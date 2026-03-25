@@ -1,0 +1,20 @@
+# Build artifacts
+morze_app
+
+# Logs
+*.log
+
+# Node
+ui/node_modules/
+ui/.vite/
+
+# OS
+.DS_Store
+*.swp
+
+# IDE
+.vscode/
+.idea/
+
+# Gemini/AI artifacts
+.gemini/
