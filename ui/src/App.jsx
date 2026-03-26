@@ -42,8 +42,8 @@ function App() {
   const [morseBuffer, setMorseBuffer] = useState('');
   
   const [frequency, setFrequency] = useState(700);
+  const [volume, setVolume] = useState(50);
   const [wpm, setWpm] = useState(15);
-  const [showSettings, setShowSettings] = useState(false);
   
   const canvasRef = useRef(null);
   const ws = useRef(null);
@@ -196,7 +196,12 @@ function App() {
 
   const updateFrequency = (val) => {
     setFrequency(val);
-    if (ws.current && ws.current.readyState === 1) ws.current.send(val.toString());
+    if (ws.current && ws.current.readyState === 1) ws.current.send('F' + val);
+  };
+
+  const updateVolume = (val) => {
+    setVolume(val);
+    if (ws.current && ws.current.readyState === 1) ws.current.send('V' + val);
   };
 
   return (
@@ -208,13 +213,17 @@ function App() {
           <div className="header-controls">
             <div className="freq-control">
               <span className="label">{frequency} HZ</span>
-              <input type="range" min="400" max="1200" step="25" value={frequency} onChange={(e) => updateFrequency(parseInt(e.target.value))} />
+              <input type="range" min="200" max="2000" step="25" value={frequency} onChange={(e) => updateFrequency(parseInt(e.target.value))} />
+            </div>
+
+            <div className="freq-control">
+              <span className="label"><Speaker size={14} style={{marginBottom:'-2px'}}/> {volume}%</span>
+              <input type="range" min="0" max="100" step="1" value={volume} onChange={(e) => updateVolume(parseInt(e.target.value))} />
             </div>
             
             <div className="lang-toggle">
               <button className={lang === 'RU' ? 'active' : ''} onClick={() => setLang('RU')}>RU</button>
               <button className={lang === 'EN' ? 'active' : ''} onClick={() => setLang('EN')}>EN</button>
-              <button className="gear-btn" onClick={() => setShowSettings(!showSettings)}><Settings size={16} /></button>
             </div>
           </div>
 
@@ -225,15 +234,6 @@ function App() {
         </header>
 
         <main>
-          <AnimatePresence>
-            {showSettings && (
-              <motion.section initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="settings-panel">
-                <div className="setting-info">
-                  Advanced settings will appear here.
-                </div>
-              </motion.section>
-            )}
-          </AnimatePresence>
 
           <section className="scrolling-tape-container">
             <canvas ref={canvasRef} width={800} height={100} className="tape-canvas" />

@@ -12,8 +12,13 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         const str = message.toString();
         console.log(`[Bridge] Received from UI: ${str}`);
-        if (activeEngine && !isNaN(str)) {
-            activeEngine.stdin.write(str + '\n');
+        if (activeEngine) {
+            if (str.startsWith('F') || str.startsWith('V')) {
+                activeEngine.stdin.write(str + '\n');
+            } else if (!isNaN(str) && str.trim() !== '') {
+                // Backwards compatibility for plain numbers
+                activeEngine.stdin.write('F' + str + '\n');
+            }
         }
     });
     ws.on('close', () => console.log('[Bridge] UI Client disconnected'));

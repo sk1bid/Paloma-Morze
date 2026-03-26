@@ -19,6 +19,7 @@
 @property (assign) double phase;
 @property (assign) float currentVolume;
 @property (assign) float targetVolume;
+@property (assign) float maxVolume;
 @property (strong) dispatch_source_t timer;
 @end
 
@@ -36,6 +37,7 @@
         _phase = 0.0;
         _currentVolume = 0.0f;
         _targetVolume = 0.0f;
+        _maxVolume = 0.5f; // Default 50% volume
 
         __weak MorseOscillator *weakSelf = self;
         _sourceNode = [[AVAudioSourceNode alloc] initWithRenderBlock:
@@ -86,14 +88,17 @@
 - (double)phase { return _phase; }
 - (void)setPhase:(double)p { _phase = p; }
 
-- (void)start { self.targetVolume = 0.5f; }
+- (void)start { self.targetVolume = self.maxVolume; }
 - (void)stop { self.targetVolume = 0.0f; }
 @end
 
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/select.h>
+#include <vector>
 
-std::string findPort() {
+// Returns the port with the newest mtime
+std::string findBestPort() {
     DIR* dir = opendir("/dev");
     if (!dir) return "";
     struct dirent* entry;
@@ -120,6 +125,8 @@ int main() {
     @autoreleasepool {
         MorseOscillator *osc = [[MorseOscillator alloc] init];
         int fd = -1;
+        std::string connectedPort;
+        time_t lastHealthCheck = 0;
         
         char buf[1];
         char stdin_buf[16];
@@ -131,7 +138,7 @@ int main() {
 
         while (true) {
             if (fd == -1) {
-                std::string port = findPort();
+                std::string port = findBestPort();
                 if (!port.empty()) {
                     fd = open(port.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
                     if (fd != -1) {
@@ -145,12 +152,46 @@ int main() {
                         options.c_iflag &= ~(IXON | IXOFF | IXANY);
                         options.c_oflag &= ~OPOST;
                         tcsetattr(fd, TCSANOW, &options);
-                        usleep(100000); // Wait 100ms for hardware to stabilize
+                        usleep(100000);
+                        connectedPort = port;
+                        lastHealthCheck = time(NULL);
                         printf("[Engine] Connected to %s\n", port.c_str());
                         fflush(stdout);
                     }
                 }
-                if (fd == -1) usleep(1000000); // 1s wait
+                if (fd == -1) usleep(1000000);
+            }
+
+            // Health check: verify port file exists and check for newer ports
+            if (fd != -1) {
+                time_t now = time(NULL);
+                if (now - lastHealthCheck >= 2) {
+                    lastHealthCheck = now;
+                    if (access(connectedPort.c_str(), F_OK) != 0) {
+                        close(fd);
+                        fd = -1;
+                        [osc stop];
+                        printf("[Engine] Port %s disappeared. Reconnecting...\n", connectedPort.c_str());
+                        fflush(stdout);
+                        connectedPort.clear();
+                        continue;
+                    } else {
+                        std::string best = findBestPort();
+                        if (!best.empty() && best != connectedPort) {
+                            struct stat st_best, st_current;
+                            if (stat(best.c_str(), &st_best) == 0 && stat(connectedPort.c_str(), &st_current) == 0) {
+                                if (st_best.st_mtime > st_current.st_mtime) {
+                                    printf("[Engine] Found a newer port %s. Switching automatically...\n", best.c_str());
+                                    close(fd);
+                                    fd = -1;
+                                    [osc stop];
+                                    connectedPort.clear();
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             // Arduino -> UI & Sound
@@ -167,27 +208,40 @@ int main() {
                         fflush(stdout);
                     }
                 } else if (n < 0 && errno != EAGAIN) {
-                    // Actual error - port lost
                     close(fd);
                     fd = -1;
-                    printf("[Engine] Connection lost (errno: %d). Retrying...\n", errno);
+                    [osc stop];
+                    printf("[Engine] Connection lost (errno: %d). Reconnecting...\n", errno);
                     fflush(stdout);
                 }
+
             }
 
-            // UI -> Engine (Frequency)
+            // UI -> Engine (Frequency and Volume)
             char c;
             if (read(STDIN_FILENO, &c, 1) > 0) {
                 if (c == '\n') {
                     stdin_buf[stdin_pos] = '\0';
-                    int f = atoi(stdin_buf);
-                    if (f >= 200 && f <= 2000) osc.frequency = f;
+                    if (stdin_buf[0] == 'F') {
+                        int f = atoi(stdin_buf + 1);
+                        if (f >= 200 && f <= 2000) osc.frequency = f;
+                    } else if (stdin_buf[0] == 'V') {
+                        int v = atoi(stdin_buf + 1);
+                        if (v >= 0 && v <= 100) {
+                            osc.maxVolume = v / 100.0f;
+                            // Update live volume if currently pressing
+                            if (osc.targetVolume > 0.0f) {
+                                osc.targetVolume = osc.maxVolume;
+                            }
+                        }
+                    }
                     stdin_pos = 0;
-                } else if (isdigit(c) && stdin_pos < 15) {
+                } else if (stdin_pos < 15) {
                     stdin_buf[stdin_pos++] = c;
                 }
             }
-            usleep(1000); 
+            // Yield to macOS runloop to process AVAudioEngine notifications (like headphone unplug)
+            [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.001]];
         }
     }
     return 0;
