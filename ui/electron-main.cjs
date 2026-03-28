@@ -8,6 +8,15 @@ let mainWindow;
 // --- Auto Updater Configuration ---
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
+autoUpdater.logger = null; // Suppress default logging
+
+// Prevent update errors from crashing the app
+process.on('uncaughtException', (err) => {
+  console.error('[Main] Uncaught exception:', err.message);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('[Main] Unhandled rejection:', err);
+});
 
 function sendUpdateStatus(status, data = {}) {
   if (mainWindow && mainWindow.webContents) {

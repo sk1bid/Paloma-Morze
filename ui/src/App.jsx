@@ -54,15 +54,23 @@ function App() {
       }
     };
   }, []);
+  const freqTimer = useRef(null);
+  const volTimer = useRef(null);
 
   const updateFrequency = (val) => {
     setFrequency(val);
-    if (ws.current && ws.current.readyState === 1) ws.current.send('F' + val);
+    clearTimeout(freqTimer.current);
+    freqTimer.current = setTimeout(() => {
+      if (ws.current && ws.current.readyState === 1) ws.current.send('F' + val);
+    }, 50);
   };
 
   const updateVolume = (val) => {
     setVolume(val);
-    if (ws.current && ws.current.readyState === 1) ws.current.send('V' + val);
+    clearTimeout(volTimer.current);
+    volTimer.current = setTimeout(() => {
+      if (ws.current && ws.current.readyState === 1) ws.current.send('V' + val);
+    }, 50);
   };
 
   return (

@@ -401,18 +401,6 @@ int main(int argc, char** argv) {
         }
       }
 
-      // Silence timeout: if no data for 5 seconds, assume disconnection
-      if (lastDataTime > 0 && (get_time_ms() - lastDataTime) > 5000) {
-        CloseHandle(hComm);
-        hComm = INVALID_HANDLE_VALUE;
-        state.targetVolume = 0.0f;
-        connectedPort.clear();
-        lastDataTime = 0;
-        printf("[Engine] Silence timeout. Reconnecting...\n");
-        fflush(stdout);
-        continue;
-      }
-
       char bufWIN[1];
       DWORD bytes_read;
       if (ReadFile(hComm, bufWIN, 1, &bytes_read, NULL)) {
