@@ -64,7 +64,7 @@ build:linux_win:
     - cd ui
     - npm ci --cache .npm --prefer-offline
     - npm run build
-    - GH_TOKEN=$GITHUB_TOKEN npx electron-builder --linux --win -p always
+    - GH_TOKEN=$GITHUB_TOKEN npx electron-builder --linux --win -p never
   cache:
     - <<: *npm_cache_config
     - <<: *electron_cache_config
@@ -93,7 +93,7 @@ build:mac:
     - cp native/morze_app native/morze_app_macos
     - npm ci --cache .npm --prefer-offline
     - npm run build
-    - GH_TOKEN=$GITHUB_TOKEN npx electron-builder --mac -p always
+    - GH_TOKEN=$GITHUB_TOKEN npx electron-builder --mac -p never
   cache:
     - <<: *npm_cache_config
     - <<: *electron_cache_config
@@ -239,6 +239,6 @@ sync:github_assets:
       }
       
       # 3. Process files
-      find ui/release ui/native -maxdepth 1 -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.yml" -o -name "*.blockmap" -o -name "morze_app_linux" -o -name "morze_app_macos" -o -name "morze_app_win.exe" \) | while read f; do
+      find ui/release ui/native -maxdepth 1 -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.zip" -o -name "*.yml" -o -name "*.blockmap" -o -name "morze_app_linux" -o -name "morze_app_macos" -o -name "morze_app_win.exe" \) | while read f; do
         upload_asset "$f"
       done
