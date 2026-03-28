@@ -1,7 +1,7 @@
 {
   "name": "ui",
   "private": true,
-  "version": "0.1.0-beta.22",
+  "version": "0.1.0-beta.23",
   "author": "Paloma Morse Team",
   "description": "Premium Morse Code Training application with cross-platform C++ engine.",
   "repository": {
@@ -27,8 +27,9 @@
     ],
     "publish": [
       {
-        "provider": "generic",
-        "url": "https://gitlab.sk1bid.ru/root/paloma-morze/-/releases"
+        "provider": "github",
+        "owner": "sk1bid",
+        "repo": "Paloma-Morze"
       }
     ],
     "directories": {
@@ -44,7 +45,8 @@
     "mac": {
       "icon": "assets/icon.icns",
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ]
     },
     "win": {
@@ -61,6 +63,7 @@
     }
   },
   "dependencies": {
+    "electron-updater": "^6.8.3",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.6.0",
     "react": "^19.2.4",

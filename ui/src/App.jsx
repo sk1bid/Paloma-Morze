@@ -3,6 +3,7 @@ import { Zap, Speaker, Radio, Headphones } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Transmission } from './Transmission';
 import { Reception } from './Reception';
+import { UpdateChecker } from './UpdateChecker';
 import './App.css';
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
   const [volume, setVolume] = useState(50);
   const [lang, setLang] = useState('RU');
   const [keyConnected, setKeyConnected] = useState(false);
+  const [keyPressed, setKeyPressed] = useState(false);
   const [wsNode, setWsNode] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   
@@ -36,7 +38,9 @@ function App() {
     const handleAppMessage = (event) => {
       if (typeof event.data === 'string') {
         if (event.data === 'STATUS:CONNECTED') setKeyConnected(true);
-        else if (event.data === 'STATUS:DISCONNECTED') setKeyConnected(false);
+        else if (event.data === 'STATUS:DISCONNECTED') { setKeyConnected(false); setKeyPressed(false); }
+        else if (event.data === '1') setKeyPressed(true);
+        else if (event.data === '0') setKeyPressed(false);
       }
     };
     ws.current.addEventListener('message', handleAppMessage);
@@ -76,7 +80,7 @@ function App() {
             <Zap size={20} className="icon-zap" />
             <span>PALOMA MORSE</span>
             <div 
-              className={`connection-badge ${keyConnected ? 'connected' : 'disconnected'}`}
+              className={`connection-badge ${keyConnected ? (keyPressed ? 'active' : 'connected') : 'disconnected'}`}
               title={keyConnected ? 'КЛЮЧ ПОДКЛЮЧЕН' : 'КЛЮЧ ОТКЛЮЧЕН'}
             >
               <div className="conn-dot"></div>
@@ -98,6 +102,8 @@ function App() {
               <button className={lang === 'RU' ? 'active' : ''} onClick={() => setLang('RU')}>RU</button>
               <button className={lang === 'EN' ? 'active' : ''} onClick={() => setLang('EN')}>EN</button>
             </div>
+
+            <UpdateChecker />
           </div>
         </header>
 

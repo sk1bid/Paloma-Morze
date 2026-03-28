@@ -1,8 +1,63 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const bridge = require('./bridge.cjs');
 
 let mainWindow;
+
+// --- Auto Updater Configuration ---
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
+
+function sendUpdateStatus(status, data = {}) {
+  if (mainWindow && mainWindow.webContents) {
+    mainWindow.webContents.send('update-status', { status, ...data });
+  }
+}
+
+function setupAutoUpdater() {
+  autoUpdater.on('checking-for-update', () => {
+    console.log('[Updater] Checking for updates...');
+    sendUpdateStatus('checking');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('[Updater] Update available:', info.version);
+    sendUpdateStatus('available', { version: info.version });
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    console.log('[Updater] App is up to date.');
+    sendUpdateStatus('uptodate');
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    sendUpdateStatus('downloading', { percent: Math.round(progress.percent) });
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('[Updater] Update downloaded:', info.version);
+    sendUpdateStatus('downloaded', { version: info.version });
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('[Updater] Error:', err.message);
+    sendUpdateStatus('error', { message: err.message });
+  });
+
+  // IPC handlers from renderer
+  ipcMain.on('check-for-update', () => {
+    autoUpdater.checkForUpdates();
+  });
+
+  ipcMain.on('download-update', () => {
+    autoUpdater.downloadUpdate();
+  });
+
+  ipcMain.on('install-update', () => {
+    autoUpdater.quitAndInstall();
+  });
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -23,6 +78,15 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     mainWindow.setTitle('Paloma Morse');
     mainWindow.show();
+
+    // Check for updates 3 seconds after window is ready
+    if (app.isPackaged) {
+      setTimeout(() => {
+        autoUpdater.checkForUpdates().catch(err => {
+          console.log('[Updater] Auto-check failed:', err.message);
+        });
+      }, 3000);
+    }
   });
 
   // Enable standard DevTools shortcuts for profiling
@@ -43,6 +107,7 @@ function createWindow() {
 app.on('ready', () => {
   console.log(`[Main] Starting Paloma Morse (Packaged: ${app.isPackaged})`);
   bridge.start(app.isPackaged);
+  setupAutoUpdater();
   createWindow();
 });
 

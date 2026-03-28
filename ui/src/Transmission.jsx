@@ -220,11 +220,6 @@ export const Transmission = React.memo(({ frequency, volume, lang, ws }) => {
 
   return (
     <>
-      <div className="status-indicator" style={{ position: 'absolute', top: -45, right: 0 }}>
-        <div className={`dot ${isPressed ? 'active' : ''}`}></div>
-        <span>{isPressed ? 'TYPING' : 'AWAITING'}</span>
-      </div>
-
       <main>
 
           <section className="scrolling-tape-container">

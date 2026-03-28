@@ -32,7 +32,7 @@ build:linux_win:
     - cd ui
     - npm install
     - npm run build
-    - npx electron-builder --linux --win -p never
+    - GH_TOKEN=$GITHUB_TOKEN npx electron-builder --linux --win -p always
   artifacts:
     name: "paloma-morse-$CI_COMMIT_TAG-linux-win"
     paths:
@@ -40,6 +40,7 @@ build:linux_win:
       - ui/native/morze_app_win.exe
       - ui/release/*.AppImage
       - ui/release/*.exe
+      - ui/release/*.yml
     expire_in: 1 week
   rules:
     - if: $CI_COMMIT_TAG
@@ -53,12 +54,14 @@ build:mac:
     - g++ native/morze_engine_v2.cpp -I native -o native/morze_app_macos -lpthread -lm -ldl -framework CoreAudio -framework AudioUnit -framework CoreFoundation
     - npm install
     - npm run build
-    - npx electron-builder --mac -p never
+    - GH_TOKEN=$GITHUB_TOKEN npx electron-builder --mac -p always
   artifacts:
     name: "paloma-morse-$CI_COMMIT_TAG-mac"
     paths:
       - ui/native/morze_app_macos
       - ui/release/*.dmg
+      - ui/release/*.zip
+      - ui/release/*.yml
     expire_in: 1 week
   rules:
     - if: $CI_COMMIT_TAG
