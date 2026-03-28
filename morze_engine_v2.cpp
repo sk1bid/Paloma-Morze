@@ -134,16 +134,38 @@ std::vector<std::string> findAvailablePorts() {
   }
   return ports;
 }
-long long get_time_ms() { return GetTickCount64(); }
+long long get_time_ms() { return GetTickCount(); }
 #endif
 
-int main() {
+int main(int argc, char** argv) {
   MorseState state;
   state.phase = 0.0;
   state.frequency = 700.0;
   state.currentVolume = 0.0f;
   state.targetVolume = 0.0f;
   state.maxVolume = 0.5f;
+
+  for (int i = 1; i < argc; ++i) {
+    std::string arg = argv[i];
+    if (arg == "-h" || arg == "--help") {
+      printf("Paloma Morse Engine (CLI Mode)\n");
+      printf("Usage: morze_app [opts]\n");
+      printf("  --freq <Hz>       Set base frequency (200-2000 Hz)\n");
+      printf("  --vol <0-100>     Set max volume (0-100)\n");
+      printf("  --help            Show this help message\n\n");
+      return 0;
+    } else if (arg == "--freq" || arg == "-f") {
+      if (i + 1 < argc) {
+        int f = atoi(argv[++i]);
+        if (f >= 200 && f <= 2000) state.frequency = (double)f;
+      }
+    } else if (arg == "--vol" || arg == "-v") {
+      if (i + 1 < argc) {
+        int v = atoi(argv[++i]);
+        if (v >= 0 && v <= 100) state.maxVolume = v / 100.0f;
+      }
+    }
+  }
   state.sampleRate = 44100.0;
 
   ma_device_config config = ma_device_config_init(ma_device_type_playback);
@@ -164,8 +186,7 @@ int main() {
     ma_device_uninit(&device);
     return -1;
   }
-
-  printf("[Engine] Cross-platform engine started (miniaudio).\n");
+  printf("[Engine] Cross-platform engine started. Freq: %.0fHz, Vol: %.0f%%\n", state.frequency, state.maxVolume * 100);
   fflush(stdout);
 
   int fd = -1;
