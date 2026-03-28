@@ -153,7 +153,7 @@ sync:github_assets:
         RELEASE_RESPONSE=$(curl -s -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
           -H "Accept: application/vnd.github.v3+json" \
           https://api.github.com/repos/sk1bid/Paloma-Morze/releases \
-          -d "{\"tag_name\":\"${VERSION}\",\"name\":\"Release ${VERSION}\",\"body\":\"Automatic release mirrored from GitLab CI.\"}")
+          -d "{\"tag_name\":\"${VERSION}\",\"name\":\"Release ${VERSION}\",\"body\":\"Automatic release mirrored from GitLab CI.\",\"draft\":false}")
         RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq -r '.id')
       fi
       
@@ -188,6 +188,6 @@ sync:github_assets:
       }
       
       # 3. Process files
-      find ui/release ui/native -maxdepth 1 -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "morze_app_linux" -o -name "morze_app_macos" -o -name "morze_app_win.exe" \) | while read f; do
+      find ui/release ui/native -maxdepth 1 -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.yml" -o -name "*.blockmap" -o -name "morze_app_linux" -o -name "morze_app_macos" -o -name "morze_app_win.exe" \) | while read f; do
         upload_asset "$f"
       done
