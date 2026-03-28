@@ -27,5 +27,3 @@ git tag v0.1.0-beta
 git push origin v0.1.0-beta
 ```
 
----
-*Developed by Paloma Morse Team*
