@@ -14,9 +14,11 @@
     "start": "electron .",
     "dev": "vite",
     "dev:electron": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && npm start\"",
+    "sync-version": "bash ../scripts/update_version.sh",
+    "prebuild": "npm run sync-version",
     "build": "vite build",
-    "build:app": "electron-builder",
-    "publish:app": "electron-builder -mwl -p always",
+    "build:app": "npm run sync-version && electron-builder",
+    "publish:app": "npm run sync-version && electron-builder -mwl -p always",
     "lint": "eslint .",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "preview": "vite preview"

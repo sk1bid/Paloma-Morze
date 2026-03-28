@@ -25,6 +25,7 @@ function sendUpdateStatus(status, data = {}) {
 }
 
 function setupAutoUpdater() {
+  autoUpdater.allowPrerelease = true;
   autoUpdater.on('checking-for-update', () => {
     console.log('[Updater] Checking for updates...');
     sendUpdateStatus('checking');
@@ -103,6 +104,7 @@ function createWindow() {
     // Check for updates 3 seconds after window is ready
     if (app.isPackaged) {
       setTimeout(() => {
+        console.log(`[Updater] Current version: ${app.getVersion()}`);
         autoUpdater.checkForUpdates().catch(err => {
           console.log('[Updater] Auto-check failed:', err.message);
         });

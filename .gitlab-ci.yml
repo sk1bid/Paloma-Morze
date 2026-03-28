@@ -1,6 +1,7 @@
 stages:
   - test
   - build
+  - test_release
   - release
   - sync
 
@@ -116,6 +117,7 @@ release:
       artifacts: true
     - job: build:mac
       artifacts: true
+    - job: test:release
   rules:
     - if: $CI_COMMIT_TAG
   script:
@@ -141,7 +143,7 @@ release:
           url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app_macos?job=build:mac'
 
 test:release:
-  stage: release
+  stage: test_release
   image: node:20
   needs:
     - job: build:linux_win
@@ -160,7 +162,9 @@ sync:github:
   variables:
     GIT_DEPTH: 1
   image: alpine:latest
-  needs: [] 
+  needs:
+    - job: test:cpp_parser
+    - job: test:bridge
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
     - if: $CI_COMMIT_TAG
@@ -188,6 +192,7 @@ sync:github_assets:
       artifacts: true
     - job: build:mac
       artifacts: true
+    - job: test:release
   rules:
     - if: $CI_COMMIT_TAG
   before_script:
