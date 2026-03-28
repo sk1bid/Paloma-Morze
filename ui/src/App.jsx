@@ -12,16 +12,25 @@ function App() {
   const [lang, setLang] = useState('RU');
   const [keyConnected, setKeyConnected] = useState(false);
   const [wsNode, setWsNode] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false);
   
   const ws = useRef(null);
 
   // Initialize generic WebSocket for sending global audio settings to C++ engine
   useEffect(() => {
     ws.current = new WebSocket('ws://127.0.0.1:8080');
+    
+    // Safety fallback: Show UI after 2.5s even if WS is slow
+    const loadTimeout = setTimeout(() => {
+      setIsLoaded(true);
+    }, 2500);
+
     ws.current.onopen = () => {
       console.log('Connected to Morse Engine via WebSocket');
       ws.current.send('F' + frequency);
       ws.current.send('V' + volume);
+      clearTimeout(loadTimeout);
+      setIsLoaded(true);
     };
 
     const handleAppMessage = (event) => {
@@ -53,7 +62,12 @@ function App() {
   };
 
   return (
-    <div className="app-container">
+    <motion.div 
+      className="app-container"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: isLoaded ? 1 : 0 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+    >
       <div className="glass-panel main-panel">
         
         {/* Global Settings Header */}
@@ -103,39 +117,35 @@ function App() {
           </button>
         </div>
 
-        {/* Routing */}
+        {/* Persistent Content (Keep-alive) */}
         <div className="tab-content">
-          <AnimatePresence mode="wait">
-            {activeTab === 'transmission' && (
-              <motion.div
-                key="trans"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-                className="tab-motion-wrapper"
-              >
-                <Transmission frequency={frequency} volume={volume} lang={lang} ws={wsNode} />
-              </motion.div>
-            )}
+          <motion.div
+            animate={{ 
+              opacity: activeTab === 'transmission' ? 1 : 0,
+              x: activeTab === 'transmission' ? 0 : -20,
+              pointerEvents: activeTab === 'transmission' ? 'auto' : 'none'
+            }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="tab-motion-wrapper"
+          >
+            <Transmission frequency={frequency} volume={volume} lang={lang} ws={wsNode} />
+          </motion.div>
 
-            {activeTab === 'reception' && (
-              <motion.div
-                key="rec"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-                className="tab-motion-wrapper"
-              >
-                <Reception frequency={frequency} volume={volume} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <motion.div
+            animate={{ 
+              opacity: activeTab === 'reception' ? 1 : 0,
+              x: activeTab === 'reception' ? 0 : 20,
+              pointerEvents: activeTab === 'reception' ? 'auto' : 'none'
+            }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="tab-motion-wrapper"
+          >
+            <Reception frequency={frequency} volume={volume} lang={lang} />
+          </motion.div>
         </div>
 
       </div>
-    </div>
+    </motion.div>
   );
 }
 

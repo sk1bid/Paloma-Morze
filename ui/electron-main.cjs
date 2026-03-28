@@ -9,8 +9,8 @@ function createWindow() {
     width: 1000,
     height: 800,
     title: 'Paloma Morse',
-    backgroundColor: '#0b0e14', // Match the UI background
-    show: false, // Don't show until ready-to-show
+    backgroundColor: '#0b0e14', 
+    show: false, 
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -21,7 +21,18 @@ function createWindow() {
   mainWindow.loadFile(indexPath);
 
   mainWindow.once('ready-to-show', () => {
+    mainWindow.setTitle('Paloma Morse');
     mainWindow.show();
+  });
+
+  // Enable standard DevTools shortcuts for profiling
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.control && input.shift && input.key.toLowerCase() === 'i') {
+      mainWindow.webContents.openDevTools();
+    }
+    if (input.meta && input.alt && input.key.toLowerCase() === 'i') {
+      mainWindow.webContents.openDevTools();
+    }
   });
 
   mainWindow.on('closed', function () {
@@ -36,9 +47,7 @@ app.on('ready', () => {
 });
 
 app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  app.quit();
 });
 
 app.on('activate', function () {

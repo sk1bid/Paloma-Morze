@@ -2,12 +2,67 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ui</title>
+    <title>Paloma Morse</title>
+    <style>
+      body {
+        margin: 0;
+        background-color: #0b0e14;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        overflow: hidden;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      }
+      .loader-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+      .pulse-circle {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        border-radius: 50%;
+        position: relative;
+        animation: pulse 2s infinite ease-in-out;
+      }
+      .pulse-circle::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        border-radius: 50%;
+        background: inherit;
+        filter: blur(15px);
+        opacity: 0.6;
+        animation: pulse-glow 2s infinite ease-in-out;
+      }
+      @keyframes pulse {
+        0%, 100% { transform: scale(0.85); opacity: 0.8; }
+        50% { transform: scale(1); opacity: 1; }
+      }
+      @keyframes pulse-glow {
+        0%, 100% { transform: scale(1); blur: 15px; }
+        50% { transform: scale(1.4); blur: 25px; }
+      }
+      .loading-text {
+        color: #94a3b8;
+        font-size: 0.875rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 500;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <div id="root">
+      <div class="loader-container">
+        <div class="pulse-circle"></div>
+        <div class="loading-text">Paloma Morse Loading...</div>
+      </div>
+    </div>
+    <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>
