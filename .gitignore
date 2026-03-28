@@ -1,10 +1,17 @@
 # Build artifacts
 morze_app
+morze_app.exe
+ui/dist/
+ui/release/
+ui/.cache/
+Paloma\ Morse.app/
 
 # Logs
 *.log
+daemon.*
 
 # Node
+node_modules/
 ui/node_modules/
 ui/.vite/
 
@@ -16,5 +23,5 @@ ui/.vite/
 .vscode/
 .idea/
 
-# Gemini/AI artifacts
+# Gemini/AI
 .gemini/
