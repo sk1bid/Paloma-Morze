@@ -23,7 +23,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 50% 50%, #1a2233 0%, #0b0e14 100%);
+  background: #11151f;
   overflow: hidden;
   margin: 0;
   padding: 0;
@@ -781,4 +781,35 @@ header {
   border-radius: 2px;
   transition: width 0.3s ease;
   box-shadow: 0 0 8px rgba(0, 210, 255, 0.4);
+}
+
+/* Connection Toast */
+.connection-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 14px 28px;
+  border-radius: 16px;
+  z-index: 10000;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+}
+
+.toast-content .icon-zap {
+  color: #50fa7b;
+  filter: drop-shadow(0 0 8px rgba(80, 250, 123, 0.4));
 }

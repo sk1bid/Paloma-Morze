@@ -81,8 +81,20 @@ function createWindow() {
     }
   });
 
-  const indexPath = path.join(__dirname, 'dist', 'index.html');
-  mainWindow.loadURL(`file://${indexPath}`);
+  if (!app.isPackaged) {
+    // Development mode: Connect to Vite dev server
+    mainWindow.loadURL('http://localhost:5173').catch(() => {
+      // Fallback if Vite is not running
+      const indexPath = path.join(__dirname, 'dist', 'index.html');
+      mainWindow.loadURL(`file://${indexPath}`);
+    });
+    // Open DevTools by default in dev mode for easier debugging
+    mainWindow.webContents.openDevTools();
+  } else {
+    // Production mode: Load built files
+    const indexPath = path.join(__dirname, 'dist', 'index.html');
+    mainWindow.loadURL(`file://${indexPath}`);
+  }
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.setTitle('Paloma Morse');

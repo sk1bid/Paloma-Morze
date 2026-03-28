@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Transmission } from './Transmission';
 import { Reception } from './Reception';
 import { UpdateChecker } from './UpdateChecker';
+import { sounds } from './utils/sounds';
 import './App.css';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
   const [keyPressed, setKeyPressed] = useState(false);
   const [wsNode, setWsNode] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   
   const ws = useRef(null);
 
@@ -54,6 +56,19 @@ function App() {
       }
     };
   }, []);
+  // Play sounds and show toast on connection changes
+  useEffect(() => {
+    if (!isLoaded) return; // Don't play on initial load
+    if (keyConnected) {
+      sounds.playConnect();
+      setShowToast(true);
+      const timer = setTimeout(() => setShowToast(false), 3000);
+      return () => clearTimeout(timer);
+    } else {
+      sounds.playDisconnect();
+    }
+  }, [keyConnected]);
+
   const freqTimer = useRef(null);
   const volTimer = useRef(null);
 
@@ -76,6 +91,8 @@ function App() {
   return (
     <motion.div 
       className="app-container"
+      onClick={() => sounds.init()}
+      onMouseDown={() => sounds.init()}
       initial={{ opacity: 0 }}
       animate={{ opacity: isLoaded ? 1 : 0 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
@@ -89,7 +106,10 @@ function App() {
             <span>PALOMA MORSE</span>
             <div 
               className={`connection-badge ${keyConnected ? (keyPressed ? 'active' : 'connected') : 'disconnected'}`}
-              title={keyConnected ? 'КЛЮЧ ПОДКЛЮЧЕН' : 'КЛЮЧ ОТКЛЮЧЕН'}
+              title={lang === 'RU' 
+                ? (keyConnected ? 'КЛЮЧ ПОДКЛЮЧЕН' : 'КЛЮЧ ОТКЛЮЧЕН') 
+                : (keyConnected ? 'KEY CONNECTED' : 'KEY DISCONNECTED')
+              }
             >
               <div className="conn-dot"></div>
             </div>
@@ -159,6 +179,23 @@ function App() {
         </div>
 
       </div>
+
+      {/* Connection Toast */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div 
+            className="connection-toast"
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+          >
+            <div className="toast-content">
+              <Zap size={16} className="icon-zap" />
+              <span>{lang === 'RU' ? 'КЛЮЧ ПОДКЛЮЧЕН' : 'KEY CONNECTED'}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

@@ -1,4 +1,5 @@
 stages:
+  - test
   - build
   - release
   - sync
@@ -19,6 +20,21 @@ cache:
     - ui/.cache/electron/
     - ui/.cache/electron-builder/
     - .apt-cache/
+
+test:cpp_parser:
+  stage: test
+  image: gcc:latest
+  script:
+    - g++ ui/native/test_parser.cpp -I ui/native -o test_parser
+    - ./test_parser
+
+test:bridge:
+  stage: test
+  image: node:20
+  script:
+    - cd ui
+    - npm install
+    - npm test
 
 build:linux_win:
   stage: build
@@ -101,6 +117,21 @@ release:
           url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app_linux?job=build:linux_win'
         - name: 'Engine Console macOS (ARM64)'
           url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app_macos?job=build:mac'
+
+test:release:
+  stage: release
+  image: node:20
+  needs:
+    - job: build:linux_win
+      artifacts: true
+    - job: build:mac
+      artifacts: true
+  script:
+    - cd ui
+    - npm install
+    - node tests/verify_release.cjs
+  rules:
+    - if: $CI_COMMIT_TAG
 
 sync:github:
   stage: sync

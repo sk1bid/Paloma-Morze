@@ -7,7 +7,7 @@ let activeEngine = null;
 let isKeyConnected = false;
 let wss = null;
 
-function startEngine(isProduction = false) {
+function startEngine(isProduction = false, extraArgs = []) {
     if (wss) return; // Already started
 
     wss = new WebSocketServer({ port: 8080 });
@@ -43,8 +43,8 @@ function startEngine(isProduction = false) {
     }
 
     const launch = () => {
-        console.log(`[Bridge] Launching engine: ${enginePath}`);
-        activeEngine = spawn(enginePath, [], {
+        console.log(`[Bridge] Launching engine: ${enginePath} with args: ${extraArgs.join(' ')}`);
+        activeEngine = spawn(enginePath, extraArgs, {
             cwd: path.dirname(enginePath)
         });
 
@@ -100,6 +100,7 @@ function stopEngine() {
         activeEngine.kill();
         activeEngine = null;
     }
+    isKeyConnected = false;
     if (wss) {
         wss.close();
         wss = null;

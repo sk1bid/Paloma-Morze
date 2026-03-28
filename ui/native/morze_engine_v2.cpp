@@ -160,6 +160,8 @@ int main(int argc, char** argv) {
   state.currentVolume = 0.0f;
   state.targetVolume = 0.0f;
   state.maxVolume = 0.5f;
+  std::string testMode = "";
+
 
   for (int i = 1; i < argc; ++i) {
     std::string arg = argv[i];
@@ -180,6 +182,8 @@ int main(int argc, char** argv) {
         int v = atoi(argv[++i]);
         if (v >= 0 && v <= 100) state.maxVolume = v / 100.0f;
       }
+    } else if (arg == "--test-mode") {
+      if (i + 1 < argc) testMode = argv[++i];
     }
   }
   state.sampleRate = 44100.0;
@@ -192,17 +196,22 @@ int main(int argc, char** argv) {
   config.pUserData = &state;
 
   ma_device device;
-  if (ma_device_init(NULL, &config, &device) != MA_SUCCESS) {
-    printf("[Error] Failed to initialize playback device.\n");
-    return -1;
+  bool audio_ok = false;
+  if (testMode.empty()) {
+    if (ma_device_init(NULL, &config, &device) != MA_SUCCESS) {
+      printf("[Error] Failed to initialize playback device.\n");
+      return -1;
+    }
+    if (ma_device_start(&device) != MA_SUCCESS) {
+      printf("[Error] Failed to start playback device.\n");
+      ma_device_uninit(&device);
+      return -1;
+    }
+    audio_ok = true;
   }
 
-  if (ma_device_start(&device) != MA_SUCCESS) {
-    printf("[Error] Failed to start playback device.\n");
-    ma_device_uninit(&device);
-    return -1;
-  }
   printf("[Engine] Cross-platform engine started. Freq: %.0fHz, Vol: %.0f%%\n", state.frequency, state.maxVolume * 100);
+  if (!testMode.empty()) printf("[Engine] Running in TEST MODE: %s\n", testMode.c_str());
   fflush(stdout);
 
   int fd = -1;
@@ -223,53 +232,59 @@ int main(int argc, char** argv) {
 #endif
 
   while (true) {
+    if (!testMode.empty()) {
+      if (testMode == "auth_ok" && connectedPort.empty()) {
+        connectedPort = "MOCK_PORT";
+        printf("[Engine] Connected to %s (Auth OK!)\n", connectedPort.c_str());
+        fflush(stdout);
+      } else if (testMode == "auth_fail" && connectedPort.empty()) {
+        printf("[Engine] Ignored MOCK_PORT (no PALOMA response)\n");
+        fflush(stdout);
+        SLEEP(1000);
+      }
+    }
+
 #ifndef _WIN32
-    if (fd == -1) {
+    if (fd == -1 && testMode.empty()) {
+
       std::vector<std::string> ports = findAvailablePorts();
       for (const auto &port : ports) {
-        int test_fd = open(port.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
-        if (test_fd != -1) {
-          SLEEP(100);
-          struct termios options;
-          memset(&options, 0, sizeof(options));
-          tcgetattr(test_fd, &options);
-          cfsetispeed(&options, B115200);
-          cfsetospeed(&options, B115200);
-          options.c_cflag |= (CLOCAL | CREAD | CS8);
-          options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-          options.c_iflag &= ~(IXON | IXOFF | IXANY);
-          options.c_oflag &= ~OPOST;
-          tcsetattr(test_fd, TCSANOW, &options);
-          tcflush(test_fd, TCIOFLUSH);
-          SLEEP(50);
+            long long probe_start = get_time_ms();
+            int test_fd = open(port.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
+            if (test_fd != -1) {
+              SLEEP(20);
+              
+              struct termios options;
+              tcgetattr(test_fd, &options);
+              cfsetispeed(&options, B115200);
+              cfsetospeed(&options, B115200);
+              options.c_cflag |= (CLOCAL | CREAD | CS8);
+              tcsetattr(test_fd, TCSANOW, &options);
+              
+              // --- РУКОПОЖАТИЕ (СВОЙ-ЧУЖОЙ) БЫСТРОЕ ---
+              long long hs_start_time = get_time_ms();
+              bool handshake_ok = false;
+              std::string hs_str = "";
+              long long last_send = 0;
 
-          // --- РУКОПОЖАТИЕ (СВОЙ-ЧУЖОЙ) БЫСТРОЕ ---
-          long long start_time = get_time_ms();
-          bool handshake_ok = false;
-          std::string hs_str = "";
-          long long last_send = 0;
+              while (get_time_ms() - hs_start_time < 500) {
+                long long now = get_time_ms();
+                if (now - last_send > 100) {
+                  write(test_fd, "?\n", 2);
+                  last_send = now;
+                }
 
-          while (get_time_ms() - start_time < 3000) {
-            long long now = get_time_ms();
-            if (now - last_send > 200) {
-              write(test_fd, "?\n", 2);
-              last_send = now;
-            }
-
-            char hc;
-            int r = read(test_fd, &hc, 1);
-            if (r > 0) {
-              hs_str += hc;
-              if (hs_str.find("PALOMA") != std::string::npos) {
-                handshake_ok = true;
-                break;
+                char hc;
+                int r = read(test_fd, &hc, 1);
+                if (r > 0) {
+                  hs_str += hc;
+                  if (hs_str.find("PALOMA") != std::string::npos) {
+                    handshake_ok = true;
+                    break;
+                  }
+                }
+                SLEEP(5);
               }
-              if (hs_str.length() > 500)
-                hs_str = hs_str.substr(250);
-            } else {
-              SLEEP(5);
-            }
-          }
 
           if (handshake_ok) {
             fd = test_fd;
@@ -286,7 +301,7 @@ int main(int argc, char** argv) {
         }
       }
       if (fd == -1)
-        SLEEP(250);
+        SLEEP(100);
     }
 
     // Health check
@@ -325,7 +340,8 @@ int main(int argc, char** argv) {
       }
     }
 #else
-    if (hComm == INVALID_HANDLE_VALUE) {
+    if (hComm == INVALID_HANDLE_VALUE && testMode.empty()) {
+
       std::vector<std::string> ports = findAvailablePorts();
       for (const auto &port : ports) {
         char port_name[32];
