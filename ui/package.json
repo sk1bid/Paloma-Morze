@@ -1,15 +1,57 @@
 {
   "name": "ui",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0-beta",
+  "author": "Paloma Morse Team",
+  "description": "Premium Morse Code Training application with cross-platform C++ engine.",
   "type": "module",
   "main": "electron-main.cjs",
   "scripts": {
     "start": "electron .",
     "dev": "vite",
     "build": "vite build",
+    "build:app": "electron-builder",
+    "publish:app": "electron-builder -mwl -p always",
     "lint": "eslint .",
     "preview": "vite preview"
+  },
+  "build": {
+    "appId": "com.paloma.morse",
+    "productName": "Paloma Morse",
+    "publish": [
+      {
+        "provider": "gitlab",
+        "url": "https://gitlab.sk1bid.ru"
+      }
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron-main.cjs",
+      "bridge.cjs",
+      "assets/icon.*",
+      "native/**/*"
+    ],
+    "mac": {
+      "icon": "assets/icon.icns",
+      "target": [
+        "dmg"
+      ]
+    },
+    "win": {
+      "icon": "assets/icon.png",
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "icon": "assets/icon.png",
+      "target": [
+        "AppImage"
+      ]
+    }
   },
   "dependencies": {
     "framer-motion": "^12.38.0",

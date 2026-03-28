@@ -24,9 +24,19 @@
 @end
 
 @implementation MorseOscillator {
+    @public
     double _phase;
     double _sampleRate;
+    float _currentVolume;
+    float _targetVolume;
+    float _maxVolume;
+    double _frequency;
 }
+
+@synthesize frequency = _frequency;
+@synthesize targetVolume = _targetVolume;
+@synthesize maxVolume = _maxVolume;
+@synthesize currentVolume = _currentVolume;
 
 - (instancetype)init {
     self = [super init];
@@ -42,25 +52,46 @@
         __weak MorseOscillator *weakSelf = self;
         _sourceNode = [[AVAudioSourceNode alloc] initWithRenderBlock:
             ^OSStatus(BOOL *silence, const AudioTimeStamp *timestamp, AVAudioFrameCount frameCount, AudioBufferList *outputData) {
-            float *outL = (float *)outputData->mBuffers[0].mData;
-            float target = weakSelf.targetVolume;
-            float current = weakSelf.currentVolume;
             
+            MorseOscillator *strongSelf = weakSelf;
+            if (!strongSelf) return noErr;
+
+            float *outL = (float *)outputData->mBuffers[0].mData;
+            
+            // Load values into local variables once per buffer
+            float target = strongSelf->_targetVolume;
+            float current = strongSelf->_currentVolume;
+            double freq = strongSelf->_frequency;
+            double phase = strongSelf->_phase;
+            double sr = strongSelf->_sampleRate;
+
+            // CPU Optimization: Silence detection
+            if (current == 0.0f && target == 0.0f) {
+                *silence = YES;
+                return noErr;
+            }
+
+            *silence = NO;
             for (AVAudioFrameCount i = 0; i < frameCount; i++) {
-                // Smooth volume ramp (approx 5-10ms)
+                // Smooth volume ramp (~11ms full range)
+                // 0.001f is 512 samples at 44.1kHz = 11.6ms ramp
                 if (current < target) {
-                    current = fminf(current + 0.002f, target);
+                    current = fminf(current + 0.001f, target);
                 } else if (current > target) {
-                    current = fmaxf(current - 0.002f, target);
+                    current = fmaxf(current - 0.001f, target);
                 }
                 
-                double val = sin(weakSelf.phase * 2.0 * M_PI);
-                outL[i] = (float)val * current;
+                // Pure Sine Wave Generation
+                outL[i] = (float)sin(phase * 2.0 * M_PI) * current;
                 
-                weakSelf.phase += weakSelf.frequency / 44100.0;
-                if (weakSelf.phase >= 1.0) weakSelf.phase -= 1.0;
+                phase += freq / sr;
+                if (phase >= 1.0) phase -= 1.0;
             }
-            weakSelf.currentVolume = current;
+
+            // Sync back state
+            strongSelf->_currentVolume = current;
+            strongSelf->_phase = phase;
+            
             return noErr;
         }];
 
@@ -207,14 +238,18 @@ int main() {
                         printf("0\n");
                         fflush(stdout);
                     }
-                } else if (n < 0 && errno != EAGAIN) {
+                } else if (n == 0 || (n < 0 && errno != EAGAIN)) {
+                    // EOF or Error
                     close(fd);
                     fd = -1;
                     [osc stop];
-                    printf("[Engine] Connection lost (errno: %d). Reconnecting...\n", errno);
+                    if (n == 0) {
+                        printf("[Engine] Serial port EOF (disconnected or reset). Reconnecting...\n");
+                    } else {
+                        printf("[Engine] Connection lost (errno: %d). Reconnecting...\n", errno);
+                    }
                     fflush(stdout);
                 }
-
             }
 
             // UI -> Engine (Frequency and Volume)

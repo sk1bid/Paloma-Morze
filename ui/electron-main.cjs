@@ -10,46 +10,53 @@ function createWindow() {
     width: 1000,
     height: 800,
     title: 'Paloma Morse',
+    backgroundColor: '#0b0e14', // Match the UI background
+    show: false, // Don't show until ready-to-show
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
+      nodeIntegration: false,
+      contextIsolation: true
     }
   });
 
-  // Load the Vite dev server for now (we can bundle it later)
-  mainWindow.loadURL('http://localhost:5173');
+  // Load the production build
+  const indexPath = path.join(__dirname, 'dist', 'index.html');
+  mainWindow.loadFile(indexPath);
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
 
   mainWindow.on('closed', function () {
     mainWindow = null;
   });
 }
 
+// Ensure children are killed on quit
+function cleanup() {
+  if (bridgeProcess) {
+    console.log('[Main] Killing bridge process...');
+    bridgeProcess.kill('SIGTERM');
+  }
+}
+
 app.on('ready', () => {
   // 1. Start the Bridge and Engine
+  // On production, we assume bridge.cjs and morze_app are in the right places
   bridgeProcess = spawn('node', [path.join(__dirname, 'bridge.cjs')], {
     cwd: __dirname,
     stdio: 'inherit'
   });
 
-  // 2. Start Vite Dev Server
-  const viteProcess = spawn('npm', ['run', 'dev'], {
-    cwd: __dirname,
-    stdio: 'inherit'
-  });
-
-  // Wait a moment for Vite to start before opening the window
-  setTimeout(createWindow, 2000);
+  createWindow();
 });
 
 app.on('window-all-closed', function () {
-  if (bridgeProcess) bridgeProcess.kill();
-  if (process.platform !== 'darwin') app.quit();
+  app.quit();
 });
 
 app.on('activate', function () {
   if (mainWindow === null) createWindow();
 });
 
-app.on('will-quit', () => {
-  if (bridgeProcess) bridgeProcess.kill();
-});
+app.on('will-quit', cleanup);
+app.on('before-quit', cleanup);
