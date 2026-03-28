@@ -192,6 +192,7 @@ int main(int argc, char** argv) {
   int fd = -1;
 #ifdef _WIN32
   HANDLE hComm = INVALID_HANDLE_VALUE;
+  long long lastDataTime = 0;
 #endif
   std::string connectedPort = "";
   time_t lastHealthCheck = 0;
@@ -367,6 +368,7 @@ int main(int argc, char** argv) {
             hComm = test_h;
             connectedPort = port;
             lastHealthCheck = time(NULL);
+            lastDataTime = get_time_ms();
             printf("[Engine] Connected to %s (Auth OK!)\n", port.c_str());
             fflush(stdout);
             break;
@@ -382,15 +384,40 @@ int main(int argc, char** argv) {
     }
 
     if (hComm != INVALID_HANDLE_VALUE) {
+      // Health check: verify COM port is still alive
       time_t now = time(NULL);
       if (now - lastHealthCheck >= 2) {
         lastHealthCheck = now;
+        DWORD errors = 0;
+        COMSTAT comStat;
+        if (!ClearCommError(hComm, &errors, &comStat) || errors != 0) {
+          CloseHandle(hComm);
+          hComm = INVALID_HANDLE_VALUE;
+          state.targetVolume = 0.0f;
+          connectedPort.clear();
+          printf("[Engine] Port error detected. Reconnecting...\n");
+          fflush(stdout);
+          continue;
+        }
+      }
+
+      // Silence timeout: if no data for 5 seconds, assume disconnection
+      if (lastDataTime > 0 && (get_time_ms() - lastDataTime) > 5000) {
+        CloseHandle(hComm);
+        hComm = INVALID_HANDLE_VALUE;
+        state.targetVolume = 0.0f;
+        connectedPort.clear();
+        lastDataTime = 0;
+        printf("[Engine] Silence timeout. Reconnecting...\n");
+        fflush(stdout);
+        continue;
       }
 
       char bufWIN[1];
       DWORD bytes_read;
       if (ReadFile(hComm, bufWIN, 1, &bytes_read, NULL)) {
         if (bytes_read > 0) {
+          lastDataTime = get_time_ms();
           if (bufWIN[0] == '1') {
             state.targetVolume = state.maxVolume;
             printf("1\n");
@@ -404,6 +431,8 @@ int main(int argc, char** argv) {
         CloseHandle(hComm);
         hComm = INVALID_HANDLE_VALUE;
         state.targetVolume = 0.0f;
+        connectedPort.clear();
+        lastDataTime = 0;
         printf("[Engine] Disconnected. Reconnecting...\n");
         fflush(stdout);
       }

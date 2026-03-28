@@ -27,8 +27,8 @@ build:linux_win:
     - mkdir -p .apt-cache/archives/partial
     - apt-get update -o dir::cache::archives=".apt-cache/archives"
     - apt-get install -o dir::cache::archives=".apt-cache/archives" -y mingw-w64 g++
-    - x86_64-w64-mingw32-g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app.exe -static -lpthread -lm
-    - g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app -lpthread -lm -ldl
+    - x86_64-w64-mingw32-g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app_win.exe -static -lpthread -lm
+    - g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app_linux -lpthread -lm -ldl
     - cd ui
     - npm install
     - npm run build
@@ -36,8 +36,8 @@ build:linux_win:
   artifacts:
     name: "paloma-morse-$CI_COMMIT_TAG-linux-win"
     paths:
-      - ui/native/morze_app
-      - ui/native/morze_app.exe
+      - ui/native/morze_app_linux
+      - ui/native/morze_app_win.exe
       - ui/release/*.AppImage
       - ui/release/*.exe
     expire_in: 1 week
@@ -50,14 +50,14 @@ build:mac:
     - mac-runner
   script:
     - cd ui
-    - g++ native/morze_engine_v2.cpp -I native -o native/morze_app -lpthread -lm -ldl -framework CoreAudio -framework AudioUnit -framework CoreFoundation
+    - g++ native/morze_engine_v2.cpp -I native -o native/morze_app_macos -lpthread -lm -ldl -framework CoreAudio -framework AudioUnit -framework CoreFoundation
     - npm install
     - npm run build
     - npx electron-builder --mac -p never
   artifacts:
     name: "paloma-morse-$CI_COMMIT_TAG-mac"
     paths:
-      - ui/native/morze_app
+      - ui/native/morze_app_macos
       - ui/release/*.dmg
     expire_in: 1 week
   rules:
@@ -90,11 +90,11 @@ release:
         - name: 'macOS Disk Image (.dmg)'
           url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/release/Paloma-Morse-${CI_COMMIT_TAG}-arm64.dmg?job=build:mac'
         - name: 'Engine Console Windows (.exe)'
-          url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app.exe?job=build:linux_win'
+          url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app_win.exe?job=build:linux_win'
         - name: 'Engine Console Linux (ELF)'
-          url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app?job=build:linux_win'
+          url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app_linux?job=build:linux_win'
         - name: 'Engine Console macOS (ARM64)'
-          url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app?job=build:mac'
+          url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app_macos?job=build:mac'
 
 sync:github:
   stage: sync
@@ -142,38 +142,41 @@ sync:github_assets:
   script:
     - |
       echo "Uploading assets for $CI_COMMIT_TAG to GitHub"
+      VERSION="$CI_COMMIT_TAG"
       
       # 1. Get or Create Release
       RELEASE_RESPONSE=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" \
-        https://api.github.com/repos/sk1bid/Paloma-Morze/releases/tags/${CI_COMMIT_TAG})
+        https://api.github.com/repos/sk1bid/Paloma-Morze/releases/tags/${VERSION})
       
       RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq -r '.id')
-      
       if [ "$RELEASE_ID" = "null" ]; then
-        echo "Release not found, creating new one..."
         RELEASE_RESPONSE=$(curl -s -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
           -H "Accept: application/vnd.github.v3+json" \
           https://api.github.com/repos/sk1bid/Paloma-Morze/releases \
-          -d "{\"tag_name\":\"${CI_COMMIT_TAG}\",\"name\":\"Release ${CI_COMMIT_TAG}\",\"body\":\"Automatic release mirrored from GitLab CI.\"}")
+          -d "{\"tag_name\":\"${VERSION}\",\"name\":\"Release ${VERSION}\",\"body\":\"Automatic release mirrored from GitLab CI.\"}")
         RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq -r '.id')
       fi
       
       UPLOAD_URL=$(echo "$RELEASE_RESPONSE" | jq -r '.upload_url' | sed 's/{?name,label}//')
       
-      if [ -z "$UPLOAD_URL" ] || [ "$UPLOAD_URL" = "null" ]; then
-        echo "Error: Could not get upload_url from GitHub. Response:"
-        echo "$RELEASE_RESPONSE" | sed "s/${GITHUB_TOKEN}/[MASKED]/g"
-        exit 1
-      fi
-      
-      # 2. Function to upload asset
+      # 2. Upload function with name mapping
       upload_asset() {
         FILE_PATH=$1
         FILE_NAME=$(basename "$FILE_PATH")
-        # URL encode filename (replace space with %20)
-        ENCODED_NAME=$(echo "$FILE_NAME" | sed 's/ /%20/g')
         
-        echo "Uploading $FILE_NAME as $ENCODED_NAME..."
+        # Mapping logic
+        case "$FILE_NAME" in
+          *.dmg)               DISPLAY_NAME="Paloma-Morse-v${VERSION}-macOS-arm64.dmg" ;;
+          *Setup*.exe)         DISPLAY_NAME="Paloma-Morse-v${VERSION}-Windows-Setup.exe" ;;
+          *.AppImage)          DISPLAY_NAME="Paloma-Morse-v${VERSION}-Linux-x64.AppImage" ;;
+          morze_app_linux)     DISPLAY_NAME="Paloma-Engine-Console-v${VERSION}-Linux-x64" ;;
+          morze_app_macos)     DISPLAY_NAME="Paloma-Engine-Console-v${VERSION}-macOS-arm64" ;;
+          morze_app_win.exe)   DISPLAY_NAME="Paloma-Engine-Console-v${VERSION}-Windows-x64.exe" ;;
+          *)                   DISPLAY_NAME="$FILE_NAME" ;;
+        esac
+        
+        ENCODED_NAME=$(echo "$DISPLAY_NAME" | sed 's/ /%20/g')
+        echo "Uploading $FILE_NAME as $DISPLAY_NAME..."
         
         UPLOAD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
           -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
@@ -181,14 +184,10 @@ sync:github_assets:
           --data-binary "@$FILE_PATH" \
           "${UPLOAD_URL}?name=${ENCODED_NAME}")
         
-        if [ "$UPLOAD_STATUS" -eq 201 ]; then
-          echo "Successfully uploaded $FILE_NAME"
-        else
-          echo "Failed to upload $FILE_NAME (HTTP $UPLOAD_STATUS)"
-        fi
+        [ "$UPLOAD_STATUS" -eq 201 ] && echo "Successfully uploaded $DISPLAY_NAME" || echo "Failed $DISPLAY_NAME (HTTP $UPLOAD_STATUS)"
       }
       
-      # 3. Find and upload files
-      find ui/release ui/native -maxdepth 1 -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "morze_app" \) | while read f; do
+      # 3. Process files
+      find ui/release ui/native -maxdepth 1 -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "morze_app_linux" -o -name "morze_app_macos" -o -name "morze_app_win.exe" \) | while read f; do
         upload_asset "$f"
       done
