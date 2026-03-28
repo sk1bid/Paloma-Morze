@@ -29,7 +29,6 @@ build:linux_win:
     paths:
       - ui/release/*.AppImage
       - ui/release/*.exe
-      - ui/release/*.zip
     expire_in: 1 week
   rules:
     - if: $CI_COMMIT_TAG
@@ -47,7 +46,6 @@ build:mac:
     name: "paloma-morse-$CI_COMMIT_TAG-mac"
     paths:
       - ui/release/*.dmg
-      - ui/release/*.zip
     expire_in: 1 week
   rules:
     - if: $CI_COMMIT_TAG
@@ -72,8 +70,8 @@ release:
     assets:
       links:
         - name: 'Windows Setup (.exe)'
-          url: '${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/artifacts/${CI_COMMIT_TAG}/download?job=build:linux_win'
+          url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/release/Paloma%20Morse%20Setup%20${CI_COMMIT_TAG}.exe?job=build:linux_win'
         - name: 'Linux Portable (.AppImage)'
-          url: '${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/artifacts/${CI_COMMIT_TAG}/download?job=build:linux_win'
+          url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/release/Paloma%20Morse-${CI_COMMIT_TAG}.AppImage?job=build:linux_win'
         - name: 'macOS Disk Image (.dmg)'
-          url: '${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/artifacts/${CI_COMMIT_TAG}/download?job=build:mac'
+          url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/release/Paloma%20Morse-${CI_COMMIT_TAG}-arm64.dmg?job=build:mac'
