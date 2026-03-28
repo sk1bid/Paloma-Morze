@@ -4,6 +4,7 @@ stages:
 
 variables:
   ELECTRON_CACHE: "${CI_PROJECT_DIR}/ui/.cache/electron"
+  ELECTRON_BUILDER_CACHE: "${CI_PROJECT_DIR}/ui/.cache/electron-builder"
   npm_config_cache: "${CI_PROJECT_DIR}/ui/.npm"
 
 # Глобальный кэш для ускорения сборок
@@ -15,12 +16,16 @@ cache:
     - ui/node_modules/
     - ui/.npm/
     - ui/.cache/electron/
+    - ui/.cache/electron-builder/
+    - .apt-cache/
 
 build:linux_win:
   stage: build
   image: electronuserland/builder:wine
   script:
-    - apt-get update && apt-get install -y mingw-w64 g++
+    - mkdir -p .apt-cache/archives/partial
+    - apt-get update -o dir::cache::archives=".apt-cache/archives"
+    - apt-get install -o dir::cache::archives=".apt-cache/archives" -y mingw-w64 g++
     - x86_64-w64-mingw32-g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app.exe -static -lpthread -lm
     - g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app -lpthread -lm -ldl
     - cd ui
