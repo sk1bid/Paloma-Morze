@@ -137,6 +137,22 @@ std::vector<std::string> findAvailablePorts() {
 long long get_time_ms() { return GetTickCount(); }
 #endif
 
+void process_command(const char* cmd, MorseState& state) {
+  if (cmd[0] == 'F') {
+    int f = atoi(cmd + 1);
+    if (f >= 200 && f <= 2000)
+      state.frequency = (double)f;
+  } else if (cmd[0] == 'V') {
+    int v = atoi(cmd + 1);
+    if (v >= 0 && v <= 100) {
+      state.maxVolume = v / 100.0f;
+      if (state.targetVolume > 0.0f)
+        state.targetVolume = state.maxVolume;
+    }
+  }
+}
+
+#ifndef TEST_RUNNER
 int main(int argc, char** argv) {
   MorseState state;
   state.phase = 0.0;
@@ -433,18 +449,7 @@ int main(int argc, char** argv) {
     if (read(STDIN_FILENO, &c, 1) > 0) {
       if (c == '\n') {
         stdin_buf[stdin_pos] = '\0';
-        if (stdin_buf[0] == 'F') {
-          int f = atoi(stdin_buf + 1);
-          if (f >= 200 && f <= 2000)
-            state.frequency = (double)f;
-        } else if (stdin_buf[0] == 'V') {
-          int v = atoi(stdin_buf + 1);
-          if (v >= 0 && v <= 100) {
-            state.maxVolume = v / 100.0f;
-            if (state.targetVolume > 0.0f)
-              state.targetVolume = state.maxVolume;
-          }
-        }
+        process_command(stdin_buf, state);
         stdin_pos = 0;
       } else if (stdin_pos < 15) {
         stdin_buf[stdin_pos++] = c;
@@ -458,18 +463,7 @@ int main(int argc, char** argv) {
       if (ReadFile(GetStdHandle(STD_INPUT_HANDLE), &cPos, 1, &bytesRead, NULL) && bytesRead > 0) {
         if (cPos == '\n') {
           stdin_buf[stdin_pos] = '\0';
-          if (stdin_buf[0] == 'F') {
-            int f = atoi(stdin_buf + 1);
-            if (f >= 200 && f <= 2000)
-              state.frequency = (double)f;
-          } else if (stdin_buf[0] == 'V') {
-            int v = atoi(stdin_buf + 1);
-            if (v >= 0 && v <= 100) {
-              state.maxVolume = v / 100.0f;
-              if (state.targetVolume > 0.0f)
-                state.targetVolume = state.maxVolume;
-            }
-          }
+          process_command(stdin_buf, state);
           stdin_pos = 0;
         } else if (stdin_pos < 15) {
           stdin_buf[stdin_pos++] = cPos;
@@ -483,3 +477,4 @@ int main(int argc, char** argv) {
   ma_device_uninit(&device);
   return 0;
 }
+#endif

@@ -164,16 +164,9 @@ sync:github_assets:
         FILE_PATH=$1
         FILE_NAME=$(basename "$FILE_PATH")
         
-        # Mapping logic
-        case "$FILE_NAME" in
-          *.dmg)               DISPLAY_NAME="Paloma-Morse-v${VERSION}-macOS-arm64.dmg" ;;
-          *Setup*.exe)         DISPLAY_NAME="Paloma-Morse-v${VERSION}-Windows-Setup.exe" ;;
-          *.AppImage)          DISPLAY_NAME="Paloma-Morse-v${VERSION}-Linux-x64.AppImage" ;;
-          morze_app_linux)     DISPLAY_NAME="Paloma-Engine-Console-v${VERSION}-Linux-x64" ;;
-          morze_app_macos)     DISPLAY_NAME="Paloma-Engine-Console-v${VERSION}-macOS-arm64" ;;
-          morze_app_win.exe)   DISPLAY_NAME="Paloma-Engine-Console-v${VERSION}-Windows-x64.exe" ;;
-          *)                   DISPLAY_NAME="$FILE_NAME" ;;
-        esac
+        # Use original names to avoid breaking links in latest.yml
+        DISPLAY_NAME="$FILE_NAME"
+
         
         ENCODED_NAME=$(echo "$DISPLAY_NAME" | sed 's/ /%20/g')
         echo "Uploading $FILE_NAME as $DISPLAY_NAME..."
