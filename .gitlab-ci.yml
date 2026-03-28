@@ -138,41 +138,57 @@ sync:github_assets:
   rules:
     - if: $CI_COMMIT_TAG
   before_script:
-    - apk add --no-cache curl
+    - apk add --no-cache curl jq
   script:
     - |
       echo "Uploading assets for $CI_COMMIT_TAG to GitHub"
       
-      # Create GitHub Release
-      RELEASE_RESPONSE=$(curl -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
-        -H "Accept: application/vnd.github.v3+json" \
-        https://api.github.com/repos/sk1bid/Paloma-Morze/releases \
-        -d "{\"tag_name\":\"${CI_COMMIT_TAG}\",\"name\":\"Release ${CI_COMMIT_TAG}\",\"body\":\"Automatic release mirrored from GitLab CI.\"}")
+      # 1. Get or Create Release
+      RELEASE_RESPONSE=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" \
+        https://api.github.com/repos/sk1bid/Paloma-Morze/releases/tags/${CI_COMMIT_TAG})
       
-      UPLOAD_URL=$(echo "$RELEASE_RESPONSE" | grep -o 'upload_url": "[^"]*' | cut -d'"' -f3 | sed 's/{?name,label}//')
+      RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq -r '.id')
       
-      if [ -z "$UPLOAD_URL" ]; then
-        echo "Error: Could not get upload_url from GitHub. Response was:"
+      if [ "$RELEASE_ID" = "null" ]; then
+        echo "Release not found, creating new one..."
+        RELEASE_RESPONSE=$(curl -s -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/sk1bid/Paloma-Morze/releases \
+          -d "{\"tag_name\":\"${CI_COMMIT_TAG}\",\"name\":\"Release ${CI_COMMIT_TAG}\",\"body\":\"Automatic release mirrored from GitLab CI.\"}")
+        RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq -r '.id')
+      fi
+      
+      UPLOAD_URL=$(echo "$RELEASE_RESPONSE" | jq -r '.upload_url' | sed 's/{?name,label}//')
+      
+      if [ -z "$UPLOAD_URL" ] || [ "$UPLOAD_URL" = "null" ]; then
+        echo "Error: Could not get upload_url from GitHub. Response:"
         echo "$RELEASE_RESPONSE" | sed "s/${GITHUB_TOKEN}/[MASKED]/g"
         exit 1
       fi
       
-      # Function to upload asset
+      # 2. Function to upload asset
       upload_asset() {
         FILE_PATH=$1
         FILE_NAME=$(basename "$FILE_PATH")
-        echo "Uploading $FILE_NAME to GitHub..."
-        curl -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
+        # URL encode filename (replace space with %20)
+        ENCODED_NAME=$(echo "$FILE_NAME" | sed 's/ /%20/g')
+        
+        echo "Uploading $FILE_NAME as $ENCODED_NAME..."
+        
+        UPLOAD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
           -H "Content-Type: application/octet-stream" \
           --data-binary "@$FILE_PATH" \
-          "$UPLOAD_URL?name=$FILE_NAME"
+          "${UPLOAD_URL}?name=${ENCODED_NAME}")
+        
+        if [ "$UPLOAD_STATUS" -eq 201 ]; then
+          echo "Successfully uploaded $FILE_NAME"
+        else
+          echo "Failed to upload $FILE_NAME (HTTP $UPLOAD_STATUS)"
+        fi
       }
       
-      # Find and upload files
-      for f in ui/release/*.dmg ui/release/*.exe ui/release/*.AppImage ui/native/morze_app ui/native/morze_app.exe; do
-        if [ -f "$f" ]; then
-          upload_asset "$f"
-        else
-          echo "Warning: File $f not found, skipping."
-        fi
+      # 3. Find and upload files
+      find ui/release ui/native -maxdepth 1 -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "morze_app" \) | while read f; do
+        upload_asset "$f"
       done
