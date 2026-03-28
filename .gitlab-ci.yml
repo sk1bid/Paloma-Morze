@@ -49,12 +49,14 @@ build:mac:
     - mac-runner
   script:
     - cd ui
+    - g++ native/morze_engine_v2.cpp -I native -o native/morze_app -lpthread -lm -ldl -framework CoreAudio -framework AudioUnit -framework CoreFoundation
     - npm install
     - npm run build
     - npx electron-builder --mac -p never
   artifacts:
     name: "paloma-morse-$CI_COMMIT_TAG-mac"
     paths:
+      - ui/native/morze_app
       - ui/release/*.dmg
     expire_in: 1 week
   rules:
@@ -90,3 +92,5 @@ release:
           url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app.exe?job=build:linux_win'
         - name: 'Engine Console Linux (ELF)'
           url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app?job=build:linux_win'
+        - name: 'Engine Console macOS (ARM64)'
+          url: '${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app?job=build:mac'
