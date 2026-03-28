@@ -22,7 +22,7 @@
   "build": {
     "appId": "com.paloma.morse",
     "productName": "Paloma-Morse",
-    "asarUnpacked": [
+    "asarUnpack": [
       "native/**/*"
     ],
     "publish": [
