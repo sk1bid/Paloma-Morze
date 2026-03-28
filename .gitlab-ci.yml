@@ -27,8 +27,10 @@ build:linux_win:
     - mkdir -p .apt-cache/archives/partial
     - apt-get update -o dir::cache::archives=".apt-cache/archives"
     - apt-get install -o dir::cache::archives=".apt-cache/archives" -y mingw-w64 g++
-    - x86_64-w64-mingw32-g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app_win.exe -static -lpthread -lm
-    - g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app_linux -lpthread -lm -ldl
+    - x86_64-w64-mingw32-g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app.exe -static -lpthread -lm
+    - g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app -lpthread -lm -ldl
+    - cp ui/native/morze_app ui/native/morze_app_linux
+    - cp ui/native/morze_app.exe ui/native/morze_app_win.exe
     - cd ui
     - npm install
     - npm run build
@@ -51,7 +53,8 @@ build:mac:
     - mac-runner
   script:
     - cd ui
-    - g++ native/morze_engine_v2.cpp -I native -o native/morze_app_macos -lpthread -lm -ldl -framework CoreAudio -framework AudioUnit -framework CoreFoundation
+    - g++ native/morze_engine_v2.cpp -I native -o native/morze_app -lpthread -lm -ldl -framework CoreAudio -framework AudioUnit -framework CoreFoundation
+    - cp native/morze_app native/morze_app_macos
     - npm install
     - npm run build
     - GH_TOKEN=$GITHUB_TOKEN npx electron-builder --mac -p always
