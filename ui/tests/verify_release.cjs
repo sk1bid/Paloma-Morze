@@ -20,11 +20,12 @@ function verifyMetadata(filename) {
     }
 
     for (const fileInfo of data.files) {
-      const filePath = path.join(releaseDir, fileInfo.url);
+      const decodedPath = decodeURIComponent(fileInfo.url);
+      const filePath = path.join(releaseDir, decodedPath);
       if (!fs.existsSync(filePath)) {
-        throw new Error(`CRITICAL: File ${fileInfo.url} referenced in ${filename} is missing!`);
+        throw new Error(`CRITICAL: File ${decodedPath} referenced in ${filename} is missing!`);
       }
-      console.log(`[OK] Found ${fileInfo.url}`);
+      console.log(`[OK] Found ${decodedPath}`);
     }
   } catch (err) {
     console.error(`[FAIL] ${filename} validation failed: ${err.message}`);
