@@ -2,6 +2,20 @@ stages:
   - build
   - release
 
+variables:
+  ELECTRON_CACHE: "${CI_PROJECT_DIR}/ui/.cache/electron"
+  npm_config_cache: "${CI_PROJECT_DIR}/ui/.npm"
+
+# Глобальный кэш для ускорения сборок
+cache:
+  key:
+    files:
+      - ui/package-lock.json
+  paths:
+    - ui/node_modules/
+    - ui/.npm/
+    - ui/.cache/electron/
+
 build:linux_win:
   stage: build
   image: electronuserland/builder:wine
