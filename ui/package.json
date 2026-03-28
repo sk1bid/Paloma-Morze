@@ -1,7 +1,7 @@
 {
   "name": "ui",
   "private": true,
-  "version": "0.1.0-beta.29",
+  "version": "0.1.0-beta.30",
   "author": "Paloma Morse Team",
   "description": "Premium Morse Code Training application with cross-platform C++ engine.",
   "repository": {
@@ -48,6 +48,7 @@
     ],
     "mac": {
       "icon": "assets/icon.icns",
+      "artifactName": "${productName}.${version}.${ext}",
       "target": [
         "dmg",
         "zip"
@@ -55,12 +56,14 @@
     },
     "win": {
       "icon": "assets/icon.png",
+      "artifactName": "${productName}.Setup.${version}.${ext}",
       "target": [
         "nsis"
       ]
     },
     "linux": {
       "icon": "assets/icon.png",
+      "artifactName": "${productName}.${version}.${ext}",
       "target": [
         "AppImage"
       ]
