@@ -27,78 +27,89 @@ class MorseAudioEngine {
 
   setFrequency(freq) {
     this.frequency = freq;
-    if (this.osc) this.osc.frequency.setTargetAtTime(freq, this.ctx.currentTime, 0.05);
+    if (this.osc) this.osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
   }
 
   setVolume(vol) {
-    this.volume = vol / 100.0;
+    this.volume = vol / 100;
+  }
+
+  setCharWpm(wpm) {
+    this.charWpm = wpm;
+  }
+
+  setGapWpm(wpm) {
+    this.gapWpm = wpm;
   }
 
   // Plays a single character's morse string (e.g. '.-')
-  // wpm: Speed of the character itself
-  // Return a Promise that resolves when the character finishes playing
-  playString(morseStr, wpm = 20) {
+  // onPulse: optional callback(null|'dot'|'dash')
+  playString(morseStr, onPulse = null) {
     return new Promise(resolve => {
       this.init();
-      const dotLen = 1.2 / wpm; // 1200 / wpm in seconds
+      const currentWpm = this.charWpm || 20;
+      const dotLen = 1.2 / currentWpm; 
       const dashLen = dotLen * 3;
       const intraCharGap = dotLen;
-      const attack = 0.01; // 10ms linear attack 
-      const release = 0.01; // 10ms linear release
+      const attack = 0.01; 
+      const release = 0.01; 
 
       let time = this.ctx.currentTime + 0.01;
 
       for (let i = 0; i < morseStr.length; i++) {
         const symbol = morseStr[i];
+        const type = symbol === '-' ? 'dash' : 'dot';
         const duration = symbol === '-' ? dashLen : dotLen;
 
-        // Force exactly 0 before attack
+        // Schedule pulse callbacks via timeouts (approximation to visual sync)
+        if (onPulse) {
+          const delayMs = (time - this.ctx.currentTime) * 1000;
+          setTimeout(() => onPulse(type), delayMs);
+          setTimeout(() => onPulse(null), delayMs + (duration * 1000));
+        }
+
         this.gain.gain.setValueAtTime(0, time);
-        // Ramp up to target volume linearly
         this.gain.gain.linearRampToValueAtTime(this.volume, time + attack);
         
         time += duration;
         
-        // Hold volume until end of duration
         this.gain.gain.setValueAtTime(this.volume, time);
-        // Ramp down to 0 linearly
         this.gain.gain.linearRampToValueAtTime(0, time + release);
 
-        // Gap between dots/dashes
         if (i < morseStr.length - 1) {
           time += intraCharGap;
         }
       }
 
-      // We add release padding to the timeout
       const totalDuration = (time + release) - this.ctx.currentTime;
       setTimeout(resolve, totalDuration * 1000);
     });
   }
 
   // Plays a sequence of characters with Farnsworth timing
-  // charWpm: Speed of the dots/dashes
-  // gapWpm: Speed of the gap between characters (usually slower, e.g., 10)
-  async playSequence(sequence, morseDict, charWpm = 20, gapWpm = 10, onCharPlay = null) {
+  async playSequence(sequence, morseDict, onCharPlay = null, onPulse = null) {
     this.init();
     let isCancelled = false;
     this.cancelTokens = this.cancelTokens || [];
     const token = { cancel: () => isCancelled = true };
     this.cancelTokens.push(token);
 
-    const charGap = (1.2 / gapWpm) * 3; // 3 units of gapWpm for inter-character pause
-
     for (let char of sequence) {
       if (isCancelled) break;
+      
+      // Calculate gaps and WPM dynamically in each iteration
+      const currentGapWpm = this.gapWpm || 10;
+      const charGap = (1.2 / currentGapWpm) * 3; 
+
       if (char === ' ') {
-        await new Promise(r => setTimeout(r, charGap * 2.33 * 1000)); // Word gap
+        await new Promise(r => setTimeout(r, charGap * 2.33 * 1000)); 
         continue;
       }
       
       const morsePattern = Object.keys(morseDict).find(k => morseDict[k] === char);
       if (morsePattern) {
         if (onCharPlay) onCharPlay(char);
-        await this.playString(morsePattern, charWpm);
+        await this.playString(morsePattern, onPulse);
         await new Promise(r => setTimeout(r, charGap * 1000));
       }
     }

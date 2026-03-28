@@ -250,7 +250,7 @@ export const Transmission = React.memo(({ frequency, volume, lang, ws }) => {
         setMorseBuffer(prev => {
           const next = prev + (type === 'dot' ? '.' : '-');
           const codes = lang === 'RU' ? MORSE_RU : MORSE_EN;
-          setPreviewChar(codes[next] || '?');
+          setPreviewChar(codes[next] || 'Ø');
           setPreviewMnemonic(mnemonics[next] || ''); 
           return next;
         });
@@ -288,7 +288,7 @@ export const Transmission = React.memo(({ frequency, volume, lang, ws }) => {
 
   const decodeMorse = (buffer) => {
     const codes = lang === 'RU' ? MORSE_RU : MORSE_EN;
-    const char = codes[buffer] || '?';
+    const char = codes[buffer] || 'Ø';
     setDecodedText(prev => prev + char);
     setLastMnemonic(mnemonics[buffer] || '');
     setPreviewChar('');

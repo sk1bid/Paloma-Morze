@@ -4,20 +4,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { audioEngine } from './audio';
 
 const LESSONS = [
-  { id: 1, chars: ['Е', 'Л', 'Ж'] },
-  { id: 2, chars: ['А', 'С', 'Щ'] },
-  { id: 3, chars: ['Т', 'Ц', 'Д'] },
-  { id: 4, chars: ['О', 'Р', 'И'] },
-  { id: 5, chars: ['Г', 'Ь', 'Ф'] },
-  { id: 6, chars: ['Н', 'Й', 'У'] },
-  { id: 7, chars: ['Х', 'К', 'Б'] },
-  { id: 8, chars: ['П', 'М', 'Ы'] },
-  { id: 9, chars: ['З', 'В', 'Ш'] },
-  { id: 10, chars: ['Я', 'Ч'] },
-  { id: 11, chars: ['Э', 'Ю'] },
-  { id: 12, chars: ['1', '2', '3', '4'] },
-  { id: 13, chars: ['5', '6', '7', '8'] },
-  { id: 14, chars: ['9', '0', '?', '/', '.'] }
+  { id: 1, chars: ['Е', 'Л', 'Ж', 'А'] },
+  { id: 2, chars: ['С', 'Щ', 'Т', 'Ц'] },
+  { id: 3, chars: ['Д', 'О', 'Р', 'И'] },
+  { id: 4, chars: ['Г', 'Ь', 'Ф', 'Н'] },
+  { id: 5, chars: ['Й', 'У', 'Х', 'К'] },
+  { id: 6, chars: ['Б', 'П', 'М', 'Ы'] },
+  { id: 7, chars: ['З', 'В', 'Ч', 'Ш'] },
+  { id: 8, chars: ['Э', 'Ю', 'Я'] },
+  { id: 9, chars: ['1', '2', '3', '4'] },
+  { id: 10, chars: ['5', '6', '7', '8'] },
+  { id: 11, chars: ['9', '0', '/', '.'] },
+  { id: 12, chars: ['?'] }
 ];
 
 const MORSE_RU = {
@@ -32,7 +30,7 @@ const MORSE_RU = {
 
 const MNEMONICS_RU = {
   '.-': 'ай-ДА', '-...': 'БА-ки-те-кут', '.--': 'ви-ДА-ЛА', '--.': 'ГА-РА-жи', '-..': 'ДО-ми-ки', '.': 'есть',
-  '...-': 'же-ле-зи-СТО', '--..': 'ЗА-КА-ти-ки', '..': 'И-ди', '.---': 'йес-НА-ПА-РА', '-.-': 'КАК-же-ТАК', '.-..': 'лу-НА-ти-ки',
+  '...-': 'же-ле-зи-СТО', '--..': 'ЗА-КА-ти-ки', '..': 'и-ди', '.---': 'йес-НА-ПА-РА', '-.-': 'КАК-же-ТАК', '.-..': 'лу-НА-ти-ки',
   '--': 'МА-МА', '-.': 'НО-мер', '---': 'О-КО-ЛО', '.--.': 'пи-ЛА-ПО-ет', '.-.': 'ре-ША-ет', '...': 'си-не-е',
   '-': 'ТАК', '..-': 'у-нес-ЛО', '..-.': 'фи-ли-МОН-чик', '....': 'хи-ми-чи-те', '-.-.': 'ЦА-пли-НА-ши', '---.': 'ЧА-ША-ТО-нет',
   '----': 'ША-РО-ВА-РЫ', '--.-': 'ЩА-ВАМ-не-ША', '-.--': 'Ы-не-НА-ДО', '-..-': 'ТО-мяг-кий-ЗНАК', '..-..': 'э-ле-РО-ни-ки', '..--': 'ю-ли-А-НА', '.-.-': 'я-МАЛ-я-МАЛ',
@@ -58,30 +56,32 @@ const UI_STRINGS = {
 
 export const Reception = React.memo(({ frequency, volume, lang = 'RU' }) => {
   const [lessonIndex, setLessonIndex] = useState(0);
-  const [charSpeed, setCharSpeed] = useState(50); // WPM equivalent (approx characters per min)
-  const [pauseSpeed, setPauseSpeed] = useState(15); // Gap WPM (Farnsworth)
+  const [charSpeed, setCharSpeed] = useState(50); // Signs Per Minute (APAK standard)
+  const [pauseSpeed, setPauseSpeed] = useState(15); // Gap SPM
   
   const [hoverChar, setHoverChar] = useState(null);
   const [playingChar, setPlayingChar] = useState(null);
+  const [pulseType, setPulseType] = useState(null); // 'dot', 'dash' or null
   const [isRunning, setIsRunning] = useState(false);
 
   const currentLesson = LESSONS[lessonIndex];
 
-  // Keep Audio Engine sync'd with global settings
+  // Keep Audio Engine sync'd with global settings in real-time
   useEffect(() => {
     audioEngine.setFrequency(frequency);
     audioEngine.setVolume(volume);
-  }, [frequency, volume]);
+    audioEngine.setCharWpm(Math.max(5, charSpeed / 5));
+    audioEngine.setGapWpm(Math.max(3, pauseSpeed / 5));
+  }, [frequency, volume, charSpeed, pauseSpeed]);
 
   const playSingleChar = async (char) => {
-    if (isRunning) return; // Prevent manual play during exercise
+    if (isRunning || (playingChar && playingChar !== char)) return; 
     const morsePattern = Object.keys(MORSE_RU).find(k => MORSE_RU[k] === char);
     if (morsePattern) {
       setPlayingChar(char);
-      // Rough WPM conversion from "Signs per minute" (APAK uses 50 as standard)
-      const wpm = Math.max(10, charSpeed / 2.5); 
-      await audioEngine.playString(morsePattern, wpm);
+      await audioEngine.playString(morsePattern, setPulseType);
       setPlayingChar(null);
+      setPulseType(null);
     }
   };
 
@@ -90,28 +90,28 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU' }) => {
       audioEngine.stopAll();
       setIsRunning(false);
       setPlayingChar(null);
+      setPulseType(null);
       return;
     }
 
+    if (playingChar) return; 
+
     setIsRunning(true);
     
-    // Create sequence: 5 repetitions of each new char in random order, or sequential.
-    // The user requested: "5 повторении каждой буквы". Let's do them grouped for initial learning.
+    // Create sequence: 5 repetitions of each new char in grouped order.
     let sequence = [];
     currentLesson.chars.forEach(c => {
       for(let i=0; i<5; i++) sequence.push(c);
       sequence.push(' '); // space between letter groups
     });
 
-    const wpm = Math.max(10, charSpeed / 2.5);
-    const gapWpm = Math.max(5, pauseSpeed / 2.5);
-
-    await audioEngine.playSequence(sequence, MORSE_RU, wpm, gapWpm, (char) => {
+    await audioEngine.playSequence(sequence, MORSE_RU, (char) => {
       setPlayingChar(char);
-    });
+    }, setPulseType);
 
     setIsRunning(false);
     setPlayingChar(null);
+    setPulseType(null);
   };
 
   // Ensure audio stops if component unmounts
@@ -122,15 +122,32 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU' }) => {
   const ui = UI_STRINGS[lang] || UI_STRINGS.RU;
   const mnemonics = lang === 'RU' ? MNEMONICS_RU : MNEMONICS_EN;
 
+  // Determine what to show in the header
+  const activeChar = playingChar || hoverChar;
+  let headerTitle = ui.title;
+  let headerDesc = ui.desc;
+
+  if (activeChar) {
+    const pattern = Object.keys(MORSE_RU).find(k => MORSE_RU[k] === activeChar);
+    headerTitle = activeChar;
+    headerDesc = mnemonics[pattern] || '';
+  }
+
   return (
     <div className="reception-container">
       <div className="reception-sidebar">
         <div className="control-group">
           <label>{ui.lesson}</label>
           <div className="number-stepper">
-            <button onClick={() => setLessonIndex(Math.max(0, lessonIndex - 1))}>-</button>
-            <span>{currentLesson.id} / 14</span>
-            <button onClick={() => setLessonIndex(Math.min(13, lessonIndex + 1))}>+</button>
+            <button 
+              disabled={isRunning || playingChar}
+              onClick={() => setLessonIndex(Math.max(0, lessonIndex - 1))}
+            >-</button>
+            <span>{currentLesson.id} / 12</span>
+            <button 
+              disabled={isRunning || playingChar}
+              onClick={() => setLessonIndex(Math.min(11, lessonIndex + 1))}
+            >+</button>
           </div>
         </div>
 
@@ -152,44 +169,48 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU' }) => {
           </div>
         </div>
 
-        <button className={`start-btn ${isRunning ? 'stop' : ''}`} onClick={startExercise}>
+        <button 
+          className={`start-btn ${isRunning ? 'stop' : ''}`} 
+          onClick={startExercise}
+          disabled={!isRunning && playingChar}
+        >
           {isRunning ? <><Square size={16} /> {ui.stop}</> : <><Play size={16} /> {ui.start}</>}
         </button>
       </div>
 
       <div className="reception-main">
         <div className="lesson-header">
-          <h2>{ui.title}</h2>
-          <p>{ui.desc}</p>
+          <motion.h2 
+            key={headerTitle}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.1 }}
+          >
+            {headerTitle}
+          </motion.h2>
+          <motion.p 
+            key={headerDesc}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            {headerDesc}
+          </motion.p>
         </div>
 
-        <div className="letters-grid">
+        <div 
+          className={`letters-grid ${(isRunning || playingChar) ? 'disabled' : ''}`}
+          onMouseLeave={() => setHoverChar(null)}
+        >
           {currentLesson.chars.map((char, i) => {
-            const pattern = Object.keys(MORSE_RU).find(k => MORSE_RU[k] === char);
-            const mnemonic = mnemonics[pattern] || pattern;
-            
             return (
               <div 
                 key={i} 
-                className={`letter-card ${playingChar === char ? 'playing' : ''}`}
+                className={`letter-card ${playingChar === char ? 'playing' : ''} ${pulseType && playingChar === char ? 'pulse-' + pulseType : ''} ${((isRunning || playingChar) && playingChar !== char) ? 'locked' : ''}`}
                 onMouseEnter={() => setHoverChar(char)}
-                onMouseLeave={() => setHoverChar(null)}
                 onClick={() => playSingleChar(char)}
               >
                 <div className="char-display">{char}</div>
-                <AnimatePresence>
-                  {hoverChar === char && !isRunning && (
-                    <motion.div 
-                      key="mnemonic"
-                      initial={{ opacity: 0, y: 10 }} 
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="mnemonic-display"
-                    >
-                      {mnemonic}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
             );
           })}
