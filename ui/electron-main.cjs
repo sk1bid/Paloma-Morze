@@ -1,9 +1,8 @@
 const { app, BrowserWindow } = require('electron');
-const { spawn } = require('child_process');
 const path = require('path');
+const bridge = require('./bridge.cjs');
 
 let mainWindow;
-let bridgeProcess;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -13,12 +12,11 @@ function createWindow() {
     backgroundColor: '#0b0e14', // Match the UI background
     show: false, // Don't show until ready-to-show
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true
+      nodeIntegration: true,
+      contextIsolation: false
     }
   });
 
-  // Load the production build
   const indexPath = path.join(__dirname, 'dist', 'index.html');
   mainWindow.loadFile(indexPath);
 
@@ -31,32 +29,23 @@ function createWindow() {
   });
 }
 
-// Ensure children are killed on quit
-function cleanup() {
-  if (bridgeProcess) {
-    console.log('[Main] Killing bridge process...');
-    bridgeProcess.kill('SIGTERM');
-  }
-}
-
 app.on('ready', () => {
-  // 1. Start the Bridge and Engine
-  // On production, we assume bridge.cjs and morze_app are in the right places
-  bridgeProcess = spawn('node', [path.join(__dirname, 'bridge.cjs')], {
-    cwd: __dirname,
-    stdio: 'inherit'
-  });
-
+  console.log(`[Main] Starting Paloma Morse (Packaged: ${app.isPackaged})`);
+  bridge.start(app.isPackaged);
   createWindow();
 });
 
 app.on('window-all-closed', function () {
-  app.quit();
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
 });
 
 app.on('activate', function () {
   if (mainWindow === null) createWindow();
 });
 
-app.on('will-quit', cleanup);
-app.on('before-quit', cleanup);
+app.on('will-quit', () => {
+  console.log('[Main] Cleaning up engine...');
+  bridge.stop();
+});
