@@ -20,6 +20,9 @@ build:linux_win:
   stage: build
   image: electronuserland/builder:wine
   script:
+    - apt-get update && apt-get install -y mingw-w64 g++
+    - x86_64-w64-mingw32-g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app.exe -static -lpthread -lm
+    - g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app -lpthread -lm -ldl
     - cd ui
     - npm install
     - npm run build
