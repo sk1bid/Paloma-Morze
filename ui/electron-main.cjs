@@ -18,7 +18,7 @@ function createWindow() {
   });
 
   const indexPath = path.join(__dirname, 'dist', 'index.html');
-  mainWindow.loadFile(indexPath);
+  mainWindow.loadURL(`file://${indexPath}`);
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.setTitle('Paloma Morse');

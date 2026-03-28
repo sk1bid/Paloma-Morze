@@ -30,7 +30,7 @@ const MORSE_RU = {
   '-....': '6', '--...': '7', '---..': '8', '----.': '9', '-..-.': '/', '.-.-.-': '.', '..--..': '?'
 };
 
-const MNEMONICS = {
+const MNEMONICS_RU = {
   '.-': 'ай-ДА', '-...': 'БА-ки-те-кут', '.--': 'ви-ДА-ЛА', '--.': 'ГА-РА-жи', '-..': 'ДО-ми-ки', '.': 'есть',
   '...-': 'же-ле-зи-СТО', '--..': 'ЗА-КА-ти-ки', '..': 'И-ди', '.---': 'йес-НА-ПА-РА', '-.-': 'КАК-же-ТАК', '.-..': 'лу-НА-ти-ки',
   '--': 'МА-МА', '-.': 'НО-мер', '---': 'О-КО-ЛО', '.--.': 'пи-ЛА-ПО-ет', '.-.': 'ре-ША-ет', '...': 'си-не-е',
@@ -41,7 +41,22 @@ const MNEMONICS = {
   '---..': 'ВО-СЬМО-ГО-и-ди', '----.': 'НО-НА-НО-НА-ми', '-..-.': 'РА-зде-ли-те-КА', '.-.-.-': 'ТОЧ-КА-ТОЧ-КА-ТОЧ-КА', '..--..': 'ВО-ПРО-СИК-ВО-ПРО-СИК'
 };
 
-export const Reception = ({ frequency, volume }) => {
+const MNEMONICS_EN = {
+  '.-': 'a-PART', '-...': 'BOB-is-the-man', '-.-.': 'CO-ca-CO-la', '-..': 'DOG-did-it', '.': 'egg', '..-.': 'fetch-a-FI-re',
+  '--.': 'GO-GO-dance', '....': 'hi-ppo-po-tmus', '..': 'i-nit', '.---': 'in-JA-PON-GOL', '-.-': 'KANG-ga-ROO', '.-..': 'l-A-po-p-o',
+  '--': 'MA-MA', '-.': 'NO-el', '---': 'ONE-OF-US', '.--.': 'a-PU-PPY-poo', '--.-': 'GOD-SAVE-the-QUEEN', '.-.': 'ro-TAY-tor',
+  '...': 'si-si-si', '-': 'TALL', '..-': 'un-der-WHERE', '...-': 'vic-to-ry-VEE', '.--': 'a-WET-DOG', '-..-': 'X-marks-the-SPOT',
+  '-.--': 'YELL-ow-YOYO', '--..': 'ZEN-dra-is-HERE', '-----': 'NO-ONE-GO-ES-HOME', '.----': 'a-LONG-WHI-TE-BEA-RD', '..---': 'and-not-GO-OD-for-US', '...--': 'it-is-not-for-ME',
+  '....-': 'and-the-dogs-are-HERE', '.....': 'i-ti-bi-ti-hi', '-....': 'SIX-dogs-are-run-ning', '--...': 'SE-VEN-is-high-up-HERE',
+  '---..': 'EIGHT-TEN-is-not-E-NOUGH', '----.': 'NINE-NINE-is-not-for-US', '.-.-.-': 'STOP', '..--..': 'QUERY'
+};
+
+const UI_STRINGS = {
+  RU: { lesson: 'УРОК', charSpeed: 'СКОРОСТЬ ЗНАКА', pauseSpeed: 'СКОРОСТЬ ПАУЗЫ', start: 'СТАРТ', stop: 'СТОП', title: 'НОВЫЕ ЗНАКИ', desc: 'Наведите для подсказки, нажмите для прослушивания' },
+  EN: { lesson: 'LESSON', charSpeed: 'CHAR SPEED', pauseSpeed: 'GAP SPEED', start: 'START', stop: 'STOP', title: 'LEARN CHARACTERS', desc: 'Hover for hint, click to listen' }
+};
+
+export const Reception = React.memo(({ frequency, volume, lang = 'RU' }) => {
   const [lessonIndex, setLessonIndex] = useState(0);
   const [charSpeed, setCharSpeed] = useState(50); // WPM equivalent (approx characters per min)
   const [pauseSpeed, setPauseSpeed] = useState(15); // Gap WPM (Farnsworth)
@@ -104,11 +119,14 @@ export const Reception = ({ frequency, volume }) => {
     return () => audioEngine.stopAll();
   }, []);
 
+  const ui = UI_STRINGS[lang] || UI_STRINGS.RU;
+  const mnemonics = lang === 'RU' ? MNEMONICS_RU : MNEMONICS_EN;
+
   return (
     <div className="reception-container">
       <div className="reception-sidebar">
         <div className="control-group">
-          <label>УРОК</label>
+          <label>{ui.lesson}</label>
           <div className="number-stepper">
             <button onClick={() => setLessonIndex(Math.max(0, lessonIndex - 1))}>-</button>
             <span>{currentLesson.id} / 14</span>
@@ -117,7 +135,7 @@ export const Reception = ({ frequency, volume }) => {
         </div>
 
         <div className="control-group">
-          <label>СКОРОСТЬ ЗНАКА</label>
+          <label>{ui.charSpeed}</label>
           <div className="number-stepper">
             <button onClick={() => setCharSpeed(Math.max(20, charSpeed - 5))}>-</button>
             <span>{charSpeed}</span>
@@ -126,7 +144,7 @@ export const Reception = ({ frequency, volume }) => {
         </div>
 
         <div className="control-group">
-          <label>СКОРОСТЬ ПАУЗЫ</label>
+          <label>{ui.pauseSpeed}</label>
           <div className="number-stepper">
             <button onClick={() => setPauseSpeed(Math.max(5, pauseSpeed - 5))}>-</button>
             <span>{pauseSpeed}</span>
@@ -135,20 +153,20 @@ export const Reception = ({ frequency, volume }) => {
         </div>
 
         <button className={`start-btn ${isRunning ? 'stop' : ''}`} onClick={startExercise}>
-          {isRunning ? <><Square size={16} /> СТОП</> : <><Play size={16} /> СТАРТ</>}
+          {isRunning ? <><Square size={16} /> {ui.stop}</> : <><Play size={16} /> {ui.start}</>}
         </button>
       </div>
 
       <div className="reception-main">
         <div className="lesson-header">
-          <h2>НОВЫЕ ЗНАКИ</h2>
-          <p>Наведите для подсказки, нажмите для прослушивания</p>
+          <h2>{ui.title}</h2>
+          <p>{ui.desc}</p>
         </div>
 
         <div className="letters-grid">
           {currentLesson.chars.map((char, i) => {
             const pattern = Object.keys(MORSE_RU).find(k => MORSE_RU[k] === char);
-            const mnemonic = MNEMONICS[pattern] || pattern;
+            const mnemonic = mnemonics[pattern] || pattern;
             
             return (
               <div 
@@ -179,4 +197,4 @@ export const Reception = ({ frequency, volume }) => {
       </div>
     </div>
   );
-};
+});

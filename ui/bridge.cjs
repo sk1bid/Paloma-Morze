@@ -57,7 +57,7 @@ function startEngine(isProduction = false) {
                 } else if (l.includes('[Engine] Connected')) {
                     isKeyConnected = true;
                     broadcast('STATUS:CONNECTED');
-                } else if (l.includes('disappeared') || l.includes('lost')) {
+                } else if (l.includes('disappeared') || l.includes('lost') || l.includes('Disconnected')) {
                     isKeyConnected = false;
                     broadcast('STATUS:DISCONNECTED');
                 }
