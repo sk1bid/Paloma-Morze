@@ -80,72 +80,149 @@ export const Transmission = React.memo(({ frequency, volume, lang, ws }) => {
     }
   }, [decodedText, morseBuffer]);
 
-  // Tape Animation Logic - Optimized for 60fps constant flow
+  // Tape Animation Logic - STABLE & BEAUTIFUL 60fps flow
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
+    
+    // Offscreen canvas for axis
+    const offscreen = document.createElement('canvas');
+    const octx = offscreen.getContext('2d', { alpha: true });
+    
     let animationFrame;
+    let logicalWidth = 0;
+    let logicalHeight = 0;
+    let dpr = 1;
 
-    const render = () => {
+    const setupCanvas = () => {
+      dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      logicalWidth = Math.ceil(rect.width);
+      logicalHeight = Math.ceil(rect.height);
+      if (logicalWidth === 0) return;
+
+      canvas.width = logicalWidth * dpr;
+      canvas.height = logicalHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      canvas.style.width = `${logicalWidth}px`;
+      canvas.style.height = `${logicalHeight}px`;
+
+      offscreen.width = canvas.width;
+      offscreen.height = canvas.height;
+      octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      
+      // Clear offscreen (it will be transparent)
+      octx.clearRect(0, 0, logicalWidth, logicalHeight);
+      
+      const centerY = logicalHeight / 2;
+      octx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      octx.setLineDash([5, 5]);
+      octx.beginPath(); octx.moveTo(0, centerY); octx.lineTo(logicalWidth, centerY); octx.stroke();
+      octx.setLineDash([]);
+
+      const rightMargin = 100;
+      octx.strokeStyle = 'rgba(0, 210, 255, 0.2)';
+      octx.beginPath(); octx.moveTo(logicalWidth - rightMargin, 15); octx.lineTo(logicalWidth - rightMargin, logicalHeight - 15); octx.stroke();
+    };
+
+    setupCanvas();
+    window.addEventListener('resize', setupCanvas);
+
+    let lastFrameTime = performance.now();
+    let frameCount = 0;
+    const rightMargin = 100;
+
+    const render = (time) => {
+      const frameDelta = time - lastFrameTime;
+      lastFrameTime = time;
+      
       const now = Date.now();
       const currentWpm = wpmRef.current;
-      const pixelsPerMs = currentWpm / 150;
-      const currentDashThreshold = (1200 / currentWpm) * 2;
-      const currentLastDotDuration = lastDotDuration.current;
+      const pms = currentWpm / 150; 
+      const centerY = logicalHeight / 2;
+      const basePos = logicalWidth - rightMargin;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const rightMargin = 100;
-      const centerY = canvas.height / 2;
+      // 1. Clear Main Canvas (Make it transparent to show CSS bg)
+      ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+      
+      // 2. Static Draw (Draw axes from offscreen)
+      ctx.drawImage(offscreen, 0, 0, canvas.width, canvas.height, 0, 0, logicalWidth, logicalHeight);
 
-      // Draw Axis
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-      ctx.setLineDash([5, 5]);
-      ctx.beginPath(); ctx.moveTo(0, centerY); ctx.lineTo(canvas.width, centerY); ctx.stroke();
-      ctx.setLineDash([]);
+      // 2. Batch Drawing (BEAUTIFUL VERSION)
+      const evs = events.current;
+      const cutoff = now - (logicalWidth / pms + 1000); 
+      
+      const paths = {
+        dot: new Path2D(),
+        dash: new Path2D(),
+        'too-long': new Path2D()
+      };
+      const activeTypes = { dot: false, dash: false, 'too-long': false };
 
-      // Draw Pointer
-      ctx.strokeStyle = 'rgba(0, 210, 255, 0.4)';
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(canvas.width - rightMargin, 15); ctx.lineTo(canvas.width - rightMargin, canvas.height - 15); ctx.stroke();
+      for (let i = 0; i < evs.length; i++) {
+        const ev = evs[i];
+        if (ev.end < cutoff) continue;
 
-      // Draw Finished Events
-      events.current.forEach(ev => {
-        const xStart = canvas.width - rightMargin + (ev.start - now) * pixelsPerMs;
-        const xEnd = ev.end ? canvas.width - rightMargin + (ev.end - now) * pixelsPerMs : canvas.width - rightMargin;
-        const width = xEnd - xStart;
-        if (xEnd > 0 && xStart < canvas.width) {
-          if (ev.type === 'too-long') ctx.fillStyle = '#ff5555'; 
-          else if (ev.type === 'dash') ctx.fillStyle = '#ff79c6'; 
-          else ctx.fillStyle = '#50fa7b';
-          
-          ctx.beginPath(); ctx.roundRect(xStart, centerY - 15, Math.max(width, 4), 30, 4); ctx.fill();
+        const xStart = basePos + (ev.start - now) * pms;
+        const xEnd = basePos + (ev.end - now) * pms;
+        const width = Math.max(xEnd - xStart, 4);
+
+        if (xEnd > -50 && xStart < logicalWidth + 50) {
+          paths[ev.type].roundRect(xStart, centerY - 15, width, 30, 6);
+          activeTypes[ev.type] = true;
         }
-      });
+      }
 
-      // Draw Active Press
+      // Draw batches with aesthetic colors
+      if (activeTypes.dot) { ctx.fillStyle = '#50fa7b'; ctx.fill(paths.dot); }
+      if (activeTypes.dash) { ctx.fillStyle = '#ff79c6'; ctx.fill(paths.dash); }
+      if (activeTypes['too-long']) { ctx.fillStyle = '#ff5555'; ctx.fill(paths['too-long']); }
+
+      // 3. Active Press (With Glow & Animation)
       if (isPressedRef.current) {
-        const xStart = canvas.width - rightMargin + (lastPressTime.current - now) * pixelsPerMs;
-        const width = (canvas.width - rightMargin) - xStart;
+        const xStart = basePos + (lastPressTime.current - now) * pms;
+        const width = basePos - xStart;
         const duration = now - lastPressTime.current;
+        const dashThr = (1200 / currentWpm) * 2;
+        const dotDur = lastDotDuration.current;
+
+        let color = '#50fa7b';
+        if (duration > dotDur * 4.5) color = '#ff5555';
+        else if (duration >= dashThr) color = '#ff79c6';
+
+        // Draw Glow first (cheap method: gradient path)
+        const glow = ctx.createLinearGradient(xStart, 0, basePos, 0);
+        glow.addColorStop(0, color);
+        glow.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
         
-        if (duration > currentLastDotDuration * 4.5) ctx.fillStyle = '#ff5555';
-        else if (duration >= currentDashThreshold) ctx.fillStyle = '#ff79c6';
-        else ctx.fillStyle = '#50fa7b';
-
-        ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
-        ctx.beginPath(); ctx.roundRect(xStart, centerY - 15, width, 30, 4); ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(xStart, centerY - 15, width, 30, 6);
+        ctx.fillStyle = glow;
+        ctx.fill();
+        
+        // White-glass stroke
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.restore();
       }
 
-      if (events.current.length > 50) {
-        events.current = events.current.filter(ev => (ev.end || now) > now - 15000 / pixelsPerMs);
+      // 4. Optimized Memory
+      if (evs.length > 80 && Math.random() < 0.01) {
+        events.current = evs.filter(ev => ev.end > cutoff);
       }
+      
       animationFrame = requestAnimationFrame(render);
     };
-    render();
-    return () => cancelAnimationFrame(animationFrame);
-  }, []); // Run UNINTERRUPTED from mount to unmount
+
+    animationFrame = requestAnimationFrame(render);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      window.removeEventListener('resize', setupCanvas);
+    };
+  }, []);
 
   useEffect(() => {
     const socket = ws?.current || ws;
