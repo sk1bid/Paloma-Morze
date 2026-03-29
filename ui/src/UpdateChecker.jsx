@@ -80,47 +80,50 @@ export function UpdateChecker() {
       <div className="update-checker">
         {status === 'idle' && (
           <button className="update-btn" onClick={checkForUpdate} title="Проверить обновления">
-            <RefreshCw size={12} />
+            <RefreshCw size={16} />
             <span>v{CURRENT_VERSION}</span>
           </button>
         )}
 
         {status === 'checking' && (
           <button className="update-btn checking" disabled>
-            <RefreshCw size={12} className="spin" />
+            <RefreshCw size={16} className="spin" />
+            <span>v{CURRENT_VERSION}</span>
           </button>
         )}
 
         {status === 'available' && (
           <button className="update-btn available" onClick={downloadUpdate} title={`Скачать ${latestVersion}`}>
-            <Download size={12} />
-            <span>{latestVersion}</span>
+            <Download size={16} />
+            <span>v{CURRENT_VERSION}</span>
           </button>
         )}
 
         {status === 'downloading' && (
           <button className="update-btn downloading" disabled>
-            <RefreshCw size={12} className="spin" />
-            <span>{downloadPercent}%</span>
+            <RotateCw size={16} className="spin" />
+            <span>v{CURRENT_VERSION}</span>
           </button>
         )}
 
         {status === 'downloaded' && (
           <button className="update-btn downloaded" onClick={installUpdate} title="Установить и перезапустить">
-            <RotateCw size={12} />
-            <span>Установить</span>
+            <Check size={16} style={{ color: '#50fa7b' }} />
+            <span>v{CURRENT_VERSION}</span>
           </button>
         )}
 
         {status === 'uptodate' && (
           <button className="update-btn uptodate" disabled>
-            <Check size={12} />
+            <Check size={16} />
+            <span>v{CURRENT_VERSION}</span>
           </button>
         )}
 
         {status === 'error' && (
           <button className="update-btn error-state" onClick={checkForUpdate}>
-            <X size={12} />
+            <X size={16} />
+            <span>v{CURRENT_VERSION}</span>
           </button>
         )}
       </div>

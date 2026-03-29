@@ -50,31 +50,83 @@ const MNEMONICS_EN = {
 };
 
 const UI_STRINGS = {
-  RU: { lesson: 'УРОК', charSpeed: 'СКОРОСТЬ ЗНАКА', pauseSpeed: 'СКОРОСТЬ ПАУЗЫ', start: 'СТАРТ', stop: 'СТОП', title: 'НОВЫЕ ЗНАКИ', desc: 'Наведите для подсказки, нажмите для прослушивания' },
-  EN: { lesson: 'LESSON', charSpeed: 'CHAR SPEED', pauseSpeed: 'GAP SPEED', start: 'START', stop: 'STOP', title: 'LEARN CHARACTERS', desc: 'Hover for hint, click to listen' }
+  RU: { 
+    lesson: 'УРОК', 
+    exercise: 'УПРАЖНЕНИЕ',
+    groups: 'ГРУПП',
+    charSpeed: 'СКОРОСТЬ ЗНАКА', 
+    ratio: '- / .',
+    pause: 'ПАУЗА', 
+    start: 'СТАРТ', 
+    stop: 'СТОП', 
+    title: 'НОВЫЕ ЗНАКИ', 
+    desc: 'Наведите для подсказки, нажмите для прослушивания',
+    ex2Title: 'Нажимайте знаки, которые вы слышали!',
+    reportTitle: 'РЕЗУЛЬТАТЫ СЕССИИ',
+    noErrors: 'ИДЕАЛЬНО! ОШИБОК НЕТ',
+    errorsFound: 'ОШИБКИ В СЛЕДУЮЩИХ ЗНАКАХ:',
+    closeReport: 'ЗАКРЫТЬ'
+  },
+  EN: { 
+    lesson: 'LESSON', 
+    exercise: 'EXERCISE',
+    groups: 'GROUPS',
+    charSpeed: 'CHAR SPEED', 
+    ratio: '- / .',
+    pause: 'PAUSE', 
+    start: 'START', 
+    stop: 'STOP', 
+    title: 'LEARN CHARACTERS', 
+    desc: 'Hover for hint, click to listen',
+    ex2Title: 'Press the characters you hear!',
+    reportTitle: 'SESSION RESULTS',
+    noErrors: 'PERFECT! NO ERRORS',
+    errorsFound: 'ERRORS IN FOLLOWING SIGNS:',
+    closeReport: 'CLOSE'
+  }
 };
 
-export const Reception = React.memo(({ frequency, volume, lang = 'RU' }) => {
+export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setWpm, dashRatio, setDashRatio, pauseFactor, setPauseFactor }) => {
   const [lessonIndex, setLessonIndex] = useState(0);
-  const [charSpeed, setCharSpeed] = useState(50); // Signs Per Minute (APAK standard)
-  const [pauseSpeed, setPauseSpeed] = useState(15); // Gap SPM
+  const [exerciseIndex, setExerciseIndex] = useState(0); // 0 = Learning (Ex 1), 1 = Practice (Ex 2)
+  const [groupCount, setGroupCount] = useState(5);
   
   const [hoverChar, setHoverChar] = useState(null);
   const [playingChar, setPlayingChar] = useState(null);
   const [pulseType, setPulseType] = useState(null); // 'dot', 'dash' or null
   const [isRunning, setIsRunning] = useState(false);
-
+ 
+  // Exercise 2 Interactive State
+  const [sessionSequence, setSessionSequence] = useState([]);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [waitingForInput, setWaitingForInput] = useState(false);
+  const [sessionErrors, setSessionErrors] = useState(new Set());
+  const [showReport, setShowReport] = useState(false);
+ 
+  // Refs for stable access in async loops
+  const isRunningRef = useRef(false);
+  const currentStepRef = useRef(0);
+  const sequenceRef = useRef([]);
+  const waitingRef = useRef(false);
+ 
   const currentLesson = LESSONS[lessonIndex];
-
+ 
   // Keep Audio Engine sync'd with global settings in real-time
   useEffect(() => {
     audioEngine.setFrequency(frequency);
     audioEngine.setVolume(volume);
-    audioEngine.setCharWpm(Math.max(5, charSpeed / 5));
-    audioEngine.setGapWpm(Math.max(3, pauseSpeed / 5));
-  }, [frequency, volume, charSpeed, pauseSpeed]);
+    audioEngine.setCharWpm(wpm);
+    audioEngine.setGapWpm(wpm / (pauseFactor / 3)); // Normalize: if pauseFactor is 3 (std), Gap WPM = Char WPM
+    audioEngine.setDashRatio(dashRatio);
+  }, [frequency, volume, wpm, pauseFactor, dashRatio]);
 
-  const playSingleChar = async (char) => {
+  const playSingleCharFiltered = async (char) => {
+    // If we're waiting for input in Ex 2, clicking a button is "answering", not "previewing"
+    if (isRunning && exerciseIndex === 1 && waitingForInput) {
+      handleUserAnswer(char);
+      return;
+    }
+
     if (isRunning || (playingChar && playingChar !== char)) return; 
     const morsePattern = Object.keys(MORSE_RU).find(k => MORSE_RU[k] === char);
     if (morsePattern) {
@@ -85,33 +137,134 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU' }) => {
     }
   };
 
+  const handleUserAnswer = async (char) => {
+    if (!waitingRef.current || !isRunningRef.current) return;
+
+    const target = sequenceRef.current[currentStepRef.current];
+    if (char === target) {
+      // Correct!
+      setWaitingForInput(false);
+      waitingRef.current = false;
+      advanceSession();
+    } else {
+      // Wrong! 
+      setSessionErrors(prev => new Set(prev).add(target));
+      setWaitingForInput(false);
+      waitingRef.current = false;
+      
+      // Play 5 times as penalty
+      const morsePattern = Object.keys(MORSE_RU).find(k => MORSE_RU[k] === target);
+      if (morsePattern) {
+        setPlayingChar(target);
+        for (let i = 0; i < 5; i++) {
+          if (!isRunningRef.current) break;
+          await audioEngine.playString(morsePattern, setPulseType);
+          await new Promise(r => setTimeout(r, 200));
+        }
+        setPlayingChar(null);
+        setPulseType(null);
+      }
+      advanceSession();
+    }
+  };
+
+  const advanceSession = () => {
+    const nextStep = currentStepRef.current + 1;
+    if (nextStep >= sequenceRef.current.length) {
+      finishSession();
+    } else {
+      setCurrentStep(nextStep);
+      currentStepRef.current = nextStep;
+      playCurrentTarget();
+    }
+  };
+
+  const playCurrentTarget = async () => {
+    if (!isRunningRef.current) return;
+    
+    const target = sequenceRef.current[currentStepRef.current];
+    if (target === ' ') {
+      // Gap between groups
+      await new Promise(r => setTimeout(r, 1000));
+      advanceSession();
+      return;
+    }
+
+    const morsePattern = Object.keys(MORSE_RU).find(k => MORSE_RU[k] === target);
+    if (morsePattern) {
+      setPlayingChar(target);
+      await audioEngine.playString(morsePattern, setPulseType);
+      setPlayingChar(null);
+      setPulseType(null);
+      
+      setWaitingForInput(true);
+      waitingRef.current = true;
+    }
+  };
+
+  const finishSession = () => {
+    setIsRunning(false);
+    isRunningRef.current = false;
+    setShowReport(true);
+  };
+
   const startExercise = async () => {
     if (isRunning) {
       audioEngine.stopAll();
       setIsRunning(false);
+      isRunningRef.current = false;
       setPlayingChar(null);
       setPulseType(null);
+      setWaitingForInput(false);
+      waitingRef.current = false;
       return;
     }
 
     if (playingChar) return; 
 
-    setIsRunning(true);
+    // Reset session state
+    setSessionErrors(new Set());
+    setShowReport(false);
     
-    // Create sequence: 5 repetitions of each new char in grouped order.
-    let sequence = [];
-    currentLesson.chars.forEach(c => {
-      for(let i=0; i<5; i++) sequence.push(c);
-      sequence.push(' '); // space between letter groups
-    });
+    if (exerciseIndex === 0) {
+      // EX 1: Learning Mode
+      setIsRunning(true);
+      isRunningRef.current = true;
+      let sequence = [];
+      currentLesson.chars.forEach(c => {
+        for(let i=0; i<5; i++) sequence.push(c);
+        sequence.push(' '); 
+      });
 
-    await audioEngine.playSequence(sequence, MORSE_RU, (char) => {
-      setPlayingChar(char);
-    }, setPulseType);
+      await audioEngine.playSequence(sequence, MORSE_RU, (char) => {
+        setPlayingChar(char);
+      }, setPulseType);
 
-    setIsRunning(false);
-    setPlayingChar(null);
-    setPulseType(null);
+      setIsRunning(false);
+      isRunningRef.current = false;
+      setPlayingChar(null);
+      setPulseType(null);
+    } else {
+      // EX 2: Interactive Practice
+      const totalChars = groupCount * 5;
+      let sequence = [];
+      for (let g = 0; g < groupCount; g++) {
+        for (let i = 0; i < 5; i++) {
+          const randomChar = currentLesson.chars[Math.floor(Math.random() * currentLesson.chars.length)];
+          sequence.push(randomChar);
+        }
+        if (g < groupCount - 1) sequence.push(' ');
+      }
+
+      setSessionSequence(sequence);
+      sequenceRef.current = sequence;
+      setCurrentStep(0);
+      currentStepRef.current = 0;
+      setIsRunning(true);
+      isRunningRef.current = true;
+      
+      playCurrentTarget();
+    }
   };
 
   // Ensure audio stops if component unmounts
@@ -124,10 +277,14 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU' }) => {
 
   // Determine what to show in the header
   const activeChar = playingChar || hoverChar;
-  let headerTitle = ui.title;
-  let headerDesc = ui.desc;
+  
+  // Base labels (Defaults for the current exercise)
+  let headerTitle = exerciseIndex === 0 ? ui.title : ui.ex2Title;
+  let headerDesc = exerciseIndex === 0 ? ui.desc : ui.desc;
 
-  if (activeChar) {
+  // Use the same logic for both exercises: if a char is active, show its info.
+  // Exception: in Ex 2 during active play, we keep the prompt "Press signs...".
+  if (activeChar && (!isRunning || exerciseIndex === 0)) {
     const pattern = Object.keys(MORSE_RU).find(k => MORSE_RU[k] === activeChar);
     headerTitle = activeChar;
     headerDesc = mnemonics[pattern] || '';
@@ -143,7 +300,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU' }) => {
               disabled={isRunning || playingChar}
               onClick={() => setLessonIndex(Math.max(0, lessonIndex - 1))}
             >-</button>
-            <span>{currentLesson.id} / 12</span>
+            <span>{currentLesson.id}</span>
             <button 
               disabled={isRunning || playingChar}
               onClick={() => setLessonIndex(Math.min(11, lessonIndex + 1))}
@@ -152,20 +309,61 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU' }) => {
         </div>
 
         <div className="control-group">
-          <label>{ui.charSpeed}</label>
+          <label>{ui.exercise}</label>
           <div className="number-stepper">
-            <button onClick={() => setCharSpeed(Math.max(20, charSpeed - 5))}>-</button>
-            <span>{charSpeed}</span>
-            <button onClick={() => setCharSpeed(Math.min(150, charSpeed + 5))}>+</button>
+            <button 
+              disabled={isRunning || playingChar}
+              onClick={() => setExerciseIndex(Math.max(0, exerciseIndex - 1))}
+            >-</button>
+            <span>{exerciseIndex + 1}</span>
+            <button 
+              disabled={isRunning || playingChar}
+              onClick={() => setExerciseIndex(Math.min(1, exerciseIndex + 1))}
+            >+</button>
           </div>
         </div>
 
         <div className="control-group">
-          <label>{ui.pauseSpeed}</label>
+          <label>{ui.groups}</label>
           <div className="number-stepper">
-            <button onClick={() => setPauseSpeed(Math.max(5, pauseSpeed - 5))}>-</button>
-            <span>{pauseSpeed}</span>
-            <button onClick={() => setPauseSpeed(Math.min(100, pauseSpeed + 5))}>+</button>
+            <button 
+              disabled={isRunning || playingChar}
+              onClick={() => setGroupCount(Math.max(5, groupCount - 5))}
+            >-</button>
+            <span>{groupCount}</span>
+            <button 
+              disabled={isRunning || playingChar}
+              onClick={() => setGroupCount(Math.min(100, groupCount + 5))}
+            >+</button>
+          </div>
+        </div>
+
+        <div className="sidebar-separator"></div>
+
+        <div className="control-group">
+          <label>{ui.charSpeed}</label>
+          <div className="number-stepper">
+            <button onClick={() => setWpm(Math.max(5, wpm - 1))}>-</button>
+            <span>{wpm * 5}</span>
+            <button onClick={() => setWpm(Math.min(50, wpm + 1))}>+</button>
+          </div>
+        </div>
+
+        <div className="control-group">
+          <label>{ui.ratio}</label>
+          <div className="number-stepper">
+            <button onClick={() => setDashRatio(Math.max(2.0, parseFloat((dashRatio - 0.1).toFixed(1))))}>-</button>
+            <span>{dashRatio.toFixed(1)}</span>
+            <button onClick={() => setDashRatio(Math.min(5.0, parseFloat((dashRatio + 0.1).toFixed(1))))}>+</button>
+          </div>
+        </div>
+
+        <div className="control-group">
+          <label>{ui.pause}</label>
+          <div className="number-stepper">
+            <button onClick={() => setPauseFactor(Math.max(1.0, parseFloat((pauseFactor - 0.1).toFixed(1))))}>-</button>
+            <span>x{pauseFactor.toFixed(1)}</span>
+            <button onClick={() => setPauseFactor(Math.min(10.0, parseFloat((pauseFactor + 0.1).toFixed(1))))}>+</button>
           </div>
         </div>
 
@@ -203,12 +401,15 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU' }) => {
           onMouseLeave={() => setHoverChar(null)}
         >
           {currentLesson.chars.map((char, i) => {
+            const isTarget = playingChar === char;
+            const isInteractiveWrong = exerciseIndex === 1 && isRunning && waitingForInput && false; // We don't highlight wrong until after click
+
             return (
               <div 
                 key={i} 
-                className={`letter-card ${playingChar === char ? 'playing' : ''} ${pulseType && playingChar === char ? 'pulse-' + pulseType : ''} ${((isRunning || playingChar) && playingChar !== char) ? 'locked' : ''}`}
+                className={`letter-card ${isTarget ? 'playing' : ''} ${pulseType && isTarget ? 'pulse-' + pulseType : ''} ${((isRunning && exerciseIndex === 0 || playingChar) && playingChar !== char) ? 'locked' : ''} ${waitingForInput ? 'waiting' : ''}`}
                 onMouseEnter={() => setHoverChar(char)}
-                onClick={() => playSingleChar(char)}
+                onClick={() => playSingleCharFiltered(char)}
               >
                 <div className="char-display">{char}</div>
               </div>
@@ -216,6 +417,40 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU' }) => {
           })}
         </div>
       </div>
+
+      <AnimatePresence>
+        {showReport && (
+          <motion.div 
+            className="report-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div 
+              className="report-card glass-panel"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+            >
+              <h3>{ui.reportTitle}</h3>
+              <div className="report-content">
+                {sessionErrors.size === 0 ? (
+                  <p className="success-msg">{ui.noErrors}</p>
+                ) : (
+                  <>
+                    <p>{ui.errorsFound}</p>
+                    <div className="error-list">
+                      {Array.from(sessionErrors).map(err => (
+                        <div key={err} className="error-item">{err}</div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              <button className="start-btn" onClick={() => setShowReport(false)}>{ui.closeReport}</button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 });

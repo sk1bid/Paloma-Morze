@@ -5,6 +5,7 @@ class MorseAudioEngine {
     this.gain = null;
     this.frequency = 700;
     this.volume = 0.5;
+    this.dashRatio = 3.0;
   }
 
   init() {
@@ -42,6 +43,10 @@ class MorseAudioEngine {
     this.gapWpm = wpm;
   }
 
+  setDashRatio(ratio) {
+    this.dashRatio = ratio;
+  }
+
   // Plays a single character's morse string (e.g. '.-')
   // onPulse: optional callback(null|'dot'|'dash')
   playString(morseStr, onPulse = null) {
@@ -49,7 +54,7 @@ class MorseAudioEngine {
       this.init();
       const currentWpm = this.charWpm || 20;
       const dotLen = 1.2 / currentWpm; 
-      const dashLen = dotLen * 3;
+      const dashLen = dotLen * (this.dashRatio || 3.0);
       const intraCharGap = dotLen;
       const attack = 0.01; 
       const release = 0.01; 

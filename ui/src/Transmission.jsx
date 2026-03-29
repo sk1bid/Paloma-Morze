@@ -23,7 +23,7 @@ const MORSE_RU = {
   '-....': '6', '--...': '7', '---..': '8', '----.': '9', '-..-.': '/'
 };
 
-const MNEMONICS_RU = {
+const MNEMONICS = {
   '.-': 'ай-ДА', '-...': 'БА-ки-те-кут', '.--': 'ви-ДА-ЛА', '--.': 'ГА-РА-жи', '-..': 'ДО-ми-ки', '.': 'есть',
   '...-': 'же-ле-зи-СТО', '--..': 'ЗА-КА-ти-ки', '..': 'И-ди', '.---': 'йес-НА-ПА-РА', '-.-': 'КАК-же-ТАК', '.-..': 'лу-НА-ти-ки',
   '--': 'МА-МА', '-.': 'НО-мер', '---': 'О-КО-ЛО', '.--.': 'пи-ЛА-ПО-ет', '.-.': 'ре-ША-ет', '...': 'си-не-е',
@@ -34,46 +34,35 @@ const MNEMONICS_RU = {
   '---..': 'ВО-СЬМО-ГО-и-ди', '----.': 'НО-НА-НО-НА-ми', '-..-.': 'РА-зде-ли-те-КА'
 };
 
-const MNEMONICS_EN = {
-  '.-': 'a-PART', '-...': 'BOB-is-the-man', '-.-.': 'CO-ca-CO-la', '-..': 'DOG-did-it', '.': 'egg', '..-.': 'fetch-a-FI-re',
-  '--.': 'GO-GO-dance', '....': 'hi-ppo-po-tmus', '..': 'i-nit', '.---': 'in-JA-PON-GOL', '-.-': 'KANG-ga-ROO', '.-..': 'l-A-po-p-o',
-  '--': 'MA-MA', '-.': 'NO-el', '---': 'ONE-OF-US', '.--.': 'a-PU-PPY-poo', '--.-': 'GOD-SAVE-the-QUEEN', '.-.': 'ro-TAY-tor',
-  '...': 'si-si-si', '-': 'TALL', '..-': 'un-der-WHERE', '...-': 'vic-to-ry-VEE', '.--': 'a-WET-DOG', '-..-': 'X-marks-the-SPOT',
-  '-.--': 'YELL-ow-YOYO', '--..': 'ZEN-dra-is-HERE', '-----': 'NO-ONE-GO-ES-HOME', '.----': 'a-LONG-WHI-TE-BEA-RD', '..---': 'and-not-GO-OD-for-US', '...--': 'it-is-not-for-ME',
-  '....-': 'and-the-dogs-are-HERE', '.....': 'i-ti-bi-ti-hi', '-....': 'SIX-dogs-are-run-ning', '--...': 'SE-VEN-is-high-up-HERE',
-  '---..': 'EIGHT-TEN-is-not-E-NOUGH', '----.': 'NINE-NINE-is-not-for-US'
-};
-
-export const Transmission = React.memo(({ frequency, volume, lang, ws }) => {
-  const [isPressed, setIsPressed] = useState(false);
-  const isPressedRef = useRef(false);
-  
+export const Transmission = ({ frequency, volume, lang, ws, wpm, dashRatio, pauseFactor }) => {
   const [decodedText, setDecodedText] = useState('');
   const [lastMnemonic, setLastMnemonic] = useState('');
   const [morseBuffer, setMorseBuffer] = useState('');
   
-  const [wpm, setWpm] = useState(15);
-  const wpmRef = useRef(15);
+  const [isPressedUI, setIsPressedUI] = useState(false);
   
   const canvasRef = useRef(null);
   const lastPressTime = useRef(Date.now());
-  const lastDotDuration = useRef(1200 / 15);
+  const lastDotDuration = useRef(1200 / wpm);
   const textScrollRef = useRef(null);
   const events = useRef([]); // {start, end, type}
 
-  useEffect(() => { wpmRef.current = wpm; }, [wpm]);
-
-  // WPM determines thresholds: 1 unit = 1200 / wpm (ms)
-  const unit = 1200 / wpm;
-  const dashThreshold = unit * 2; 
-  const charGapThreshold = unit * 2.5; 
-  const wordGapThreshold = unit * 8; 
   const [previewChar, setPreviewChar] = useState('');
   const [previewMnemonic, setPreviewMnemonic] = useState('');
 
-  const mnemonics = lang === 'RU' ? MNEMONICS_RU : MNEMONICS_EN;
-
   // Auto-scroll text to bottom/right
+  const wpmRef = useRef(20);
+  const dashRatioRef = useRef(3.0);
+  const pauseFactorRef = useRef(3.0);
+
+  useEffect(() => { 
+    wpmRef.current = wpm;
+    dashRatioRef.current = dashRatio;
+    pauseFactorRef.current = pauseFactor;
+  }, [wpm, dashRatio, pauseFactor]);
+
+  const isPressedRef = useRef(false);
+
   useEffect(() => {
     if (textScrollRef.current) {
       textScrollRef.current.scrollLeft = textScrollRef.current.scrollWidth;
@@ -116,104 +105,81 @@ export const Transmission = React.memo(({ frequency, volume, lang, ws }) => {
       octx.clearRect(0, 0, logicalWidth, logicalHeight);
       
       const centerY = logicalHeight / 2;
-      octx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      // Vibrant Axis - Beta 2 Style (0.15 opacity)
+      octx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; 
       octx.setLineDash([5, 5]);
       octx.beginPath(); octx.moveTo(0, centerY); octx.lineTo(logicalWidth, centerY); octx.stroke();
       octx.setLineDash([]);
 
       const rightMargin = 100;
-      octx.strokeStyle = 'rgba(0, 210, 255, 0.2)';
-      octx.beginPath(); octx.moveTo(logicalWidth - rightMargin, 15); octx.lineTo(logicalWidth - rightMargin, logicalHeight - 15); octx.stroke();
+      // Vibrant Pointer - Beta 2 Style (0.5 opacity, width 2)
+      octx.strokeStyle = 'rgba(0, 210, 255, 0.5)';
+      octx.lineWidth = 2;
+      octx.beginPath(); octx.moveTo(logicalWidth - rightMargin, 10); octx.lineTo(logicalWidth - rightMargin, logicalHeight - 10); octx.stroke();
     };
 
     setupCanvas();
     window.addEventListener('resize', setupCanvas);
 
-    let lastFrameTime = performance.now();
-    let frameCount = 0;
     const rightMargin = 100;
 
-    const render = (time) => {
-      const frameDelta = time - lastFrameTime;
-      lastFrameTime = time;
-      
+    const render = () => {
       const now = Date.now();
       const currentWpm = wpmRef.current;
-      const pms = currentWpm / 150; 
+      const pixelsPerMs = currentWpm / 150; 
       const centerY = logicalHeight / 2;
-      const basePos = logicalWidth - rightMargin;
 
-      // 1. Clear Main Canvas (Make it transparent to show CSS bg)
+      // 1. Clear Main Canvas
       ctx.clearRect(0, 0, logicalWidth, logicalHeight);
       
       // 2. Static Draw (Draw axes from offscreen)
       ctx.drawImage(offscreen, 0, 0, canvas.width, canvas.height, 0, 0, logicalWidth, logicalHeight);
 
-      // 2. Batch Drawing (BEAUTIFUL VERSION)
-      const evs = events.current;
-      const cutoff = now - (logicalWidth / pms + 1000); 
-      
-      const paths = {
-        dot: new Path2D(),
-        dash: new Path2D(),
-        'too-long': new Path2D()
-      };
-      const activeTypes = { dot: false, dash: false, 'too-long': false };
+      // Draw Finished Events - BATCHED Path2D
+      const paths = { dot: new Path2D(), dash: new Path2D(), 'too-long': new Path2D() };
+      let has = { dot: false, dash: false, 'too-long': false };
 
-      for (let i = 0; i < evs.length; i++) {
-        const ev = evs[i];
-        if (ev.end < cutoff) continue;
-
-        const xStart = basePos + (ev.start - now) * pms;
-        const xEnd = basePos + (ev.end - now) * pms;
+      events.current.forEach(ev => {
+        const xStart = logicalWidth - rightMargin + (ev.start - now) * pixelsPerMs;
+        const xEnd = ev.end ? logicalWidth - rightMargin + (ev.end - now) * pixelsPerMs : logicalWidth - rightMargin;
         const width = Math.max(xEnd - xStart, 4);
-
-        if (xEnd > -50 && xStart < logicalWidth + 50) {
+        if (xEnd > 0 && xStart < logicalWidth) {
           paths[ev.type].roundRect(xStart, centerY - 15, width, 30, 6);
-          activeTypes[ev.type] = true;
+          has[ev.type] = true;
         }
-      }
+      });
 
-      // Draw batches with aesthetic colors
-      if (activeTypes.dot) { ctx.fillStyle = '#50fa7b'; ctx.fill(paths.dot); }
-      if (activeTypes.dash) { ctx.fillStyle = '#ff79c6'; ctx.fill(paths.dash); }
-      if (activeTypes['too-long']) { ctx.fillStyle = '#ff5555'; ctx.fill(paths['too-long']); }
+      // Draw batches with Beta 2 aesthetics (shadowBlur: 4)
+      ctx.shadowBlur = 4;
+      if (has.dot) { ctx.fillStyle = '#50fa7b'; ctx.shadowColor = '#50fa7b80'; ctx.fill(paths.dot); }
+      if (has.dash) { ctx.fillStyle = '#ff79c6'; ctx.shadowColor = '#ff79c680'; ctx.fill(paths.dash); }
+      if (has['too-long']) { ctx.fillStyle = '#ff5555'; ctx.shadowColor = '#ff555580'; ctx.fill(paths['too-long']); }
+      ctx.shadowBlur = 0;
 
-      // 3. Active Press (With Glow & Animation)
+      // Draw Active Press - Beta 2 Style (shadowBlur: 6)
       if (isPressedRef.current) {
-        const xStart = basePos + (lastPressTime.current - now) * pms;
-        const width = basePos - xStart;
+        const xStart = logicalWidth - rightMargin + (lastPressTime.current - now) * pixelsPerMs;
+        const width = (logicalWidth - rightMargin) - xStart;
         const duration = now - lastPressTime.current;
-        const dashThr = (1200 / currentWpm) * 2;
-        const dotDur = lastDotDuration.current;
-
-        let color = '#50fa7b';
-        if (duration > dotDur * 4.5) color = '#ff5555';
-        else if (duration >= dashThr) color = '#ff79c6';
-
-        // Draw Glow first (cheap method: gradient path)
-        const glow = ctx.createLinearGradient(xStart, 0, basePos, 0);
-        glow.addColorStop(0, color);
-        glow.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
         
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(xStart, centerY - 15, width, 30, 6);
-        ctx.fillStyle = glow;
-        ctx.fill();
+        // Dynamic thresholds based on global ratio
+        const dotThreshold = 1200 / currentWpm;
+        const currentDashRatio = dashRatioRef.current;
+        const dashThreshold = dotThreshold * (currentDashRatio + 1) / 2;
+        const tooLongThreshold = dotThreshold * (currentDashRatio + 1.5);
         
-        // White-glass stroke
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        ctx.restore();
+        if (duration > tooLongThreshold) ctx.fillStyle = '#ff5555';
+        else if (duration >= dashThreshold) ctx.fillStyle = '#ff79c6';
+        else ctx.fillStyle = '#50fa7b';
+
+        ctx.shadowBlur = 6; ctx.shadowColor = ctx.fillStyle;
+        ctx.beginPath(); ctx.roundRect(xStart, centerY - 15, width, 30, 6); ctx.fill();
+        ctx.shadowBlur = 0;
       }
 
-      // 4. Optimized Memory
-      if (evs.length > 80 && Math.random() < 0.01) {
-        events.current = evs.filter(ev => ev.end > cutoff);
+      if (events.current.length > 50) {
+        events.current = events.current.filter(ev => (ev.end || now) > now - 10000 / pixelsPerMs);
       }
-      
       animationFrame = requestAnimationFrame(render);
     };
 
@@ -225,33 +191,37 @@ export const Transmission = React.memo(({ frequency, volume, lang, ws }) => {
   }, []);
 
   useEffect(() => {
+    // If ws is passed as a ref, pull the current object. If it's the socket itself, use it.
     const socket = ws?.current || ws;
     if (!socket) return;
     
     const handleMessage = (event) => {
       const val = event.data;
       const now = Date.now();
-      const currentDashThreshold = (1200 / wpmRef.current) * 2;
-      const currentLastDotDuration = lastDotDuration.current;
+      const duration = now - lastPressTime.current;
+      const currentWpm = wpmRef.current;
+      const currentDashRatio = dashRatioRef.current;
+      const dotThreshold = 1200 / currentWpm;
+      const dashThreshold = dotThreshold * (currentDashRatio + 1) / 2;
+      const tooLongThreshold = dotThreshold * (currentDashRatio + 1.5);
 
       if (val === '1') {
-        setIsPressed(true);
         isPressedRef.current = true;
+        setIsPressedUI(true);
       } else if (val === '0') {
-        setIsPressed(false);
         isPressedRef.current = false;
-        const duration = now - lastPressTime.current;
+        setIsPressedUI(false);
         let type = 'dot';
-        if (duration >= currentDashThreshold) {
-          type = (duration > currentLastDotDuration * 4.5) ? 'too-long' : 'dash';
+        if (duration >= dashThreshold) {
+          type = (duration > tooLongThreshold) ? 'too-long' : 'dash';
         } else {
-          lastDotDuration.current = duration;
+          lastDotDuration.current = duration; // Update rhythm based on last dot
         }
         setMorseBuffer(prev => {
           const next = prev + (type === 'dot' ? '.' : '-');
           const codes = lang === 'RU' ? MORSE_RU : MORSE_EN;
-          setPreviewChar(codes[next] || 'Ø');
-          setPreviewMnemonic(mnemonics[next] || ''); 
+          setPreviewChar(codes[next] || '?');
+          setPreviewMnemonic(MNEMONICS[next] || ''); // Live mnemonic preview
           return next;
         });
         events.current.push({ start: lastPressTime.current, end: now, type });
@@ -263,13 +233,16 @@ export const Transmission = React.memo(({ frequency, volume, lang, ws }) => {
     return () => {
       socket.removeEventListener('message', handleMessage);
     };
-  }, [lang, dashThreshold, charGapThreshold, ws, ws?.current]);
+  }, [lang, ws, ws?.current]);
 
   // Handle Gaps (Characters and Words)
   useEffect(() => {
     const timer = setInterval(() => {
-      if (isPressed) return;
+      if (isPressedRef.current) return;
       const gap = Date.now() - lastPressTime.current;
+      const unit = 1200 / wpmRef.current;
+      const charGapThreshold = unit * pauseFactorRef.current; 
+      const wordGapThreshold = charGapThreshold * 2.33; 
 
       // Character gap - finalize current character
       if (morseBuffer && gap > charGapThreshold) {
@@ -284,13 +257,13 @@ export const Transmission = React.memo(({ frequency, volume, lang, ws }) => {
       }
     }, 50);
     return () => clearInterval(timer);
-  }, [isPressed, morseBuffer, decodedText, charGapThreshold, wordGapThreshold]);
+  }, [morseBuffer, decodedText]);
 
   const decodeMorse = (buffer) => {
     const codes = lang === 'RU' ? MORSE_RU : MORSE_EN;
-    const char = codes[buffer] || 'Ø';
+    const char = codes[buffer] || '?';
     setDecodedText(prev => prev + char);
-    setLastMnemonic(mnemonics[buffer] || '');
+    setLastMnemonic(MNEMONICS[buffer] || '');
     setPreviewChar('');
     setPreviewMnemonic(''); // Clear preview when confirmed
   };
@@ -324,4 +297,4 @@ export const Transmission = React.memo(({ frequency, volume, lang, ws }) => {
       </footer>
     </>
   );
-});
+};
