@@ -53,11 +53,11 @@ class MorseAudioEngine {
     return new Promise(resolve => {
       this.init();
       const currentWpm = this.charWpm || 20;
-      const dotLen = 1.2 / currentWpm; 
+      const dotLen = 6.0 / currentWpm; 
       const dashLen = dotLen * (this.dashRatio || 3.0);
       const intraCharGap = dotLen;
-      const attack = 0.01; 
-      const release = 0.01; 
+      const attack = 0.005; 
+      const release = 0.005; 
 
       let time = this.ctx.currentTime + 0.01;
 
@@ -104,7 +104,7 @@ class MorseAudioEngine {
       
       // Calculate gaps and WPM dynamically in each iteration
       const currentGapWpm = this.gapWpm || 10;
-      const charGap = (1.2 / currentGapWpm) * 3; 
+      const charGap = (6.0 / currentGapWpm) * 3; 
 
       if (char === ' ') {
         await new Promise(r => setTimeout(r, charGap * 2.33 * 1000)); 

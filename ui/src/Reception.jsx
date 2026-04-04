@@ -63,7 +63,7 @@ const UI_STRINGS = {
     desc: 'Наведите для подсказки, нажмите для прослушивания',
     ex2Title: 'Нажимайте знаки, которые вы слышали!',
     reportTitle: 'РЕЗУЛЬТАТЫ СЕССИИ',
-    noErrors: 'ИДЕАЛЬНО! ОШИБОК НЕТ',
+    noErrors: 'ОШИБОК НЕТ',
     errorsFound: 'ОШИБКИ В СЛЕДУЮЩИХ ЗНАКАХ:',
     closeReport: 'ЗАКРЫТЬ'
   },
@@ -102,6 +102,8 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   const [waitingForInput, setWaitingForInput] = useState(false);
   const [sessionErrors, setSessionErrors] = useState(new Set());
   const [showReport, setShowReport] = useState(false);
+  const [selectedChar, setSelectedChar] = useState(null); // The one user clicked
+  const [feedbackStatus, setFeedbackStatus] = useState(null); // 'correct' | 'wrong'
  
   // Refs for stable access in async loops
   const isRunningRef = useRef(false);
@@ -116,7 +118,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     audioEngine.setFrequency(frequency);
     audioEngine.setVolume(volume);
     audioEngine.setCharWpm(wpm);
-    audioEngine.setGapWpm(wpm / (pauseFactor / 3)); // Normalize: if pauseFactor is 3 (std), Gap WPM = Char WPM
+    audioEngine.setGapWpm(wpm / pauseFactor); 
     audioEngine.setDashRatio(dashRatio);
   }, [frequency, volume, wpm, pauseFactor, dashRatio]);
 
@@ -127,7 +129,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       return;
     }
 
-    if (isRunning || (playingChar && playingChar !== char)) return; 
+    if (isRunning || playingChar) return; 
     const morsePattern = Object.keys(MORSE_RU).find(k => MORSE_RU[k] === char);
     if (morsePattern) {
       setPlayingChar(char);
@@ -141,29 +143,49 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     if (!waitingRef.current || !isRunningRef.current) return;
 
     const target = sequenceRef.current[currentStepRef.current];
+    setSelectedChar(char);
+    
     if (char === target) {
       // Correct!
+      setFeedbackStatus('correct');
       setWaitingForInput(false);
       waitingRef.current = false;
-      advanceSession();
+      setTimeout(() => {
+        setFeedbackStatus(null);
+        setSelectedChar(null);
+        advanceSession();
+      }, 600);
     } else {
       // Wrong! 
+      setFeedbackStatus('wrong');
       setSessionErrors(prev => new Set(prev).add(target));
       setWaitingForInput(false);
       waitingRef.current = false;
       
+      // Awareness pause so user can see the red feedback
+      await new Promise(r => setTimeout(r, 1000));
+
       // Play 5 times as penalty
       const morsePattern = Object.keys(MORSE_RU).find(k => MORSE_RU[k] === target);
       if (morsePattern) {
         setPlayingChar(target);
+        
+        // Calculate rhythmic gap for penalty (3 dots * pauseFactor)
+        const dotLen = 6.0 / (wpm || 50);
+        const penaltyGapMs = dotLen * 3 * (pauseFactor || 1.0) * 1000;
+
         for (let i = 0; i < 5; i++) {
           if (!isRunningRef.current) break;
           await audioEngine.playString(morsePattern, setPulseType);
-          await new Promise(r => setTimeout(r, 200));
+          await new Promise(r => setTimeout(r, penaltyGapMs));
         }
         setPlayingChar(null);
         setPulseType(null);
+        // Added reset pause after penalty
+        await new Promise(r => setTimeout(r, 1000));
       }
+      setFeedbackStatus(null);
+      setSelectedChar(null);
       advanceSession();
     }
   };
@@ -192,7 +214,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
 
     const morsePattern = Object.keys(MORSE_RU).find(k => MORSE_RU[k] === target);
     if (morsePattern) {
-      setPlayingChar(target);
+      if (exerciseIndex === 0) setPlayingChar(target); // Only highlight in Ex 1
       await audioEngine.playString(morsePattern, setPulseType);
       setPlayingChar(null);
       setPulseType(null);
@@ -246,14 +268,58 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       setPulseType(null);
     } else {
       // EX 2: Interactive Practice
-      const totalChars = groupCount * 5;
-      let sequence = [];
-      for (let g = 0; g < groupCount; g++) {
-        for (let i = 0; i < 5; i++) {
-          const randomChar = currentLesson.chars[Math.floor(Math.random() * currentLesson.chars.length)];
-          sequence.push(randomChar);
+      const lessonChars = currentLesson.chars;
+      const totalCount = 15; // Target total chars for practice
+
+      // 1. Create a perfectly balanced pool
+      let pool = [];
+      while (pool.length < totalCount) {
+        // Shuffle lessonChars before adding to pool to vary distribution if totalCount % lessonChars.length != 0
+        const segment = [...lessonChars].sort(() => Math.random() - 0.5);
+        pool.push(...segment);
+      }
+      pool = pool.slice(0, totalCount);
+
+      // 2. Initial Shuffle (Fisher-Yates)
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+
+      // 3. Strict De-duplication (Prevent consecutive repeats)
+      if (lessonChars.length > 1) {
+        for (let i = 0; i < pool.length - 1; i++) {
+          if (pool[i] === pool[i + 1]) {
+            // Found a consecutive repeat, look for a valid swap
+            let foundSwap = false;
+            for (let k = 0; k < pool.length; k++) {
+              // Swap condition: pool[k] must be different from pool[i] 
+              // AND if we move pool[i+1] to k, it must not create a repeat at k-1 or k+1
+              // AND if we move pool[k] to i+1, it must not be the same as pool[i] or pool[i+2]
+              const charToMove = pool[i + 1];
+              const targetCandidate = pool[k];
+
+              if (targetCandidate !== pool[i] && // New i+1 won't match i
+                  (i + 2 >= pool.length || targetCandidate !== pool[i + 2]) && // New i+1 won't match i+2
+                  (k === 0 || charToMove !== pool[k - 1]) && // Moved char won't match k-1
+                  (k + 1 >= pool.length || charToMove !== pool[k + 1]) // Moved char won't match k+1
+              ) {
+                [pool[i+1], pool[k]] = [pool[k], pool[i+1]];
+                foundSwap = true;
+                break;
+              }
+            }
+          }
         }
-        if (g < groupCount - 1) sequence.push(' ');
+      }
+
+      // 4. Assemble sequence with groups and spaces
+      let sequence = [];
+      for (let g = 0; g < 3; g++) {
+        for (let i = 0; i < 5; i++) {
+          sequence.push(pool[g * 5 + i]);
+        }
+        if (g < 2) sequence.push(' ');
       }
 
       setSessionSequence(sequence);
@@ -323,6 +389,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
           </div>
         </div>
 
+        {exerciseIndex === 3 && (
         <div className="control-group">
           <label>{ui.groups}</label>
           <div className="number-stepper">
@@ -337,33 +404,34 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
             >+</button>
           </div>
         </div>
+        )}
 
         <div className="sidebar-separator"></div>
 
         <div className="control-group">
           <label>{ui.charSpeed}</label>
           <div className="number-stepper">
-            <button onClick={() => setWpm(Math.max(5, wpm - 1))}>-</button>
-            <span>{wpm * 5}</span>
-            <button onClick={() => setWpm(Math.min(50, wpm + 1))}>+</button>
+            <button onClick={() => setWpm(Math.max(20, wpm - 5))}>-</button>
+            <span>{wpm}</span>
+            <button onClick={() => setWpm(Math.min(250, wpm + 5))}>+</button>
           </div>
         </div>
 
         <div className="control-group">
           <label>{ui.ratio}</label>
           <div className="number-stepper">
-            <button onClick={() => setDashRatio(Math.max(2.0, parseFloat((dashRatio - 0.1).toFixed(1))))}>-</button>
+            <button onClick={() => setDashRatio(Math.max(2.0, parseFloat((dashRatio - 0.5).toFixed(1))))}>-</button>
             <span>{dashRatio.toFixed(1)}</span>
-            <button onClick={() => setDashRatio(Math.min(5.0, parseFloat((dashRatio + 0.1).toFixed(1))))}>+</button>
+            <button onClick={() => setDashRatio(Math.min(5.0, parseFloat((dashRatio + 0.5).toFixed(1))))}>+</button>
           </div>
         </div>
 
         <div className="control-group">
           <label>{ui.pause}</label>
           <div className="number-stepper">
-            <button onClick={() => setPauseFactor(Math.max(1.0, parseFloat((pauseFactor - 0.1).toFixed(1))))}>-</button>
+            <button onClick={() => setPauseFactor(Math.max(1.0, parseFloat((pauseFactor - 0.5).toFixed(1))))}>-</button>
             <span>x{pauseFactor.toFixed(1)}</span>
-            <button onClick={() => setPauseFactor(Math.min(10.0, parseFloat((pauseFactor + 0.1).toFixed(1))))}>+</button>
+            <button onClick={() => setPauseFactor(Math.min(10.0, parseFloat((pauseFactor + 0.5).toFixed(1))))}>+</button>
           </div>
         </div>
 
@@ -397,7 +465,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
         </div>
 
         <div 
-          className={`letters-grid ${(isRunning || playingChar) ? 'disabled' : ''}`}
+          className={`letters-grid ${(playingChar || feedbackStatus || (isRunning && !waitingForInput)) ? 'disabled' : ''}`}
           onMouseLeave={() => setHoverChar(null)}
         >
           {currentLesson.chars.map((char, i) => {
@@ -407,7 +475,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
             return (
               <div 
                 key={i} 
-                className={`letter-card ${isTarget ? 'playing' : ''} ${pulseType && isTarget ? 'pulse-' + pulseType : ''} ${((isRunning && exerciseIndex === 0 || playingChar) && playingChar !== char) ? 'locked' : ''} ${waitingForInput ? 'waiting' : ''}`}
+                className={`letter-card ${isTarget ? 'playing' : ''} ${pulseType && isTarget ? 'pulse-' + pulseType : ''} ${((isRunning && exerciseIndex === 0 || playingChar) && playingChar !== char) ? 'locked' : ''} ${waitingForInput ? 'waiting' : ''} ${selectedChar === char ? feedbackStatus : ''}`}
                 onMouseEnter={() => setHoverChar(char)}
                 onClick={() => playSingleCharFiltered(char)}
               >

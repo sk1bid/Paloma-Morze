@@ -655,6 +655,11 @@ header {
   align-content: start;
 }
 
+.letters-grid.disabled {
+  pointer-events: none;
+  cursor: wait;
+}
+
 .letter-card {
   background: var(--card-bg);
   backdrop-filter: blur(10px);
@@ -705,8 +710,29 @@ header {
 }
 
 .letter-card.locked {
-  opacity: 0.15;
+  opacity: 0.4;
   pointer-events: none;
+  filter: grayscale(0.8) blur(0.5px);
+  border-color: rgba(255, 255, 255, 0.02);
+}
+
+.letter-card.correct {
+  border-color: #00ff88;
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+  background: rgba(0, 255, 136, 0.1);
+}
+
+.letter-card.wrong {
+  border-color: #ff4444;
+  box-shadow: 0 0 15px rgba(255, 68, 68, 0.3);
+  background: rgba(255, 68, 68, 0.1);
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
 }
 
 .number-stepper button:disabled {
@@ -986,20 +1012,20 @@ header {
 }
 
 .report-card {
-  max-width: 480px;
+  max-width: 320px;
   width: 100%;
-  max-height: 80vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
-  padding: 40px !important;
+  gap: 12px;
+  padding: 16px !important;
 }
 
 .report-card h3 {
   margin: 0;
-  font-size: 1.3rem;
-  letter-spacing: 3px;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
   font-weight: 900;
   color: var(--accent-color);
 }
@@ -1007,35 +1033,35 @@ header {
 .report-content {
   width: 100%;
   text-align: center;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
 }
 
 .success-msg {
   color: #50fa7b;
   font-weight: 800;
-  font-size: 1.2rem;
-  letter-spacing: 1px;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
 }
 
 .error-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px;
   justify-content: center;
-  margin-top: 20px;
+  margin-top: 12px;
 }
 
 .error-item {
-  width: 50px;
-  height: 50px;
+  width: 42px;
+  height: 42px;
   background: rgba(255, 85, 85, 0.1);
   border: 1px solid rgba(255, 85, 85, 0.4);
   color: #ff5555;
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 900;
 }

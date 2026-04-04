@@ -74,8 +74,8 @@ function createWindow() {
     width: 1000,
     height: 800,
     title: 'Paloma Morse',
-    backgroundColor: '#0b0e14', 
-    show: false, 
+    backgroundColor: '#0b0e14',
+    show: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
