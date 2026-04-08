@@ -15,18 +15,18 @@ function shouldUpdate(current, remote) {
 }
 
 describe('Update Version Comparison Logic', () => {
-  test('should notify when a newer version is available', () => {
-    expect(shouldUpdate('0.1.0', '0.1.1')).toBe('available');
-    expect(shouldUpdate('0.1.0-beta.25', '0.1.0-beta.26')).toBe('available');
+  test("should notify when a newer version is available", () => {
+    expect(shouldUpdate("0.2.0", "0.2.1")).toBe("available");
+    expect(shouldUpdate("0.2.0-beta.1", "0.2.0-beta.2")).toBe("available");
   });
 
-  test('should say uptodate when versions match', () => {
-    expect(shouldUpdate('0.1.0', '0.1.0')).toBe('uptodate');
-    expect(shouldUpdate('1.2.3', '1.2.3')).toBe('uptodate');
+  test("should say uptodate when versions match", () => {
+    expect(shouldUpdate("0.2.0", "0.2.0")).toBe("uptodate");
+    expect(shouldUpdate("1.2.3", "1.2.3")).toBe("uptodate");
   });
 
-  test('should ignore downgrades (local dev builds)', () => {
-    expect(shouldUpdate('0.1.1-dev', '0.1.0')).toBe('uptodate');
-    expect(shouldUpdate('0.2.0', '0.1.5')).toBe('uptodate');
+  test("should ignore downgrades (local dev builds)", () => {
+    expect(shouldUpdate("0.2.1-dev", "0.2.0")).toBe("uptodate");
+    expect(shouldUpdate("0.2.0", "0.1.5")).toBe("uptodate");
   });
 });
