@@ -16,8 +16,8 @@ function shouldUpdate(current, remote) {
 
 describe('Update Version Comparison Logic', () => {
   test("should notify when a newer version is available", () => {
-    expect(shouldUpdate("0.2.0", "0.2.1")).toBe("available");
-    expect(shouldUpdate("0.2.0-beta.1", "0.2.0-beta.2")).toBe("available");
+    expect(shouldUpdate("0.2.1", "0.2.2")).toBe("available");
+    expect(shouldUpdate("0.2.1-beta.1", "0.2.1-beta.2")).toBe("available");
   });
 
   test("should say uptodate when versions match", () => {
