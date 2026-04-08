@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Terminal, Zap, History, Speaker, Settings, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { audioEngine } from './audio';
 import './App.css';
 
 const MORSE_EN = {
@@ -34,13 +35,14 @@ const MNEMONICS = {
   '---..': 'ВО-СЬМО-ГО-и-ди', '----.': 'НО-НА-НО-НА-ми', '-..-.': 'РА-зде-ли-те-КА'
 };
 
-export const Transmission = ({ frequency, volume, lang, ws }) => {
+export const Transmission = ({ frequency, volume, lang, ws, wpm: initialWpm, setWpm: setWpmProp, transmissionKey, disabled }) => {
   const [isPressed, setIsPressed] = useState(false);
   const [decodedText, setDecodedText] = useState('');
   const [lastMnemonic, setLastMnemonic] = useState('');
   const [morseBuffer, setMorseBuffer] = useState('');
   
-  const [wpm, setWpm] = useState(15);
+  const [wpm, setWpm] = useState(15); // Reverted to fixed 15 for stability
+  const isPressedRef = useRef(false); // Ref for stable animation loop
   
   const canvasRef = useRef(null);
   const lastPressTime = useRef(Date.now());
@@ -67,16 +69,16 @@ export const Transmission = ({ frequency, volume, lang, ws }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d'); // Restore alpha for transparency
     let animationFrame;
     const pixelsPerMs = wpm / 150;
+    const centerY = canvas.height / 2;
+    const rightMargin = 100;
 
     const render = () => {
       const now = Date.now();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const rightMargin = 100;
-      const centerY = canvas.height / 2;
-
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // Restore transparency
+      
       // Draw Axis
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
       ctx.setLineDash([5, 5]);
@@ -93,19 +95,21 @@ export const Transmission = ({ frequency, volume, lang, ws }) => {
         const xStart = canvas.width - rightMargin + (ev.start - now) * pixelsPerMs;
         const xEnd = ev.end ? canvas.width - rightMargin + (ev.end - now) * pixelsPerMs : canvas.width - rightMargin;
         const width = xEnd - xStart;
+        
+        // CULLING: Only draw if visible on canvas
         if (xEnd > 0 && xStart < canvas.width) {
           if (ev.type === 'too-long') ctx.fillStyle = '#ff5555'; // Red
           else if (ev.type === 'dash') ctx.fillStyle = '#ff79c6'; // Pink
           else ctx.fillStyle = '#50fa7b'; // Green (dot)
           
-          ctx.shadowBlur = 12; ctx.shadowColor = ctx.fillStyle + '80';
+          ctx.shadowBlur = 6; ctx.shadowColor = ctx.fillStyle + '80'; // Subtler glow for history
           ctx.beginPath(); ctx.roundRect(xStart, centerY - 15, Math.max(width, 4), 30, 6); ctx.fill();
           ctx.shadowBlur = 0;
         }
       });
 
       // Draw Active Press
-      if (isPressed) {
+      if (isPressedRef.current) {
         const xStart = canvas.width - rightMargin + (lastPressTime.current - now) * pixelsPerMs;
         const width = (canvas.width - rightMargin) - xStart;
         const duration = now - lastPressTime.current;
@@ -115,19 +119,16 @@ export const Transmission = ({ frequency, volume, lang, ws }) => {
         else if (duration >= dashThreshold) ctx.fillStyle = '#ff79c6';
         else ctx.fillStyle = '#50fa7b';
 
-        ctx.shadowBlur = 20; ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 25; ctx.shadowColor = ctx.fillStyle; // Strong glow for active press
         ctx.beginPath(); ctx.roundRect(xStart, centerY - 15, width, 30, 6); ctx.fill();
         ctx.shadowBlur = 0;
       }
 
-      if (events.current.length > 50) {
-        events.current = events.current.filter(ev => (ev.end || now) > now - 10000 / pixelsPerMs);
-      }
       animationFrame = requestAnimationFrame(render);
     };
     render();
     return () => cancelAnimationFrame(animationFrame);
-  }, [wpm, isPressed, dashThreshold]);
+  }, [wpm, dashThreshold]); // NO isPressed dependency anymore!
 
   useEffect(() => {
     // If ws is passed as a ref, pull the current object. If it's the socket itself, use it.
@@ -140,8 +141,10 @@ export const Transmission = ({ frequency, volume, lang, ws }) => {
       const duration = now - lastPressTime.current;
 
       if (val === '1') {
+        isPressedRef.current = true;
         setIsPressed(true);
       } else if (val === '0') {
+        isPressedRef.current = false;
         setIsPressed(false);
         let type = 'dot';
         if (duration >= dashThreshold) {
@@ -167,6 +170,73 @@ export const Transmission = ({ frequency, volume, lang, ws }) => {
     };
   }, [lang, dashThreshold, charGapThreshold, ws, ws?.current]);
 
+  // Keyboard Handling
+  useEffect(() => {
+    if (disabled) return; // Completely ignore shortcuts when disabled
+    
+    const handleKeyDown = (e) => {
+      console.log('[Transmission] KeyDown:', e.code, 'Target:', transmissionKey);
+      // Prevent repetition while holding key and browser shortcuts
+      if (e.repeat) return;
+      if (e.code === transmissionKey) {
+        e.preventDefault();
+        const now = Date.now();
+        lastPressTime.current = now;
+        isPressedRef.current = true;
+        setIsPressed(true);
+        audioEngine.init();
+        audioEngine.keyDown();
+      }
+    };
+
+    const handleKeyUp = (e) => {
+      console.log('[Transmission] KeyUp:', e.code);
+      if (e.code === transmissionKey) {
+        e.preventDefault();
+        const now = Date.now();
+        const duration = now - lastPressTime.current;
+        isPressedRef.current = false;
+        setIsPressed(false);
+        audioEngine.keyUp();
+
+        // Process rhythm
+        let type = 'dot';
+        if (duration >= dashThreshold) {
+          type = (duration > lastDotDuration.current * 4.5) ? 'too-long' : 'dash';
+        } else {
+          lastDotDuration.current = duration;
+        }
+
+        setMorseBuffer(prev => {
+          const next = prev + (type === 'dot' ? '.' : '-');
+          const codes = lang === 'RU' ? MORSE_RU : MORSE_EN;
+          setPreviewChar(codes[next] || '?');
+          setPreviewMnemonic(MNEMONICS[next] || '');
+          return next;
+        });
+        events.current.push({ start: lastPressTime.current, end: now, type });
+        lastPressTime.current = now;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [transmissionKey, dashThreshold, lang, disabled]);
+
+  // Safety Reset when Transmission is disabled or hidden
+  useEffect(() => {
+    if (disabled) {
+      isPressedRef.current = false;
+      setIsPressed(false);
+      audioEngine.keyUp();
+    }
+  }, [disabled]);
+
+
   // Handle Gaps (Characters and Words)
   useEffect(() => {
     const timer = setInterval(() => {
@@ -187,6 +257,19 @@ export const Transmission = ({ frequency, volume, lang, ws }) => {
     }, 50);
     return () => clearInterval(timer);
   }, [isPressed, morseBuffer, decodedText, charGapThreshold, wordGapThreshold]);
+
+  // Periodic cleanup of off-screen events to keep memory lean
+  useEffect(() => {
+    const cleanup = setInterval(() => {
+      const now = Date.now();
+      const pixelsPerMs = wpm / 150;
+      const rightMargin = 100;
+      // Remove events that are more than 10 seconds off-screen to the left
+      const cutoffTime = now - (12000 / pixelsPerMs); 
+      events.current = events.current.filter(ev => (ev.end || now) > cutoffTime);
+    }, 5000);
+    return () => clearInterval(cleanup);
+  }, [wpm]);
 
   const decodeMorse = (buffer) => {
     const codes = lang === 'RU' ? MORSE_RU : MORSE_EN;
@@ -215,7 +298,12 @@ export const Transmission = ({ frequency, volume, lang, ws }) => {
             </div>
             <div className="text-scroll-container" ref={textScrollRef}>
               <div className="text-display">
-                {decodedText || (!previewChar && <span className="placeholder">START TYPING...</span>)}
+                {decodedText || (!previewChar && (
+                  <span className="placeholder">
+                    {lang === 'RU' ? 'НАЖМИТЕ ' : 'PRESS '} 
+                    <span className="kb-key">{transmissionKey === 'Space' ? (lang === 'RU' ? 'ПРОБЕЛ' : 'SPACE') : transmissionKey.replace('Key', '')}</span>
+                  </span>
+                ))}
                 {previewChar && <span className="preview-char">{previewChar}</span>}
                 <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity }} className="cursor">_</motion.span>
               </div>
@@ -223,8 +311,15 @@ export const Transmission = ({ frequency, volume, lang, ws }) => {
           </section>
         </main>
 
-      <footer>
-        <button className="clear-btn" onClick={() => { setDecodedText(''); setMorseBuffer(''); setLastMnemonic(''); events.current = []; }}>CLEAR</button>
+      <footer className="trans-footer">
+        <div className="transmission-legend">
+          <div className="legend-item"><div className="dot-sample dot-color"></div> <span>{lang === 'RU' ? 'ТОЧКА' : 'DOT'}</span></div>
+          <div className="legend-item"><div className="dot-sample dash-color"></div> <span>{lang === 'RU' ? 'ТИРЕ' : 'DASH'}</span></div>
+          <div className="legend-item"><div className="dot-sample error-color"></div> <span>{lang === 'RU' ? 'ПЕРЕДЕРЖАЛ' : 'TOO LONG'}</span></div>
+        </div>
+        <button className="clear-btn" onClick={() => { setDecodedText(''); setMorseBuffer(''); setLastMnemonic(''); events.current = []; }}>
+          {lang === 'RU' ? 'ОЧИСТИТЬ' : 'CLEAR'}
+        </button>
       </footer>
     </>
   );

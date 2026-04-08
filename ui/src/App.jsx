@@ -5,6 +5,7 @@ import { Transmission } from './Transmission';
 import { Reception } from './Reception';
 import { UpdateChecker } from './UpdateChecker';
 import { sounds } from './utils/sounds';
+import { audioEngine } from './audio';
 import './App.css';
 
 function App() {
@@ -32,6 +33,8 @@ function App() {
   const [transWpm, setTransWpm] = useState(() => loadSetting('transWpm', 50)); // Independent Transmission WPM (reverted to 1200/wpm scale)
   const [dashRatio, setDashRatio] = useState(() => loadSetting('dashRatio', 3.0));
   const [pauseFactor, setPauseFactor] = useState(() => loadSetting('pauseFactor', 1.0));
+  const [transmissionKey, setTransmissionKey] = useState(() => loadSetting('transmissionKey', 'Space'));
+  const [isBindingKey, setIsBindingKey] = useState(false);
 
   const [showSettings, setShowSettings] = useState(false);
   const [keyConnected, setKeyConnected] = useState(false);
@@ -124,11 +127,26 @@ function App() {
     };
   }, []);
 
+  // Global Key Binding Listener
+  useEffect(() => {
+    if (!isBindingKey) return;
+    
+    const handleKeyBind = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setTransmissionKey(e.code);
+      setIsBindingKey(false);
+    };
+
+    window.addEventListener('keydown', handleKeyBind, true);
+    return () => window.removeEventListener('keydown', handleKeyBind, true);
+  }, [isBindingKey]);
+
   // Persistence Sync Effect
   useEffect(() => {
-    const settings = { frequency, volume, lang, wpm, transWpm, dashRatio, pauseFactor };
+    const settings = { frequency, volume, lang, wpm, transWpm, dashRatio, pauseFactor, transmissionKey };
     localStorage.setItem('paloma_morse_v1', JSON.stringify(settings));
-  }, [frequency, volume, lang, wpm, transWpm, dashRatio, pauseFactor]);
+  }, [frequency, volume, lang, wpm, transWpm, dashRatio, pauseFactor, transmissionKey]);
 
   const resetSettings = () => {
     if (confirm(lang === 'RU' ? 'СБРОСИТЬ ВСЕ НАСТРОЙКИ?' : 'RESET ALL SETTINGS?')) {
@@ -140,6 +158,7 @@ function App() {
       setTransWpm(50);
       setDashRatio(3.0);
       setPauseFactor(1.0);
+      setTransmissionKey('Space');
       window.location.reload(); // Refresh to clean engine state
     }
   };
@@ -179,8 +198,8 @@ function App() {
   return (
     <motion.div
       className="app-container"
-      onClick={() => sounds.init()}
-      onMouseDown={() => sounds.init()}
+      onClick={() => { sounds.init(); audioEngine.init(); }}
+      onMouseDown={() => { sounds.init(); audioEngine.init(); }}
       initial={{ opacity: 0 }}
       animate={{ opacity: isLoaded ? 1 : 0 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
@@ -245,6 +264,19 @@ function App() {
                   </div>
                 </div>
 
+                <div className="setting-row">
+                  <label>{lang === 'RU' ? 'КЛАВИША ПЕРЕДАЧИ' : 'TRANSMISSION KEY'}</label>
+                  <button 
+                    className={`key-bind-btn ${isBindingKey ? 'binding' : ''}`}
+                    onClick={() => setIsBindingKey(true)}
+                  >
+                    {isBindingKey 
+                      ? (lang === 'RU' ? 'ОЖИДАНИЕ...' : 'WAITING...') 
+                      : (transmissionKey === 'Space' ? 'SPACE' : transmissionKey.replace('Key', ''))
+                    }
+                  </button>
+                </div>
+
                 <div className="sidebar-separator" style={{ margin: '20px 0' }}></div>
 
                 <button className="reset-btn" onClick={resetSettings}>
@@ -291,6 +323,8 @@ function App() {
               setWpm={setTransWpm}
               dashRatio={dashRatio}
               pauseFactor={pauseFactor}
+              transmissionKey={transmissionKey}
+              disabled={showSettings}
             />
           </motion.div>
 

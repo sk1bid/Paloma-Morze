@@ -34,7 +34,7 @@ const MNEMONICS_RU = {
   '----': 'ША-РО-ВА-РЫ', '--.-': 'ЩА-ВАМ-не-ША', '-.--': 'Ы-не-НА-ДО', '-..-': 'ТО-мяг-кий-ЗНАК', '..-..': 'э-ле-РО-ни-ки', '..--': 'ю-ли-А-НА', '.-.-': 'я-МАЛ-я-МАЛ',
   '-----': 'НОЛЬ-ТО-О-КО-ЛО', '.----': 'и-ТО-ЛЬКО-О-ДНА', '..---': 'две-не-ХО-РО-ШО', '...--': 'три-те-бе-МА-ЛО',
   '....-': 'че-тве-ри-те-КА', '.....': 'пя-ти-ле-ти-е', '-....': 'ПО-ше-сти-бе-ри', '--...': 'ДА-ДА-се-ме-ри',
-  '---..': 'ВО-СЬМО-ГО-и-ди', '----.': 'НО-НА-НО-НА-ми', '-..-.': 'РА-зде-ли-те-КА', '.-.-.-': 'ТОЧ-КА-ТОЧ-КА-ТОЧ-КА', '..--..': 'ВО-ПРО-СИК-ВО-ПРО-СИК'
+  '---..': 'ВО-СЬМО-ГО-и-ди', '----.': 'НО-НА-НО-НА-ми', '-..-.': 'ДРО-бь-ри-СУЙ-те', '.-.-.-': 'точ-КА-точ-КА-точ-КА', '..--..': 'вы-ку-ШАЙ-ТЕ-чи-сто'
 };
 
 const MNEMONICS_EN = {
@@ -44,7 +44,7 @@ const MNEMONICS_EN = {
   '...': 'si-si-si', '-': 'TALL', '..-': 'un-der-WHERE', '...-': 'vic-to-ry-VEE', '.--': 'a-WET-DOG', '-..-': 'X-marks-the-SPOT',
   '-.--': 'YELL-ow-YOYO', '--..': 'ZEN-dra-is-HERE', '-----': 'NO-ONE-GO-ES-HOME', '.----': 'a-LONG-WHI-TE-BEA-RD', '..---': 'and-not-GO-OD-for-US', '...--': 'it-is-not-for-ME',
   '....-': 'and-the-dogs-are-HERE', '.....': 'i-ti-bi-ti-hi', '-....': 'SIX-dogs-are-run-ning', '--...': 'SE-VEN-is-high-up-HERE',
-  '---..': 'EIGHT-TEN-is-not-E-NOUGH', '----.': 'NINE-NINE-is-not-for-US', '.-.-.-': 'STOP', '..--..': 'QUERY'
+  '---..': 'EIGHT-TEN-is-not-E-NOUGH', '----.': 'NINE-NINE-is-not-for-US', '.-.-.-': 'di-DAH-di-DAH-di-DAH', '..--..': 'di-di-DAH-DAH-di-di'
 };
 
 const KEYBOARD_LAYOUT = [
@@ -99,8 +99,11 @@ const UI_STRINGS = {
   }
 };
 
-const generateSequence = (activePool, totalCount, symbolsPerGroup = 5) => {
+const generateSequence = (activePool, totalCount, exerciseIndex, symbolsPerGroup = 5) => {
   if (!activePool || activePool.length === 0) return [];
+  
+  // For Exercises 1 & 2, totalCount might be small. 
+  // For Exercise 3 (Groups), totalCount is already groups * 5.
   
   // 1. Create a balanced pool
   let pool = [];
@@ -141,15 +144,23 @@ const generateSequence = (activePool, totalCount, symbolsPerGroup = 5) => {
     }
   }
 
-  // 4. Assemble with groups
+  // 4. Assemble
   let sequence = [];
-  const groupCountTotal = Math.ceil(totalCount / symbolsPerGroup);
-  for (let g = 0; g < groupCountTotal; g++) {
-    for (let i = 0; i < symbolsPerGroup; i++) {
-      const idx = g * symbolsPerGroup + i;
-      if (idx < pool.length) sequence.push(pool[idx]);
+  const isExam = exerciseIndex === 3;
+  
+  if (isExam) {
+    // Standard groups with spaces for Exam mode
+    const groupCountTotal = Math.ceil(totalCount / symbolsPerGroup);
+    for (let g = 0; g < groupCountTotal; g++) {
+      for (let i = 0; i < symbolsPerGroup; i++) {
+        const idx = g * symbolsPerGroup + i;
+        if (idx < pool.length) sequence.push(pool[idx]);
+      }
+      if (g < groupCountTotal - 1) sequence.push(' ');
     }
-    if (g < groupCountTotal - 1) sequence.push(' ');
+  } else {
+    // Continuous stream for Practice and Group training
+    sequence = [...pool];
   }
   return sequence;
 };
@@ -210,7 +221,9 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     return Array.from(new Set(pool));
   };
   
-  const studiedPool = manualMode ? [...manualPool, ...(includeSymbols ? LESSONS[9].chars : [])] : getBasePool();
+  const studiedPool = manualMode 
+    ? [...manualPool, ...(includeSymbols ? LESSONS[9].chars : [])] 
+    : [...getBasePool(), ...(includeSymbols ? LESSONS[9].chars : [])];
  
   // Keep Audio Engine sync'd with global settings in real-time
   useEffect(() => {
@@ -296,12 +309,16 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
           if (!isRunningRef.current) break;
           const playPromise = audioEngine.playString(morsePattern, null, setPulseType);
           await playPromise;
+          if (!isRunningRef.current) break;
           await new Promise(r => setTimeout(r, penaltyGapMs));
         }
         setPlayingChar(null);
         setPulseType(null);
+        if (!isRunningRef.current) return;
+
         // Added reset pause after penalty
         await new Promise(r => setTimeout(r, 1000));
+        if (!isRunningRef.current) return;
       }
       setFeedbackStatus(null);
       setSelectedChar(null);
@@ -327,6 +344,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     if (target === ' ') {
       // Gap between groups
       await new Promise(r => setTimeout(r, 1000));
+      if (!isRunningRef.current) return;
       advanceSession();
       return;
     }
@@ -335,6 +353,11 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     if (morsePattern) {
       if (exerciseIndex === 0) setPlayingChar(target); // Only highlight in Ex 1
       await audioEngine.playString(morsePattern, null, setPulseType);
+      if (!isRunningRef.current) {
+        setPlayingChar(null);
+        setPulseType(null);
+        return;
+      }
       setPlayingChar(null);
       setPulseType(null);
       
@@ -358,6 +381,8 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       setPulseType(null);
       setWaitingForInput(false);
       waitingRef.current = false;
+      setFeedbackStatus(null);
+      setSelectedChar(null);
       return;
     }
 
@@ -389,7 +414,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     } else if (exerciseIndex === 3) {
       // EX 4: Exam Mode (Paper-based)
       const totalCount = groupCount * 5; 
-      const freshSequence = generateSequence(studiedPool, totalCount, 5);
+      const freshSequence = generateSequence(studiedPool, totalCount, exerciseIndex, 5);
 
       console.log('[Reception] Starting Exam Sequence:', freshSequence);
       setExamResult(freshSequence);
@@ -411,7 +436,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       // EX 2 & 3: Interactive Practice
       const activePool = exerciseIndex === 1 ? lessonChars : studiedPool;
       const totalCount = exerciseIndex === 2 ? groupCount * 5 : 15; 
-      const sequence = generateSequence(activePool, totalCount, 5);
+      const sequence = generateSequence(activePool, totalCount, exerciseIndex, 5);
 
       setSessionSequence(sequence);
       sequenceRef.current = sequence;
@@ -449,26 +474,40 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   return (
     <div className="reception-container">
       <div className="reception-sidebar">
-        {exerciseIndex >= 2 && (
-          <button 
-            className={`toggle-btn main-select ${manualMode ? 'active' : ''}`}
-            onClick={() => setManualMode(!manualMode)}
-            style={{ marginBottom: '12px', padding: '12px 0' }}
-          >
-            {ui.selectLetters}
-          </button>
-        )}
+        <button 
+          className={`toggle-btn main-select ${manualMode ? 'active' : ''}`}
+          onClick={() => setManualMode(!manualMode)}
+          style={{ 
+            marginBottom: '12px', 
+            padding: '12px 0',
+            opacity: exerciseIndex < 2 ? 0.3 : 1,
+            pointerEvents: 'auto',
+            cursor: exerciseIndex < 2 ? 'not-allowed' : 'pointer'
+          }}
+          title={exerciseIndex < 2 ? (lang === 'RU' ? 'Доступно в 3 и 4 упражнении' : 'Available in Exercises 3 & 4') : ''}
+          disabled={exerciseIndex < 2}
+        >
+          {ui.selectLetters}
+        </button>
 
-        <div className="control-group" style={{ display: manualMode ? 'none' : 'flex' }}>
-          <label>{ui.lesson}</label>
+        <div className="control-group" 
+          style={{ 
+            opacity: manualMode ? 0.3 : 1, 
+            pointerEvents: 'auto',
+            cursor: manualMode ? 'not-allowed' : 'default' 
+          }}
+        >
+          <label title={manualMode ? (lang === 'RU' ? 'Доступно в обычном режиме' : 'Available in standard mode') : ''}>{ui.lesson}</label>
           <div className="number-stepper">
             <button 
-              disabled={isRunning || playingChar}
+              disabled={isRunning || playingChar || manualMode}
+              title={manualMode ? (lang === 'RU' ? 'Доступно в обычном режиме' : 'Available in standard mode') : ''}
               onClick={() => setLessonIndex(Math.max(0, lessonIndex - 1))}
             >-</button>
-            <span>{currentLesson.id}</span>
+            <span title={manualMode ? (lang === 'RU' ? 'Доступно в обычном режиме' : 'Available in standard mode') : ''}>{currentLesson.id}</span>
             <button 
-              disabled={isRunning || playingChar}
+              disabled={isRunning || playingChar || manualMode}
+              title={manualMode ? (lang === 'RU' ? 'Доступно в обычном режиме' : 'Available in standard mode') : ''}
               onClick={() => setLessonIndex(Math.min(9, lessonIndex + 1))}
             >+</button>
           </div>
@@ -489,30 +528,30 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
           </div>
         </div>
 
-        {(exerciseIndex === 2 || exerciseIndex === 3) && (
-          <div className="toggle-row">
-            <button className={`toggle-btn ${includeSymbols ? 'active' : ''}`} onClick={() => setIncludeSymbols(!includeSymbols)}>
-              {ui.symbols}
-            </button>
-          </div>
-        )}
 
-        {(exerciseIndex === 2 || exerciseIndex === 3) && (
-        <div className="control-group">
+
+        <div className="control-group" style={{ 
+          opacity: exerciseIndex < 2 ? 0.3 : 1, 
+          pointerEvents: 'auto',
+          cursor: exerciseIndex < 2 ? 'not-allowed' : 'default' 
+        }}>
           <label>{ui.groups}</label>
           <div className="number-stepper">
             <button 
-              disabled={isRunning || playingChar}
+              disabled={isRunning || playingChar || exerciseIndex < 2}
+              title={exerciseIndex < 2 ? (lang === 'RU' ? 'Доступно в 3 и 4 упражнении' : 'Available in Exercises 3 & 4') : ''}
               onClick={() => setGroupCount(Math.max(5, groupCount - 5))}
             >-</button>
-            <span>{groupCount}</span>
+            <span title={exerciseIndex < 2 ? (lang === 'RU' ? 'Доступно в 3 и 4 упражнении' : 'Available in Exercises 3 & 4') : ''}>{groupCount}</span>
             <button 
-              disabled={isRunning || playingChar}
+              disabled={isRunning || playingChar || exerciseIndex < 2}
+              title={exerciseIndex < 2 ? (lang === 'RU' ? 'Доступно в 3 и 4 упражнении' : 'Available in Exercises 3 & 4') : ''}
               onClick={() => setGroupCount(Math.min(100, groupCount + 5))}
             >+</button>
           </div>
         </div>
-        )}
+
+
 
         <div className="sidebar-separator"></div>
 
@@ -541,6 +580,28 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
             <span>x{pauseFactor.toFixed(1)}</span>
             <button onClick={() => setPauseFactor(Math.min(10.0, parseFloat((pauseFactor + 0.5).toFixed(1))))}>+</button>
           </div>
+        </div>
+
+        <div className="control-group" style={{ 
+          opacity: exerciseIndex < 2 ? 0.3 : 1, 
+          pointerEvents: 'auto',
+          cursor: exerciseIndex < 2 ? 'not-allowed' : 'default',
+          marginTop: '6px',
+          marginBottom: '16px'
+        }}>
+          <button 
+            className={`toggle-btn ${includeSymbols ? 'active' : ''}`} 
+            onClick={() => { if (exerciseIndex < 2) return; setIncludeSymbols(!includeSymbols); }}
+            disabled={exerciseIndex < 2}
+            style={{ 
+              opacity: exerciseIndex < 2 ? 0.3 : 1, 
+              pointerEvents: 'auto',
+              cursor: exerciseIndex < 2 ? 'not-allowed' : 'pointer'
+            }}
+            title={exerciseIndex < 2 ? (lang === 'RU' ? 'Доступно в 3 и 4 упражнении' : 'Available in Exercises 3 & 4') : ''}
+          >
+            {ui.symbols}
+          </button>
         </div>
 
         <button 
@@ -581,7 +642,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
               const isTarget = playingChar === char;
               return (
                 <div 
-                  key={i} 
+                  key={char} 
                   className={`letter-card ${isTarget ? 'playing' : ''} ${pulseType && isTarget ? 'pulse-' + pulseType : ''} ${((isRunning && exerciseIndex === 0 || playingChar) && playingChar !== char) ? 'locked' : ''} ${waitingForInput ? 'waiting' : ''} ${selectedChar === char ? feedbackStatus : ''} ${manualMode && manualPool.includes(char) ? 'manual-selected' : ''}`}
                   onMouseEnter={() => setHoverChar(char)}
                   onClick={() => playSingleCharFiltered(char)}
@@ -603,7 +664,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
                   
                   return (
                     <div 
-                      key={i} 
+                      key={char} 
                       className={`keyboard-key ${isEligible ? 'eligible' : 'ineligible'} ${isTarget ? 'playing' : ''} ${pulseType && isTarget ? 'pulse-' + pulseType : ''} ${isLocked ? 'locked' : ''} ${isDimmed ? 'dimmed' : ''} ${waitingForInput && isEligible ? 'waiting' : ''} ${selectedChar === char ? feedbackStatus : ''}`}
                       onMouseEnter={() => setHoverChar(char)}
                       onMouseLeave={() => setHoverChar(null)}

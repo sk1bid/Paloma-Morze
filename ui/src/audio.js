@@ -6,6 +6,7 @@ class MorseAudioEngine {
     this.frequency = 700;
     this.volume = 0.5;
     this.dashRatio = 3.0;
+    this.activeTimeouts = new Set();
   }
 
   init() {
@@ -24,6 +25,20 @@ class MorseAudioEngine {
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
+  }
+
+  registerTimeout(callback, ms) {
+    const id = setTimeout(() => {
+      this.activeTimeouts.delete(id);
+      callback();
+    }, ms);
+    this.activeTimeouts.add(id);
+    return id;
+  }
+
+  clearAllTimeouts() {
+    this.activeTimeouts.forEach(id => clearTimeout(id));
+    this.activeTimeouts.clear();
   }
 
   setFrequency(freq) {
@@ -61,6 +76,7 @@ class MorseAudioEngine {
     let time = (typeof startTime === 'number' && isFinite(startTime)) ? startTime : this.ctx.currentTime;
     if (time < this.ctx.currentTime) time = this.ctx.currentTime;
     time += 0.005; // Tiny buffer
+    const baseTime = this.ctx.currentTime;
 
     for (let i = 0; i < morseStr.length; i++) {
       const symbol = morseStr[i];
@@ -68,10 +84,10 @@ class MorseAudioEngine {
       const duration = symbol === '-' ? dashLen : dotLen;
 
       if (onPulse) {
-        const pulseStartMs = (time - this.ctx.currentTime) * 1000;
-        const pulseEndMs = (time + duration - this.ctx.currentTime) * 1000;
-        setTimeout(() => onPulse(type), Math.max(0, pulseStartMs));
-        setTimeout(() => onPulse(null), Math.max(0, pulseEndMs));
+        const pulseStartMs = (time - baseTime) * 1000;
+        const pulseEndMs = (time + duration - baseTime) * 1000;
+        this.registerTimeout(() => onPulse(type), Math.max(0, pulseStartMs));
+        this.registerTimeout(() => onPulse(null), Math.max(0, pulseEndMs));
       }
 
       // Attack
@@ -92,7 +108,9 @@ class MorseAudioEngine {
     const finishTime = time + release;
     const waitTimeMs = (finishTime - this.ctx.currentTime) * 1000;
     
-    const promise = new Promise(r => setTimeout(r, Math.max(0, waitTimeMs)));
+    const promise = new Promise(r => {
+      this.registerTimeout(r, Math.max(0, waitTimeMs));
+    });
     promise.finishTime = finishTime;
     return promise;
   }
@@ -101,7 +119,11 @@ class MorseAudioEngine {
     this.init();
     let isCancelled = false;
     this.cancelTokens = this.cancelTokens || [];
-    const token = { cancel: () => isCancelled = true };
+    const token = { cancel: () => { 
+      isCancelled = true;
+      if (onCharPlay) onCharPlay(null);
+      if (onPulse) onPulse(null);
+    }};
     this.cancelTokens.push(token);
 
     try {
@@ -127,7 +149,9 @@ class MorseAudioEngine {
         if (morsePattern) {
           if (onCharPlay) {
             const charDelayMs = (nextStartTime - this.ctx.currentTime) * 1000;
-            setTimeout(() => onCharPlay(char), Math.max(0, charDelayMs));
+            this.registerTimeout(() => {
+              if (!isCancelled) onCharPlay(char);
+            }, Math.max(0, charDelayMs));
           }
           
           const playPromise = this.playString(morsePattern, nextStartTime, onPulse);
@@ -143,7 +167,23 @@ class MorseAudioEngine {
     }
   }
 
+  keyDown() {
+    this.init();
+    if (this.gain && this.ctx) {
+      this.gain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.gain.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.005);
+    }
+  }
+
+  keyUp() {
+    if (this.gain && this.ctx) {
+      this.gain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.gain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.005);
+    }
+  }
+
   stopAll() {
+    this.clearAllTimeouts();
     if (this.cancelTokens) {
       this.cancelTokens.forEach(t => t.cancel());
       this.cancelTokens = [];
