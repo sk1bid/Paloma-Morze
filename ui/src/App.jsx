@@ -41,6 +41,88 @@ function App() {
   const [showToast, setShowToast] = useState(false);
 
   const ws = useRef(null);
+  const reconnectTimer = useRef(null);
+
+  // Initialize generic WebSocket for sending global audio settings to C++ engine
+  const connectWebSocket = () => {
+    if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) return;
+    
+    console.log('[App] Connecting to Morse Engine...');
+    const socket = new WebSocket('ws://127.0.0.1:8080');
+    ws.current = socket;
+
+    socket.onopen = () => {
+      console.log('[App] Connected to Morse Engine');
+      setKeyConnected(true);
+      // Sync current settings immediately on connection
+      socket.send('F' + frequency);
+      socket.send('V' + volume);
+      if (reconnectTimer.current) {
+        clearTimeout(reconnectTimer.current);
+        reconnectTimer.current = null;
+      }
+      setIsLoaded(true);
+    };
+
+    socket.onmessage = (event) => {
+      if (typeof event.data === 'string') {
+        if (event.data === 'STATUS:CONNECTED') setKeyConnected(true);
+        else if (event.data === 'STATUS:DISCONNECTED') { setKeyConnected(false); setKeyPressed(false); }
+        else if (event.data === '1') setKeyPressed(true);
+        else if (event.data === '0') setKeyPressed(false);
+      }
+    };
+
+    socket.onclose = () => {
+      console.log('[App] WebSocket closed. Reconnecting in 2s...');
+      setKeyConnected(false);
+      setKeyPressed(false);
+      scheduleReconnect();
+    };
+
+    socket.onerror = (err) => {
+      console.error('[App] WebSocket error:', err);
+      socket.close();
+    };
+
+    setWsNode(socket);
+  };
+
+  const scheduleReconnect = () => {
+    if (reconnectTimer.current) return;
+    reconnectTimer.current = setTimeout(() => {
+      reconnectTimer.current = null;
+      connectWebSocket();
+    }, 2000);
+  };
+
+  useEffect(() => {
+    connectWebSocket();
+
+    // Listen for power resume from main process
+    const { ipcRenderer } = window.require('electron');
+    const handleResume = () => {
+      console.log('[App] Received power-resume, checking connection...');
+      if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
+        connectWebSocket();
+      }
+    };
+    ipcRenderer.on('power-resume', handleResume);
+
+    // Safety fallback: Show UI after 2.5s even if WS is slow
+    const loadTimeout = setTimeout(() => {
+      setIsLoaded(true);
+    }, 2500);
+
+    return () => {
+      ipcRenderer.removeListener('power-resume', handleResume);
+      if (ws.current) {
+        ws.current.onclose = null; // Prevent reconnect on intentional unmount
+        ws.current.close();
+      }
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+    };
+  }, []);
 
   // Persistence Sync Effect
   useEffect(() => {
@@ -62,42 +144,6 @@ function App() {
     }
   };
 
-  // Initialize generic WebSocket for sending global audio settings to C++ engine
-  useEffect(() => {
-    ws.current = new WebSocket('ws://127.0.0.1:8080');
-
-    // Safety fallback: Show UI after 2.5s even if WS is slow
-    const loadTimeout = setTimeout(() => {
-      setIsLoaded(true);
-    }, 2500);
-
-    ws.current.onopen = () => {
-      console.log('Connected to Morse Engine via WebSocket');
-      ws.current.send('F' + frequency);
-      ws.current.send('V' + volume);
-      clearTimeout(loadTimeout);
-      setIsLoaded(true);
-    };
-
-    const handleAppMessage = (event) => {
-      if (typeof event.data === 'string') {
-        if (event.data === 'STATUS:CONNECTED') setKeyConnected(true);
-        else if (event.data === 'STATUS:DISCONNECTED') { setKeyConnected(false); setKeyPressed(false); }
-        else if (event.data === '1') setKeyPressed(true);
-        else if (event.data === '0') setKeyPressed(false);
-      }
-    };
-    ws.current.addEventListener('message', handleAppMessage);
-
-    setWsNode(ws.current);
-
-    return () => {
-      if (ws.current) {
-        ws.current.removeEventListener('message', handleAppMessage);
-        ws.current.close();
-      }
-    };
-  }, []);
   // Play sounds and show toast on connection changes
   useEffect(() => {
     if (!isLoaded) return; // Don't play on initial load

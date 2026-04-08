@@ -1,4 +1,5 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, powerMonitor } = require('electron');
+
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const bridge = require('./bridge.cjs');
@@ -71,8 +72,8 @@ function setupAutoUpdater() {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 800,
+    width: 1100,
+    height: 850,
     title: 'Paloma Morse',
     backgroundColor: '#0b0e14',
     show: false,
@@ -132,6 +133,21 @@ app.on('ready', () => {
   bridge.start(app.isPackaged);
   setupAutoUpdater();
   createWindow();
+
+  // Listen for system sleep/wake to re-sync or reconnect if needed
+  powerMonitor.on('resume', () => {
+    console.log('[Main] System resumed from sleep');
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('power-resume');
+    }
+  });
+
+  powerMonitor.on('suspend', () => {
+    console.log('[Main] System going to sleep');
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('power-suspend');
+    }
+  });
 });
 
 app.on('window-all-closed', function () {

@@ -8,6 +8,10 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'))
 export default defineConfig({
   plugins: [react()],
   base: '',
+  server: {
+    port: 5173,
+    strictPort: true,
+  },
   define: {
     '__APP_VERSION__': JSON.stringify(pkg.version),
   },

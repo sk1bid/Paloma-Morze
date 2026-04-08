@@ -10,12 +10,10 @@ const LESSONS = [
   { id: 4, chars: ['Г', 'Ь', 'Ф', 'Н'] },
   { id: 5, chars: ['Й', 'У', 'Х', 'К'] },
   { id: 6, chars: ['Б', 'П', 'М', 'Ы'] },
-  { id: 7, chars: ['З', 'В', 'Ч', 'Ш'] },
-  { id: 8, chars: ['Э', 'Ю', 'Я'] },
-  { id: 9, chars: ['1', '2', '3', '4'] },
-  { id: 10, chars: ['5', '6', '7', '8'] },
-  { id: 11, chars: ['9', '0', '/', '.'] },
-  { id: 12, chars: ['?'] }
+  { id: 7, chars: ['З', 'В', 'Ю', 'Я'] },
+  { id: 8, chars: ['Э', 'Ч', 'Ш'] },
+  { id: 9, chars: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'] },
+  { id: 10, chars: ['/', '.', '?'] }
 ];
 
 const MORSE_RU = {
@@ -49,12 +47,19 @@ const MNEMONICS_EN = {
   '---..': 'EIGHT-TEN-is-not-E-NOUGH', '----.': 'NINE-NINE-is-not-for-US', '.-.-.-': 'STOP', '..--..': 'QUERY'
 };
 
+const KEYBOARD_LAYOUT = [
+  ['Й', 'Ц', 'У', 'К', 'Е', 'Н', 'Г', 'Ш', 'Щ', 'З', 'Х'],
+  ['Ф', 'Ы', 'В', 'А', 'П', 'Р', 'О', 'Л', 'Д', 'Ж', 'Э'],
+  ['Я', 'Ч', 'С', 'М', 'И', 'Т', 'Ь', 'Б', 'Ю'],
+  ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '/', '.', '?']
+];
+
 const UI_STRINGS = {
   RU: { 
     lesson: 'УРОК', 
     exercise: 'УПРАЖНЕНИЕ',
     groups: 'ГРУПП',
-    charSpeed: 'СКОРОСТЬ ЗНАКА', 
+    charSpeed: 'ЗНАКОВ/МИН', 
     ratio: '- / .',
     pause: 'ПАУЗА', 
     start: 'СТАРТ', 
@@ -65,13 +70,17 @@ const UI_STRINGS = {
     reportTitle: 'РЕЗУЛЬТАТЫ СЕССИИ',
     noErrors: 'ОШИБОК НЕТ',
     errorsFound: 'ОШИБКИ В СЛЕДУЮЩИХ ЗНАКАХ:',
-    closeReport: 'ЗАКРЫТЬ'
+    closeReport: 'ЗАКРЫТЬ',
+    examTitle: 'ТЕКСТ КОНТРОЛЬНОЙ',
+    digits: 'ЦИФРЫ',
+    symbols: 'СИМВОЛЫ',
+    selectLetters: 'ВЫБРАТЬ БУКВЫ'
   },
   EN: { 
     lesson: 'LESSON', 
     exercise: 'EXERCISE',
     groups: 'GROUPS',
-    charSpeed: 'CHAR SPEED', 
+    charSpeed: 'CPM (SPEED)', 
     ratio: '- / .',
     pause: 'PAUSE', 
     start: 'START', 
@@ -82,8 +91,67 @@ const UI_STRINGS = {
     reportTitle: 'SESSION RESULTS',
     noErrors: 'PERFECT! NO ERRORS',
     errorsFound: 'ERRORS IN FOLLOWING SIGNS:',
-    closeReport: 'CLOSE'
+    closeReport: 'CLOSE',
+    examTitle: 'EXAM TEXT',
+    digits: 'DIGITS',
+    symbols: 'SYMBOLS',
+    selectLetters: 'SELECT LETTERS'
   }
+};
+
+const generateSequence = (activePool, totalCount, symbolsPerGroup = 5) => {
+  if (!activePool || activePool.length === 0) return [];
+  
+  // 1. Create a balanced pool
+  let pool = [];
+  while (pool.length < totalCount) {
+    const segment = [...activePool].sort(() => Math.random() - 0.5);
+    pool.push(...segment);
+  }
+  pool = pool.slice(0, totalCount);
+
+  // 2. Initial Shuffle (Fisher-Yates)
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  // 3. Strict De-duplication (Prevent consecutive repeats)
+  if (activePool.length > 1) {
+    for (let i = 0; i < pool.length - 1; i++) {
+      if (pool[i] === pool[i + 1]) {
+        // Find a replacement from elsewhere in the pool
+        let found = false;
+        for (let k = 0; k < pool.length; k++) {
+          if (k === i || k === i + 1) continue;
+          
+          const charToMove = pool[i + 1];
+          const targetCandidate = pool[k];
+
+          const isCandidateSafeAtIPlus1 = targetCandidate !== pool[i] && (i + 2 >= pool.length || targetCandidate !== pool[i + 2]);
+          const isCharSafeAtK = (k === 0 || charToMove !== pool[k - 1]) && (k + 1 >= pool.length || charToMove !== pool[k + 1]);
+
+          if (isCandidateSafeAtIPlus1 && isCharSafeAtK) {
+            [pool[i + 1], pool[k]] = [pool[k], pool[i + 1]];
+            found = true;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // 4. Assemble with groups
+  let sequence = [];
+  const groupCountTotal = Math.ceil(totalCount / symbolsPerGroup);
+  for (let g = 0; g < groupCountTotal; g++) {
+    for (let i = 0; i < symbolsPerGroup; i++) {
+      const idx = g * symbolsPerGroup + i;
+      if (idx < pool.length) sequence.push(pool[idx]);
+    }
+    if (g < groupCountTotal - 1) sequence.push(' ');
+  }
+  return sequence;
 };
 
 export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setWpm, dashRatio, setDashRatio, pauseFactor, setPauseFactor }) => {
@@ -91,16 +159,30 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   const [exerciseIndex, setExerciseIndex] = useState(0); // 0 = Learning (Ex 1), 1 = Practice (Ex 2)
   const [groupCount, setGroupCount] = useState(5);
   
+  // Auto-disable manualMode (and clear selection if needed) 
+  // when switching to exercises that don't support it (Ex 1 & 2)
+  useEffect(() => {
+    if (exerciseIndex < 2 && manualMode) {
+      setManualMode(false);
+    }
+  }, [exerciseIndex]);
+
   const [hoverChar, setHoverChar] = useState(null);
   const [playingChar, setPlayingChar] = useState(null);
   const [pulseType, setPulseType] = useState(null); // 'dot', 'dash' or null
   const [isRunning, setIsRunning] = useState(false);
+  
+  const [includeDigits, setIncludeDigits] = useState(false);
+  const [includeSymbols, setIncludeSymbols] = useState(false);
+  const [manualMode, setManualMode] = useState(false);
+  const [manualPool, setManualPool] = useState([]);
  
   // Exercise 2 Interactive State
   const [sessionSequence, setSessionSequence] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [waitingForInput, setWaitingForInput] = useState(false);
   const [sessionErrors, setSessionErrors] = useState(new Set());
+  const [examResult, setExamResult] = useState([]); // Array of characters played during exam
   const [showReport, setShowReport] = useState(false);
   const [selectedChar, setSelectedChar] = useState(null); // The one user clicked
   const [feedbackStatus, setFeedbackStatus] = useState(null); // 'correct' | 'wrong'
@@ -112,6 +194,23 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   const waitingRef = useRef(false);
  
   const currentLesson = LESSONS[lessonIndex];
+  const lessonChars = currentLesson.chars;
+  
+  // Logic for Exercise 3/4 pool: 
+  // Base pool is letters up to current lesson.
+  // Then we optionally add digits/symbols based on toggles OR if current lesson is 9/10.
+  const getBasePool = () => {
+    let pool = LESSONS.slice(0, Math.min(8, lessonIndex + 1)).flatMap(l => l.chars);
+    if (lessonIndex === 8) pool = LESSONS[8].chars; // Digits lesson
+    if (lessonIndex === 9) pool = LESSONS[9].chars; // Symbols lesson
+    
+    if (includeSymbols && lessonIndex < 9) {
+      pool = [...pool, ...LESSONS[9].chars];
+    }
+    return Array.from(new Set(pool));
+  };
+  
+  const studiedPool = manualMode ? [...manualPool, ...(includeSymbols ? LESSONS[9].chars : [])] : getBasePool();
  
   // Keep Audio Engine sync'd with global settings in real-time
   useEffect(() => {
@@ -123,17 +222,36 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   }, [frequency, volume, wpm, pauseFactor, dashRatio]);
 
   const playSingleCharFiltered = async (char) => {
-    // If we're waiting for input in Ex 2, clicking a button is "answering", not "previewing"
-    if (isRunning && exerciseIndex === 1 && waitingForInput) {
-      handleUserAnswer(char);
+    // If exercise is running and it's Exercise 4, we block all keyboard interaction
+    if (isRunning && exerciseIndex === 3) return;
+
+    // If exercise is running and we're looking for input, clicking is "answering"
+    if (isRunning && exerciseIndex >= 1 && waitingForInput) {
+      // In Ex 2/3, we only respond to characters in the active pool
+      const activePool = exerciseIndex === 1 ? lessonChars : studiedPool;
+      if (activePool.includes(char)) {
+        handleUserAnswer(char);
+      }
       return;
     }
 
-    if (isRunning || playingChar) return; 
+    // Handle Manual Selection Toggling
+    if (manualMode && !isRunning) {
+      setManualPool(prev => {
+        const next = new Set(prev);
+        if (next.has(char)) next.delete(char);
+        else next.add(char);
+        return Array.from(next);
+      });
+      // Also play sound for feedback
+    }
+
+    // Preview Mode (when not running or not waiting for input)
+    if (playingChar) return; 
     const morsePattern = Object.keys(MORSE_RU).find(k => MORSE_RU[k] === char);
     if (morsePattern) {
       setPlayingChar(char);
-      await audioEngine.playString(morsePattern, setPulseType);
+      await audioEngine.playString(morsePattern, null, setPulseType);
       setPlayingChar(null);
       setPulseType(null);
     }
@@ -176,7 +294,8 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
 
         for (let i = 0; i < 5; i++) {
           if (!isRunningRef.current) break;
-          await audioEngine.playString(morsePattern, setPulseType);
+          const playPromise = audioEngine.playString(morsePattern, null, setPulseType);
+          await playPromise;
           await new Promise(r => setTimeout(r, penaltyGapMs));
         }
         setPlayingChar(null);
@@ -215,7 +334,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     const morsePattern = Object.keys(MORSE_RU).find(k => MORSE_RU[k] === target);
     if (morsePattern) {
       if (exerciseIndex === 0) setPlayingChar(target); // Only highlight in Ex 1
-      await audioEngine.playString(morsePattern, setPulseType);
+      await audioEngine.playString(morsePattern, null, setPulseType);
       setPlayingChar(null);
       setPulseType(null);
       
@@ -246,6 +365,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
 
     // Reset session state
     setSessionErrors(new Set());
+    setExamResult([]);
     setShowReport(false);
     
     if (exerciseIndex === 0) {
@@ -253,7 +373,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       setIsRunning(true);
       isRunningRef.current = true;
       let sequence = [];
-      currentLesson.chars.forEach(c => {
+      lessonChars.forEach(c => {
         for(let i=0; i<5; i++) sequence.push(c);
         sequence.push(' '); 
       });
@@ -266,61 +386,32 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       isRunningRef.current = false;
       setPlayingChar(null);
       setPulseType(null);
+    } else if (exerciseIndex === 3) {
+      // EX 4: Exam Mode (Paper-based)
+      const totalCount = groupCount * 5; 
+      const freshSequence = generateSequence(studiedPool, totalCount, 5);
+
+      console.log('[Reception] Starting Exam Sequence:', freshSequence);
+      setExamResult(freshSequence);
+      setIsRunning(true);
+      isRunningRef.current = true;
+
+      try {
+        await audioEngine.playSequence(freshSequence, MORSE_RU, null, null);
+      } catch (err) {
+        console.error('[Reception] Playback Error:', err);
+      }
+
+      setIsRunning(false);
+      isRunningRef.current = false;
+      setPlayingChar(null);
+      setPulseType(null);
+      setShowReport(true);
     } else {
-      // EX 2: Interactive Practice
-      const lessonChars = currentLesson.chars;
-      const totalCount = 15; // Target total chars for practice
-
-      // 1. Create a perfectly balanced pool
-      let pool = [];
-      while (pool.length < totalCount) {
-        // Shuffle lessonChars before adding to pool to vary distribution if totalCount % lessonChars.length != 0
-        const segment = [...lessonChars].sort(() => Math.random() - 0.5);
-        pool.push(...segment);
-      }
-      pool = pool.slice(0, totalCount);
-
-      // 2. Initial Shuffle (Fisher-Yates)
-      for (let i = pool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [pool[i], pool[j]] = [pool[j], pool[i]];
-      }
-
-      // 3. Strict De-duplication (Prevent consecutive repeats)
-      if (lessonChars.length > 1) {
-        for (let i = 0; i < pool.length - 1; i++) {
-          if (pool[i] === pool[i + 1]) {
-            // Found a consecutive repeat, look for a valid swap
-            let foundSwap = false;
-            for (let k = 0; k < pool.length; k++) {
-              // Swap condition: pool[k] must be different from pool[i] 
-              // AND if we move pool[i+1] to k, it must not create a repeat at k-1 or k+1
-              // AND if we move pool[k] to i+1, it must not be the same as pool[i] or pool[i+2]
-              const charToMove = pool[i + 1];
-              const targetCandidate = pool[k];
-
-              if (targetCandidate !== pool[i] && // New i+1 won't match i
-                  (i + 2 >= pool.length || targetCandidate !== pool[i + 2]) && // New i+1 won't match i+2
-                  (k === 0 || charToMove !== pool[k - 1]) && // Moved char won't match k-1
-                  (k + 1 >= pool.length || charToMove !== pool[k + 1]) // Moved char won't match k+1
-              ) {
-                [pool[i+1], pool[k]] = [pool[k], pool[i+1]];
-                foundSwap = true;
-                break;
-              }
-            }
-          }
-        }
-      }
-
-      // 4. Assemble sequence with groups and spaces
-      let sequence = [];
-      for (let g = 0; g < 3; g++) {
-        for (let i = 0; i < 5; i++) {
-          sequence.push(pool[g * 5 + i]);
-        }
-        if (g < 2) sequence.push(' ');
-      }
+      // EX 2 & 3: Interactive Practice
+      const activePool = exerciseIndex === 1 ? lessonChars : studiedPool;
+      const totalCount = exerciseIndex === 2 ? groupCount * 5 : 15; 
+      const sequence = generateSequence(activePool, totalCount, 5);
 
       setSessionSequence(sequence);
       sequenceRef.current = sequence;
@@ -345,12 +436,11 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   const activeChar = playingChar || hoverChar;
   
   // Base labels (Defaults for the current exercise)
-  let headerTitle = exerciseIndex === 0 ? ui.title : ui.ex2Title;
-  let headerDesc = exerciseIndex === 0 ? ui.desc : ui.desc;
+  let headerTitle = exerciseIndex === 0 ? ui.title : (exerciseIndex === 3 ? ui.examTitle : ui.ex2Title);
+  let headerDesc = ui.desc;
 
   // Use the same logic for both exercises: if a char is active, show its info.
-  // Exception: in Ex 2 during active play, we keep the prompt "Press signs...".
-  if (activeChar && (!isRunning || exerciseIndex === 0)) {
+  if (activeChar && (!isRunning || (exerciseIndex < 3 && exerciseIndex >= 0))) {
     const pattern = Object.keys(MORSE_RU).find(k => MORSE_RU[k] === activeChar);
     headerTitle = activeChar;
     headerDesc = mnemonics[pattern] || '';
@@ -359,7 +449,17 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   return (
     <div className="reception-container">
       <div className="reception-sidebar">
-        <div className="control-group">
+        {exerciseIndex >= 2 && (
+          <button 
+            className={`toggle-btn main-select ${manualMode ? 'active' : ''}`}
+            onClick={() => setManualMode(!manualMode)}
+            style={{ marginBottom: '12px', padding: '12px 0' }}
+          >
+            {ui.selectLetters}
+          </button>
+        )}
+
+        <div className="control-group" style={{ display: manualMode ? 'none' : 'flex' }}>
           <label>{ui.lesson}</label>
           <div className="number-stepper">
             <button 
@@ -369,7 +469,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
             <span>{currentLesson.id}</span>
             <button 
               disabled={isRunning || playingChar}
-              onClick={() => setLessonIndex(Math.min(11, lessonIndex + 1))}
+              onClick={() => setLessonIndex(Math.min(9, lessonIndex + 1))}
             >+</button>
           </div>
         </div>
@@ -384,12 +484,20 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
             <span>{exerciseIndex + 1}</span>
             <button 
               disabled={isRunning || playingChar}
-              onClick={() => setExerciseIndex(Math.min(1, exerciseIndex + 1))}
+              onClick={() => setExerciseIndex(Math.min(3, exerciseIndex + 1))}
             >+</button>
           </div>
         </div>
 
-        {exerciseIndex === 3 && (
+        {(exerciseIndex === 2 || exerciseIndex === 3) && (
+          <div className="toggle-row">
+            <button className={`toggle-btn ${includeSymbols ? 'active' : ''}`} onClick={() => setIncludeSymbols(!includeSymbols)}>
+              {ui.symbols}
+            </button>
+          </div>
+        )}
+
+        {(exerciseIndex === 2 || exerciseIndex === 3) && (
         <div className="control-group">
           <label>{ui.groups}</label>
           <div className="number-stepper">
@@ -464,26 +572,51 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
           </motion.p>
         </div>
 
-        <div 
-          className={`letters-grid ${(playingChar || feedbackStatus || (isRunning && !waitingForInput)) ? 'disabled' : ''}`}
-          onMouseLeave={() => setHoverChar(null)}
-        >
-          {currentLesson.chars.map((char, i) => {
-            const isTarget = playingChar === char;
-            const isInteractiveWrong = exerciseIndex === 1 && isRunning && waitingForInput && false; // We don't highlight wrong until after click
-
-            return (
-              <div 
-                key={i} 
-                className={`letter-card ${isTarget ? 'playing' : ''} ${pulseType && isTarget ? 'pulse-' + pulseType : ''} ${((isRunning && exerciseIndex === 0 || playingChar) && playingChar !== char) ? 'locked' : ''} ${waitingForInput ? 'waiting' : ''} ${selectedChar === char ? feedbackStatus : ''}`}
-                onMouseEnter={() => setHoverChar(char)}
-                onClick={() => playSingleCharFiltered(char)}
-              >
-                <div className="char-display">{char}</div>
+        {exerciseIndex < 2 ? (
+          <div 
+            className={`letters-grid ${(playingChar || feedbackStatus || (isRunning && (exerciseIndex === 3 || !waitingForInput))) ? 'disabled' : ''}`}
+            onMouseLeave={() => setHoverChar(null)}
+          >
+            {lessonChars.map((char, i) => {
+              const isTarget = playingChar === char;
+              return (
+                <div 
+                  key={i} 
+                  className={`letter-card ${isTarget ? 'playing' : ''} ${pulseType && isTarget ? 'pulse-' + pulseType : ''} ${((isRunning && exerciseIndex === 0 || playingChar) && playingChar !== char) ? 'locked' : ''} ${waitingForInput ? 'waiting' : ''} ${selectedChar === char ? feedbackStatus : ''} ${manualMode && manualPool.includes(char) ? 'manual-selected' : ''}`}
+                  onMouseEnter={() => setHoverChar(char)}
+                  onClick={() => playSingleCharFiltered(char)}
+                >
+                  <div className="char-display">{char}</div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className={`keyboard-container ${(playingChar || feedbackStatus || (isRunning && (exerciseIndex === 3 || !waitingForInput))) ? 'disabled' : ''}`}>
+            {KEYBOARD_LAYOUT.map((row, rowIndex) => (
+              <div key={rowIndex} className="keyboard-row">
+                {row.map((char, i) => {
+                  const isEligible = studiedPool.includes(char);
+                  const isTarget = playingChar === char;
+                  const isLocked = isRunning && (exerciseIndex === 3 || !isEligible);
+                  const isDimmed = isRunning && !isEligible && exerciseIndex !== 3;
+                  
+                  return (
+                    <div 
+                      key={i} 
+                      className={`keyboard-key ${isEligible ? 'eligible' : 'ineligible'} ${isTarget ? 'playing' : ''} ${pulseType && isTarget ? 'pulse-' + pulseType : ''} ${isLocked ? 'locked' : ''} ${isDimmed ? 'dimmed' : ''} ${waitingForInput && isEligible ? 'waiting' : ''} ${selectedChar === char ? feedbackStatus : ''}`}
+                      onMouseEnter={() => setHoverChar(char)}
+                      onMouseLeave={() => setHoverChar(null)}
+                      onClick={() => playSingleCharFiltered(char)}
+                    >
+                      <div className="char-display">{char}</div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <AnimatePresence>
@@ -499,19 +632,27 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
             >
-              <h3>{ui.reportTitle}</h3>
+              <h3>{exerciseIndex === 3 ? ui.examTitle : ui.reportTitle}</h3>
               <div className="report-content">
-                {sessionErrors.size === 0 ? (
-                  <p className="success-msg">{ui.noErrors}</p>
+                {exerciseIndex === 3 ? (
+                  <div className="exam-result-text">
+                    {examResult.join('').split(' ').map((group, idx) => (
+                      <span key={idx} className="exam-group">{group}</span>
+                    ))}
+                  </div>
                 ) : (
-                  <>
-                    <p>{ui.errorsFound}</p>
-                    <div className="error-list">
-                      {Array.from(sessionErrors).map(err => (
-                        <div key={err} className="error-item">{err}</div>
-                      ))}
-                    </div>
-                  </>
+                  sessionErrors.size === 0 ? (
+                    <p className="success-msg">{ui.noErrors}</p>
+                  ) : (
+                    <>
+                      <p>{ui.errorsFound}</p>
+                      <div className="error-list">
+                        {Array.from(sessionErrors).map(err => (
+                          <div key={err} className="error-item">{err}</div>
+                        ))}
+                      </div>
+                    </>
+                  )
                 )}
               </div>
               <button className="start-btn" onClick={() => setShowReport(false)}>{ui.closeReport}</button>
