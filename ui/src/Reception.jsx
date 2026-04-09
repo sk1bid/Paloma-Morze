@@ -688,18 +688,31 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <motion.div 
-              className="report-card glass-panel"
+            <motion.div
+              className={`report-card glass-panel ${exerciseIndex === 3 ? 'exam-report' : ''}`}
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
             >
-              <h3>{exerciseIndex === 3 ? ui.examTitle : ui.reportTitle}</h3>
-              <div className="report-content">
+              <h3>{exerciseIndex === 3 ? ui.examTitle : ui.reportTitle}</h3>              <div className="report-content">
                 {exerciseIndex === 3 ? (
-                  <div className="exam-result-text">
-                    {examResult.join('').split(' ').map((group, idx) => (
-                      <span key={idx} className="exam-group">{group}</span>
-                    ))}
+                  <div className="exam-result-container">
+                    {(() => {
+                      const groups = examResult.join('').split(' ');
+                      const rows = [];
+                      for (let i = 0; i < groups.length; i += 5) {
+                        rows.push(groups.slice(i, i + 5));
+                      }
+                      return rows.map((row, rowIdx) => (
+                        <div key={rowIdx} className="exam-result-row">
+                          {row.map((group, gIdx) => (
+                            <div key={gIdx} className="exam-group-wrapper">
+                              <span className="group-number">{rowIdx * 5 + gIdx + 1}</span>
+                              <span className="exam-group">{group}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ));
+                    })()}
                   </div>
                 ) : (
                   sessionErrors.size === 0 ? (

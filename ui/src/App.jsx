@@ -32,7 +32,7 @@ function App() {
   const [wpm, setWpm] = useState(() => loadSetting('wpm', 50)); // Default to 50 Signs Per Minute (CPM) for Reception
   const [transWpm, setTransWpm] = useState(() => loadSetting('transWpm', 50)); // Independent Transmission WPM (reverted to 1200/wpm scale)
   const [dashRatio, setDashRatio] = useState(() => loadSetting('dashRatio', 3.0));
-  const [pauseFactor, setPauseFactor] = useState(() => loadSetting('pauseFactor', 1.0));
+  const [pauseFactor, setPauseFactor] = useState(() => loadSetting('pauseFactor', 3.0));
   const [transmissionKey, setTransmissionKey] = useState(() => loadSetting('transmissionKey', 'Space'));
   const [isBindingKey, setIsBindingKey] = useState(false);
 

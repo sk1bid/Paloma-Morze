@@ -1126,6 +1126,11 @@ header {
   align-items: center;
   gap: 12px;
   padding: 16px !important;
+  box-sizing: border-box;
+}
+
+.report-card.exam-report {
+  max-width: 800px;
 }
 
 .report-card h3 {
@@ -1307,23 +1312,66 @@ header {
 }
 
 /* Exam Result Styling */
-.exam-result-text {
+.exam-result-container {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 24px 48px 24px;
+  width: 100%;
+  box-sizing: border-box;
+  max-height: 65vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.exam-result-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
-  justify-content: center;
-  padding: 20px;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 1.8rem;
-  letter-spacing: 4px;
+  width: 100%;
+}
+
+.exam-group-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.group-number {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  opacity: 0.4;
+  letter-spacing: 1px;
 }
 
 .exam-group {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 4px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--glass-border);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px 0;
   color: var(--accent-color);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: clamp(1.1rem, 2.5vw, 1.8rem);
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 15px rgba(0, 210, 255, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.exam-group:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent-color);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 210, 255, 0.15);
+}
   text-shadow: 0 0 10px var(--accent-glow);
 }
 .trans-footer {
