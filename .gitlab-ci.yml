@@ -44,9 +44,6 @@ build:builder:
     - changes:
         - Dockerfile.builder
         - .gitlab-ci.yml
-    - if: $CI_COMMIT_TAG
-  tags:
-    - docker
 
 
 test:cpp_parser:
