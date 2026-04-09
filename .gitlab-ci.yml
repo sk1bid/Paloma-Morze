@@ -1,5 +1,4 @@
 stages:
-  - setup
   - test
   - build
   - test_release
@@ -28,24 +27,6 @@ variables:
     - ui/.cache/electron-builder/
   policy: pull-push
 
-build:builder:
-  stage: setup
-  image: docker:24.0.5
-  services:
-    - docker:24.0.5-dind
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-  script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t $CI_REGISTRY_IMAGE/builder:wine-mingw -f Dockerfile.builder .
-    - docker push $CI_REGISTRY_IMAGE/builder:wine-mingw
-  rules:
-    - changes:
-        - Dockerfile.builder
-        - .gitlab-ci.yml
-
-
 test:cpp_parser:
   stage: test
   image: gcc:latest
@@ -66,19 +47,30 @@ test:bridge:
 
 build:linux_win:
   stage: build
-  image: $CI_REGISTRY_IMAGE/builder:wine-mingw
+  image: electronuserland/builder:wine
   script:
+    - |
+      if [ -d ".apt-cache" ]; then
+        cp -r .apt-cache/* /var/cache/apt/archives/ || true
+      fi
+    - apt-get update
+    - apt-get install -y mingw-w64 g++
+    - mkdir -p .apt-cache
+    - cp /var/cache/apt/archives/*.deb .apt-cache/ || true
     - x86_64-w64-mingw32-g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app.exe -static -lpthread -lm
     - g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app -lpthread -lm -ldl
     - cp ui/native/morze_app ui/native/morze_app_linux
     - cp ui/native/morze_app.exe ui/native/morze_app_win.exe
     - cd ui
-    - npm ci --prefer-offline
+    - npm ci --cache .npm --prefer-offline
     - npm run build
     - GH_TOKEN=$GITHUB_TOKEN npx electron-builder --linux --win -p never
   cache:
     - <<: *npm_cache_config
     - <<: *electron_cache_config
+    - key: apt-cache-wine
+      paths:
+        - .apt-cache/
   artifacts:
     name: "paloma-morse-$CI_COMMIT_TAG-linux-win"
     paths:
@@ -160,11 +152,8 @@ test:release:
       artifacts: true
   script:
     - cd ui
-    - npm ci --prefer-offline
+    - npm install
     - node tests/verify_release.cjs
-  cache:
-    - <<: *npm_cache_config
-      policy: pull
   rules:
     - if: $CI_COMMIT_TAG
 
