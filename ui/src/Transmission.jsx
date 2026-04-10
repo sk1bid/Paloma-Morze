@@ -2,40 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Terminal, Zap, History, Speaker, Settings, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { audioEngine } from './audio';
+import { MORSE_EN, MORSE_RU, MNEMONICS_RU as MNEMONICS } from './constants';
 import './App.css';
 
-const MORSE_EN = {
-  '.-': 'A', '-...': 'B', '-.-.': 'C', '-..': 'D', '.': 'E', '..-.': 'F',
-  '--.': 'G', '....': 'H', '..': 'I', '.---': 'J', '-.-': 'K', '.-..': 'L',
-  '--': 'M', '-.': 'N', '---': 'O', '.--.': 'P', '--.-': 'Q', '.-.': 'R',
-  '...': 'S', '-': 'T', '..-': 'U', '...-': 'V', '.--': 'W', '-..-': 'X',
-  '-.--': 'Y', '--..': 'Z', '-----': '0', '.----': '1', '..---': '2',
-  '...--': '3', '....-': '4', '.....': '5', '-....': '6', '--...': '7',
-  '---..': '8', '----.': '9', '-': '0', '.-.-': 'AR', '-...-': '='
-};
+// Use shared constants
 
-const MORSE_RU = {
-  '.-': 'А', '-...': 'Б', '.--': 'В', '--.': 'Г', '-..': 'Д', '.': 'Е',
-  '...-': 'Ж', '--..': 'З', '..': 'И', '.---': 'Й', '-.-': 'К', '.-..': 'Л',
-  '--': 'М', '-.': 'Н', '---': 'О', '.--.': 'П', '.-.': 'Р', '...': 'С',
-  '-': 'Т', '..-': 'У', '..-.': 'Ф', '....': 'Х', '-.-.': 'Ц', '---.': 'Ч',
-  '----': 'Ш', '--.-': 'Щ', '-.--': 'Ы', '-..-': 'Ь', '..-..': 'Э', '..--': 'Ю', '.-.-': 'Я',
-  '-----': '0', '.----': '1', '..---': '2', '...--': '3', '....-': '4', '.....': '5',
-  '-....': '6', '--...': '7', '---..': '8', '----.': '9', '-..-.': '/', '-...-': '='
-};
-
-const MNEMONICS = {
-  '.-': 'ай-ДА', '-...': 'БА-ки-те-кут', '.--': 'ви-ДА-ЛА', '--.': 'ГА-РА-жи', '-..': 'ДО-ми-ки', '.': 'есть',
-  '...-': 'же-ле-зи-СТО', '--..': 'ЗА-КА-ти-ки', '..': 'И-ди', '.---': 'йес-НА-ПА-РА', '-.-': 'КАК-же-ТАК', '.-..': 'лу-НА-ти-ки',
-  '--': 'МА-МА', '-.': 'НО-мер', '---': 'О-КО-ЛО', '.--.': 'пи-ЛА-ПО-ет', '.-.': 'ре-ША-ет', '...': 'си-не-е',
-  '-': 'ТАК', '..-': 'у-нес-ЛО', '..-.': 'фи-ли-МОН-чик', '....': 'хи-ми-чи-те', '-.-.': 'ЦА-пли-НА-ши', '---.': 'ЧА-ША-ТО-нет',
-  '----': 'ША-РО-ВА-РЫ', '--.-': 'ЩА-ВАМ-не-ША', '-.--': 'Ы-не-НА-ДО', '-..-': 'ТО-мяг-кий-ЗНАК', '..-..': 'э-ле-РО-ни-ки', '..--': 'ю-ли-А-НА', '.-.-': 'я-МАЛ-я-МАЛ',
-  '-': 'ТАК', '.----': 'и-ТО-ЛЬКО-О-ДНА', '..---': 'две-не-ХО-РО-ШО', '...--': 'три-те-бе-МА-ЛО',
-  '....-': 'че-тве-ри-те-КА', '.....': 'пя-ти-ле-ти-е', '-....': 'ПО-ше-сти-бе-ри', '--...': 'ДА-ДА-се-ме-ри',
-  '---..': 'ВО-СЬМО-ГО-и-ди', '----.': 'НО-НА-НО-НА-ми', '-..-.': 'ДРО-бь-ри-СУЙ-те', '-...-': 'РА-зде-ли-те-КА'
-};
-
-export const Transmission = ({ frequency, volume, lang, ws, wpm: initialWpm, setWpm: setWpmProp, transmissionKey, disabled }) => {
+export const Transmission = ({ frequency, volume, lang, ws, wpm: initialWpm, setWpm: setWpmProp, transmissionKey, disabled, customOverrides = {} }) => {
   const [isPressed, setIsPressed] = useState(false);
   const [decodedText, setDecodedText] = useState('');
   const [lastMnemonic, setLastMnemonic] = useState('');
@@ -154,9 +126,28 @@ export const Transmission = ({ frequency, volume, lang, ws, wpm: initialWpm, set
         }
         setMorseBuffer(prev => {
           const next = prev + (type === 'dot' ? '.' : '-');
-          const codes = lang === 'RU' ? MORSE_RU : MORSE_EN;
-          setPreviewChar(codes[next] || '?');
-          setPreviewMnemonic(MNEMONICS[next] || ''); // Live mnemonic preview
+          
+          // Dictionary Merge Logic
+          const baseCodes = lang === 'RU' ? MORSE_RU : MORSE_EN;
+          // Create lookup: pattern -> char
+          const lookup = { ...baseCodes };
+          Object.keys(customOverrides).forEach(c => {
+            if (customOverrides[c].pattern) lookup[customOverrides[c].pattern] = c;
+          });
+          
+          // Explicitly prioritize T/Т for single dash to avoid collisions with 0
+          lookup['-'] = lang === 'RU' ? 'Т' : 'T';
+          
+          setPreviewChar(lookup[next] || '?');
+          
+          // Mnemonic Merge Logic
+          const mnemonics = { ...MNEMONICS };
+          Object.keys(customOverrides).forEach(c => {
+            if (customOverrides[c].mnemonic && customOverrides[c].pattern) {
+              mnemonics[customOverrides[c].pattern] = customOverrides[c].mnemonic;
+            }
+          });
+          setPreviewMnemonic(mnemonics[next] || ''); // Live mnemonic preview
           return next;
         });
         events.current.push({ start: lastPressTime.current, end: now, type });
@@ -272,10 +263,24 @@ export const Transmission = ({ frequency, volume, lang, ws, wpm: initialWpm, set
   }, [wpm]);
 
   const decodeMorse = (buffer) => {
-    const codes = lang === 'RU' ? MORSE_RU : MORSE_EN;
-    const char = codes[buffer] || '?';
+    // Dictionary Merge Logic
+    const baseCodes = lang === 'RU' ? MORSE_RU : MORSE_EN;
+    const lookup = { ...baseCodes };
+    Object.keys(customOverrides).forEach(c => {
+      if (customOverrides[c].pattern) lookup[customOverrides[c].pattern] = c;
+    });
+
+    const char = lookup[buffer] || '?';
     setDecodedText(prev => prev + char);
-    setLastMnemonic(MNEMONICS[buffer] || '');
+
+    const mnemonics = { ...MNEMONICS };
+    Object.keys(customOverrides).forEach(c => {
+      if (customOverrides[c].mnemonic && customOverrides[c].pattern) {
+        mnemonics[customOverrides[c].pattern] = customOverrides[c].mnemonic;
+      }
+    });
+
+    setLastMnemonic(mnemonics[buffer] || '');
     setPreviewChar('');
     setPreviewMnemonic(''); // Clear preview when confirmed
   };
