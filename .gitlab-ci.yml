@@ -9,6 +9,7 @@ variables:
   ELECTRON_CACHE: "${CI_PROJECT_DIR}/ui/.cache/electron"
   ELECTRON_BUILDER_CACHE: "${CI_PROJECT_DIR}/ui/.cache/electron-builder"
   npm_config_cache: "${CI_PROJECT_DIR}/ui/.npm"
+  ELECTRON_SKIP_BINARY_DOWNLOAD: "1" # По умолчанию пропускаем загрузку тяжелого бинарника в тестах
 
 # Глобальная конфигурация кэша
 .npm_cache_config: &npm_cache_config
@@ -62,6 +63,7 @@ build:linux_win:
     - cp ui/native/morze_app ui/native/morze_app_linux
     - cp ui/native/morze_app.exe ui/native/morze_app_win.exe
     - cd ui
+    - export ELECTRON_SKIP_BINARY_DOWNLOAD=0 # Для сборки бинарник НУЖЕН
     - npm ci --cache .npm --prefer-offline
     - npm run build
     - GH_TOKEN=$GITHUB_TOKEN npx electron-builder --linux --win -p never
@@ -91,6 +93,8 @@ build:mac:
     - cd ui
     - g++ native/morze_engine_v2.cpp -I native -o native/morze_app -lpthread -lm -ldl -framework CoreAudio -framework AudioUnit -framework CoreFoundation
     - cp native/morze_app native/morze_app_macos
+    - cd ui
+    - export ELECTRON_SKIP_BINARY_DOWNLOAD=0 # Для сборки бинарник НУЖЕН
     - npm ci --cache .npm --prefer-offline
     - npm run build
     - GH_TOKEN=$GITHUB_TOKEN npx electron-builder --mac -p never
