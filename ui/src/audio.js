@@ -54,8 +54,8 @@ class MorseAudioEngine {
     this.charWpm = wpm;
   }
 
-  setGapWpm(wpm) {
-    this.gapWpm = wpm;
+  setPauseFactor(factor) {
+    this.pauseFactor = factor;
   }
 
   setDashRatio(ratio) {
@@ -65,17 +65,22 @@ class MorseAudioEngine {
   // Returns a Promise that resolves when the sound finishes
   playString(morseStr, startTime, onPulse = null) {
     this.init();
+    let isCancelled = false;
+    this.cancelTokens = this.cancelTokens || [];
+    const token = { cancel: () => { isCancelled = true; } };
+    this.cancelTokens.push(token);
+
     const currentSpeed = isFinite(this.charWpm) ? (this.charWpm || 60) : 60;
-    const dotLen = 6.0 / currentSpeed; 
+    const dotLen = 6.0 / currentSpeed;
     const dashLen = dotLen * (this.dashRatio || 3.0);
     const intraCharGap = dotLen;
     const attack = 0.005; // Standard 5ms
-    const release = 0.005; 
+    const release = 0.005;
 
     // Safety: ensure startTime is finite and in the future
     let time = (typeof startTime === 'number' && isFinite(startTime)) ? startTime : this.ctx.currentTime;
     if (time < this.ctx.currentTime) time = this.ctx.currentTime;
-    time += 0.005; // Tiny buffer
+    time += 0.020; // 20ms buffer to strictly prevent scheduling in the past
     const baseTime = this.ctx.currentTime;
 
     for (let i = 0; i < morseStr.length; i++) {
@@ -86,19 +91,25 @@ class MorseAudioEngine {
       if (onPulse) {
         const pulseStartMs = (time - baseTime) * 1000;
         const pulseEndMs = (time + duration - baseTime) * 1000;
-        this.registerTimeout(() => onPulse(type), Math.max(0, pulseStartMs));
-        this.registerTimeout(() => onPulse(null), Math.max(0, pulseEndMs));
+        this.registerTimeout(() => { if (!isCancelled) onPulse(type); }, Math.max(0, pulseStartMs));
+        this.registerTimeout(() => { if (!isCancelled) onPulse(null); }, Math.max(0, pulseEndMs));
       }
 
-      // Attack
-      this.gain.gain.setValueAtTime(0, time);
-      this.gain.gain.linearRampToValueAtTime(this.volume, time + attack);
-      
+      // Attack: LCWO (jscwlib) style raised-cosine envelope (Hann window half)
+      const e_attack = new Float32Array(32);
+      for (let j=0; j<32; j++) {
+        e_attack[j] = this.volume * (0.5 - 0.5 * Math.cos(Math.PI * (j / 31)));
+      }
+      this.gain.gain.setValueCurveAtTime(e_attack, time, attack);
+
       time += duration;
-      
-      // Release
-      this.gain.gain.setValueAtTime(this.volume, time);
-      this.gain.gain.linearRampToValueAtTime(0, time + release);
+
+      // Release: LCWO style
+      const e_release = new Float32Array(32);
+      for (let j=0; j<32; j++) {
+        e_release[j] = this.volume * (0.5 + 0.5 * Math.cos(Math.PI * (j / 31)));
+      }
+      this.gain.gain.setValueCurveAtTime(e_release, time, release);
 
       if (i < morseStr.length - 1) {
         time += intraCharGap;
@@ -107,9 +118,12 @@ class MorseAudioEngine {
 
     const finishTime = time + release;
     const waitTimeMs = (finishTime - this.ctx.currentTime) * 1000;
-    
+
     const promise = new Promise(r => {
-      this.registerTimeout(r, Math.max(0, waitTimeMs));
+      this.registerTimeout(() => {
+        this.cancelTokens = this.cancelTokens.filter(t => t !== token);
+        r();
+      }, Math.max(0, waitTimeMs));
     });
     promise.finishTime = finishTime;
     return promise;
@@ -119,32 +133,38 @@ class MorseAudioEngine {
     this.init();
     let isCancelled = false;
     this.cancelTokens = this.cancelTokens || [];
-    const token = { cancel: () => { 
-      isCancelled = true;
-      if (onCharPlay) onCharPlay(null);
-      if (onPulse) onPulse(null);
-    }};
+    const token = {
+      cancel: () => {
+        isCancelled = true;
+        if (onCharPlay) onCharPlay(null);
+        if (onPulse) onPulse(null);
+      }
+    };
     this.cancelTokens.push(token);
 
     try {
-      const currentGapSpeed = this.gapWpm || 60;
-      const gapDotLen = 6.0 / currentGapSpeed;
-      
-      const interCharGap = gapDotLen * 3; // Standard: 3 dots
-      const wordGap = gapDotLen * 7;      // Standard: 7 dots
-      const extraWordGap = wordGap - interCharGap; // 4 extra dots for a total of 7
+      const currentSpeed = this.charWpm || 60;
+      const dotLen = 6.0 / currentSpeed;
+
+      const uiPause = this.pauseFactor || 3.0; 
+      // APAK mapping: x1.0 -> 3 dots, x2.0 -> 5 dots, x3.0 -> 7 dots.
+      const pFactor = (uiPause * 2.0) + 1.0; 
+
+      const interCharGap = dotLen * pFactor; 
+      const wordGap = dotLen * (pFactor * (7.0 / 3.0)); // Proportional word gap
+      const extraWordGap = wordGap - interCharGap;
 
       let nextStartTime = this.ctx.currentTime + 0.1;
 
       for (let i = 0; i < sequence.length; i++) {
         if (isCancelled) break;
         const char = sequence[i];
-        
+
         if (char === ' ') {
-          nextStartTime += extraWordGap; 
+          nextStartTime += extraWordGap;
           continue;
         }
-        
+
         const morsePattern = Object.keys(morseDict).find(k => morseDict[k] === char);
         if (morsePattern) {
           if (onCharPlay) {
@@ -153,11 +173,11 @@ class MorseAudioEngine {
               if (!isCancelled) onCharPlay(char);
             }, Math.max(0, charDelayMs));
           }
-          
+
           const playPromise = this.playString(morsePattern, nextStartTime, onPulse);
           await playPromise;
           const finishTime = playPromise.finishTime;
-          
+
           // Prepare for next char
           nextStartTime = finishTime + interCharGap;
         }
@@ -190,8 +210,8 @@ class MorseAudioEngine {
     }
     if (this.gain && this.ctx) {
       this.gain.gain.cancelScheduledValues(this.ctx.currentTime);
-      this.gain.gain.setValueAtTime(this.gain.gain.value, this.ctx.currentTime);
-      this.gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.005);
+      // Cancel without setting any harsh value, decay naturally from current position
+      this.gain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.005);
     }
   }
 }

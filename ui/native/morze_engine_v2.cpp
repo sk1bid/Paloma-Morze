@@ -238,9 +238,9 @@ int main(int argc, char** argv) {
         printf("[Engine] Connected to %s (Auth OK!)\n", connectedPort.c_str());
         fflush(stdout);
       } else if (testMode == "auth_fail" && connectedPort.empty()) {
-        printf("[Engine] Ignored MOCK_PORT (no PALOMA response)\n");
+        // printf("[Engine] Ignored MOCK_PORT (no PALOMA response)\n");
         fflush(stdout);
-        SLEEP(1000);
+        SLEEP(2000);
       }
     }
 
@@ -295,13 +295,13 @@ int main(int argc, char** argv) {
             break;
           } else {
             close(test_fd);
-            printf("[Engine] Ignored %s (no PALOMA response)\n", port.c_str());
+            // printf("[Engine] Ignored %s (no PALOMA response)\n", port.c_str());
             fflush(stdout);
           }
         }
       }
       if (fd == -1)
-        SLEEP(100);
+        SLEEP(2000);
     }
 
     // Health check
@@ -406,13 +406,13 @@ int main(int argc, char** argv) {
             break;
           } else {
             CloseHandle(test_h);
-            printf("[Engine] Ignored %s (no PALOMA response)\n", port.c_str());
+            // printf("[Engine] Ignored %s (no PALOMA response)\n", port.c_str());
             fflush(stdout);
           }
         }
       }
       if (hComm == INVALID_HANDLE_VALUE)
-        SLEEP(250);
+        SLEEP(2000);
     }
 
     if (hComm != INVALID_HANDLE_VALUE) {

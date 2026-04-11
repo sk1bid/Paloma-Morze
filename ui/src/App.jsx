@@ -60,7 +60,7 @@ function App() {
   // Initialize generic WebSocket for sending global audio settings to C++ engine
   const connectWebSocket = () => {
     if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) return;
-    
+
     console.log('[App] Connecting to Morse Engine...');
     const socket = new WebSocket('ws://127.0.0.1:8080');
     ws.current = socket;
@@ -141,7 +141,7 @@ function App() {
   // Global Key Binding Listener
   useEffect(() => {
     if (!isBindingKey) return;
-    
+
     const handleKeyBind = (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -158,6 +158,15 @@ function App() {
     const settings = { frequency, volume, lang, wpm, transWpm, dashRatio, pauseFactor, transmissionKey, customOverrides };
     localStorage.setItem('paloma_morse_v1', JSON.stringify(settings));
   }, [frequency, volume, lang, wpm, transWpm, dashRatio, pauseFactor, transmissionKey, customOverrides]);
+
+  // Sync Web Audio engine settings (used for previews/exercises)
+  useEffect(() => {
+    audioEngine.setFrequency(frequency);
+    audioEngine.setVolume(volume);
+    audioEngine.setCharWpm(wpm);
+    audioEngine.setPauseFactor(pauseFactor);
+    audioEngine.setDashRatio(dashRatio);
+  }, [frequency, volume, wpm, pauseFactor, dashRatio]);
 
   const resetSettings = () => {
     if (confirm(lang === 'RU' ? 'СБРОСИТЬ ВСЕ НАСТРОЙКИ?' : 'RESET ALL SETTINGS?')) {
@@ -277,23 +286,23 @@ function App() {
 
                 <div className="setting-row">
                   <label>{lang === 'RU' ? 'КЛАВИША ПЕРЕДАЧИ' : 'TRANSMISSION KEY'}</label>
-                  <button 
+                  <button
                     className={`key-bind-btn ${isBindingKey ? 'binding' : ''}`}
                     onClick={() => setIsBindingKey(true)}
                   >
-                    {isBindingKey 
-                      ? (lang === 'RU' ? 'ОЖИДАНИЕ...' : 'WAITING...') 
+                    {isBindingKey
+                      ? (lang === 'RU' ? 'ОЖИДАНИЕ...' : 'WAITING...')
                       : (transmissionKey === 'Space' ? 'SPACE' : transmissionKey.replace('Key', ''))
                     }
                   </button>
                 </div>
 
                 <div className="sidebar-separator" style={{ margin: '20px 0' }}></div>
-                
+
                 <div className="sidebar-separator" style={{ margin: '20px 0' }}></div>
-                
-                <button 
-                  className="open-customizer-btn" 
+
+                <button
+                  className="open-customizer-btn"
                   onClick={() => setShowCustomizer(true)}
                 >
                   <Zap size={16} />
@@ -397,14 +406,14 @@ function App() {
       {/* Morse Customizer Modal */}
       <AnimatePresence>
         {showCustomizer && (
-          <motion.div 
+          <motion.div
             className="customizer-modal-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setShowCustomizer(false)}
           >
-            <motion.div 
+            <motion.div
               className="customizer-modal"
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -415,7 +424,7 @@ function App() {
                 <h2>{lang === 'RU' ? 'РЕДАКТОР КОДОВ И НАПЕВОВ' : 'MORSE & MNEMONIC EDITOR'}</h2>
                 <button className="close-btn" onClick={() => setShowCustomizer(false)}><X size={24} /></button>
               </div>
-              
+
               <div className="customizer-modal-content">
                 <div className="customizer-table-header">
                   <div className="header-item" style={{ width: '40px', textAlign: 'center' }}>{lang === 'RU' ? 'ЗНАК' : 'CHAR'}</div>
@@ -430,74 +439,74 @@ function App() {
                   {Object.entries(CHARACTER_SETS).map(([category, chars]) => (
                     <div key={category} className="customizer-category">
                       <div className="category-title">{category}</div>
-                        {chars.map(char => {
-                          // Determine language for placeholders
-                          const isENRoot = category.includes('ENGLISH');
-                          const isRURoot = category.includes('РУССКИЙ');
-                          // For Digits/Symbols, follow global lang
-                          const currentIsRU = isRURoot || (!isENRoot && lang === 'RU');
-                          
-                          const morseDict = currentIsRU ? MORSE_RU : MORSE_EN;
-                          const mnemDict = currentIsRU ? MNEMONICS_RU : MNEMONICS_EN;
-                          
-                          const defaultCode = Object.keys(morseDict).find(k => morseDict[k] === char) || '';
-                          const defaultMnemonic = mnemDict[defaultCode] || '';
+                      {chars.map(char => {
+                        // Determine language for placeholders
+                        const isENRoot = category.includes('ENGLISH');
+                        const isRURoot = category.includes('РУССКИЙ');
+                        // For Digits/Symbols, follow global lang
+                        const currentIsRU = isRURoot || (!isENRoot && lang === 'RU');
 
-                          return (
-                            <div key={char} className="customizer-row">
-                              <div className="row-char">{char}</div>
-                              <div className="row-inputs">
-                                <input 
-                                  className="input-pattern"
-                                  placeholder={defaultCode || '.-.-'}
-                                  value={customOverrides[char]?.pattern !== undefined 
-                                    ? customOverrides[char].pattern 
-                                    : (focusedField === `${char}-code` ? defaultCode : '')}
-                                  onFocus={() => setFocusedField(`${char}-code`)}
-                                  onBlur={() => setFocusedField(null)}
-                                  onChange={(e) => {
-                                    const val = e.target.value.replace(/[^.-]/g, '');
-                                    setCustomOverrides(prev => ({
-                                      ...prev,
-                                      [char]: { ...prev[char], pattern: val }
-                                    }));
-                                  }}
-                                />
-                                <input 
-                                  className="input-mnemonic"
-                                  placeholder={defaultMnemonic || '...'}
-                                  value={customOverrides[char]?.mnemonic !== undefined 
-                                    ? customOverrides[char].mnemonic 
-                                    : (focusedField === `${char}-mnem` ? defaultMnemonic : '')}
-                                  onFocus={() => setFocusedField(`${char}-mnem`)}
-                                  onBlur={() => setFocusedField(null)}
-                                  onChange={(e) => {
-                                    // Space to Hyphen conversion and filtering
-                                    const val = e.target.value.replace(/ /g, '-').replace(/[^a-zA-Zа-яА-ЯёЁ-]/g, '');
-                                    setCustomOverrides(prev => ({
-                                      ...prev,
-                                      [char]: { ...prev[char], mnemonic: val }
-                                    }));
-                                  }}
-                                />
-                              </div>
-                              <div className="row-actions">
-                                {(customOverrides[char]?.pattern || customOverrides[char]?.mnemonic) && (
-                                  <button 
-                                    className="reset-row-btn"
-                                    onClick={() => {
-                                      const next = { ...customOverrides };
-                                      delete next[char];
-                                      setCustomOverrides(next);
-                                    }}
-                                  >
-                                    {lang === 'RU' ? 'СБРОС' : 'RESET'}
-                                  </button>
-                                )}
-                              </div>
+                        const morseDict = currentIsRU ? MORSE_RU : MORSE_EN;
+                        const mnemDict = currentIsRU ? MNEMONICS_RU : MNEMONICS_EN;
+
+                        const defaultCode = Object.keys(morseDict).find(k => morseDict[k] === char) || '';
+                        const defaultMnemonic = mnemDict[defaultCode] || '';
+
+                        return (
+                          <div key={char} className="customizer-row">
+                            <div className="row-char">{char}</div>
+                            <div className="row-inputs">
+                              <input
+                                className="input-pattern"
+                                placeholder={defaultCode || '.-.-'}
+                                value={customOverrides[char]?.pattern !== undefined
+                                  ? customOverrides[char].pattern
+                                  : (focusedField === `${char}-code` ? defaultCode : '')}
+                                onFocus={() => setFocusedField(`${char}-code`)}
+                                onBlur={() => setFocusedField(null)}
+                                onChange={(e) => {
+                                  const val = e.target.value.replace(/[^.-]/g, '');
+                                  setCustomOverrides(prev => ({
+                                    ...prev,
+                                    [char]: { ...prev[char], pattern: val }
+                                  }));
+                                }}
+                              />
+                              <input
+                                className="input-mnemonic"
+                                placeholder={defaultMnemonic || '...'}
+                                value={customOverrides[char]?.mnemonic !== undefined
+                                  ? customOverrides[char].mnemonic
+                                  : (focusedField === `${char}-mnem` ? defaultMnemonic : '')}
+                                onFocus={() => setFocusedField(`${char}-mnem`)}
+                                onBlur={() => setFocusedField(null)}
+                                onChange={(e) => {
+                                  // Space to Hyphen conversion and filtering
+                                  const val = e.target.value.replace(/ /g, '-').replace(/[^a-zA-Zа-яА-ЯёЁ-]/g, '');
+                                  setCustomOverrides(prev => ({
+                                    ...prev,
+                                    [char]: { ...prev[char], mnemonic: val }
+                                  }));
+                                }}
+                              />
                             </div>
-                          );
-                        })}
+                            <div className="row-actions">
+                              {(customOverrides[char]?.pattern || customOverrides[char]?.mnemonic) && (
+                                <button
+                                  className="reset-row-btn"
+                                  onClick={() => {
+                                    const next = { ...customOverrides };
+                                    delete next[char];
+                                    setCustomOverrides(next);
+                                  }}
+                                >
+                                  {lang === 'RU' ? 'СБРОС' : 'RESET'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   ))}
                 </div>

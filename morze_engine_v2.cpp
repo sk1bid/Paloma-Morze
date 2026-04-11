@@ -280,13 +280,14 @@ int main(int argc, char** argv) {
             break;
           } else {
             close(test_fd);
-            printf("[Engine] Ignored %s (no PALOMA response)\n", port.c_str());
+            // Silent ignore to avoid log spam
+            // printf("[Engine] Ignored %s (no PALOMA response)\n", port.c_str());
             fflush(stdout);
           }
         }
       }
       if (fd == -1)
-        SLEEP(250);
+        SLEEP(2000); // Slower retry to reduce noise
     }
 
     // Health check
@@ -390,13 +391,14 @@ int main(int argc, char** argv) {
             break;
           } else {
             CloseHandle(test_h);
-            printf("[Engine] Ignored %s (no PALOMA response)\n", port.c_str());
+            // Silent ignore
+            // printf("[Engine] Ignored %s (no PALOMA response)\n", port.c_str());
             fflush(stdout);
           }
         }
       }
       if (hComm == INVALID_HANDLE_VALUE)
-        SLEEP(250);
+        SLEEP(2000); // Slower retry to reduce noise
     }
 
     if (hComm != INVALID_HANDLE_VALUE) {

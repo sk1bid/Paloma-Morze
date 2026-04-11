@@ -31,7 +31,7 @@ const UI_STRINGS = {
     lesson: 'УРОК',
     exercise: 'УПРАЖНЕНИЕ',
     groups: 'ГРУПП',
-    charSpeed: 'ЗНАКОВ/МИН',
+    charSpeed: 'СКОРОСТЬ ЗНАКА',
     ratio: '- / .',
     pause: 'ПАУЗА',
     start: 'СТАРТ',
@@ -52,7 +52,7 @@ const UI_STRINGS = {
     lesson: 'LESSON',
     exercise: 'EXERCISE',
     groups: 'GROUPS',
-    charSpeed: 'CPM (SPEED)',
+    charSpeed: 'CHAR SPEED',
     ratio: '- / .',
     pause: 'PAUSE',
     start: 'START',
@@ -175,6 +175,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   const currentStepRef = useRef(0);
   const sequenceRef = useRef([]);
   const waitingRef = useRef(false);
+  const isPlayingRef = useRef(false); // Immediate lock for single char playback
 
   const currentLesson = LESSONS[lessonIndex];
   const lessonChars = currentLesson.chars;
@@ -202,7 +203,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     audioEngine.setFrequency(frequency);
     audioEngine.setVolume(volume);
     audioEngine.setCharWpm(wpm);
-    audioEngine.setGapWpm(wpm / pauseFactor);
+    audioEngine.setPauseFactor(pauseFactor);
     audioEngine.setDashRatio(dashRatio);
   }, [frequency, volume, wpm, pauseFactor, dashRatio]);
 
@@ -211,17 +212,17 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     if (customOverrides?.[char]?.pattern) return customOverrides[char].pattern;
     // Force 0 to be dash as per user request
     if (char === '0') return '-';
-    
+
     // Search in both RU and EN dictionaries to handle character set mismatches
-    return Object.keys(MORSE_RU).find(k => MORSE_RU[k] === char) || 
-           Object.keys(MORSE_EN).find(k => MORSE_EN[k] === char);
+    return Object.keys(MORSE_RU).find(k => MORSE_RU[k] === char) ||
+      Object.keys(MORSE_EN).find(k => MORSE_EN[k] === char);
   };
 
   const getMnemonic = (char) => {
     if (customOverrides?.[char]?.mnemonic) return customOverrides[char].mnemonic;
     // Force 0 mnemonic
     if (char === '0') return lang === 'RU' ? 'НОЛЬ' : 'ZERO';
-    
+
     // Look up pattern first, then look up mnemonic by pattern
     const pattern = getMorsePattern(char);
     if (!pattern) return '';
@@ -231,20 +232,29 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   };
 
   const playSingleCharFiltered = async (char) => {
-    // If exercise is running and it's Exercise 4, we block all keyboard interaction
+    // 1. FOR CUSTOM SELECTION: Strict lock (cannot select another until current finished)
+    if (manualMode && !isRunning && isPlayingRef.current) return;
+
+    // 2. FOR BROWSING: Allow interrupting previous sound for responsiveness
+    if (!manualMode && !isRunning) {
+      audioEngine.stopAll();
+      setPlayingChar(null);
+      setPulseType(null);
+    }
+
+    // 3. EXERCISE 4: Block ALL during automated playback
     if (isRunning && exerciseIndex === 3) return;
 
-    // If exercise is running and we're looking for input, clicking is "answering"
-    if (isRunning && exerciseIndex >= 1 && waitingForInput) {
-      // In Ex 2/3, we only respond to characters in the active pool
-      const activePool = exerciseIndex === 1 ? lessonChars : studiedPool;
+    // 4. EXERCISE 1-3: Handle Answering
+    if (isRunning && exerciseIndex >= 0 && waitingForInput) {
+      const activePool = exerciseIndex === 0 ? lessonChars : studiedPool;
       if (activePool.includes(char)) {
         handleUserAnswer(char);
       }
       return;
     }
 
-    // Handle Manual Selection Toggling
+    // Toggle Manual Pool membership (Custom Selection)
     if (manualMode && !isRunning) {
       setManualPool(prev => {
         const next = new Set(prev);
@@ -252,17 +262,20 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
         else next.add(char);
         return Array.from(next);
       });
-      // Also play sound for feedback
     }
 
-    // Preview Mode (when not running or not waiting for input)
-    if (playingChar) return;
+    // Audio Feedback / Preview
     const morsePattern = getMorsePattern(char);
     if (morsePattern) {
+      isPlayingRef.current = true;
       setPlayingChar(char);
-      await audioEngine.playString(morsePattern, null, setPulseType);
-      setPlayingChar(null);
-      setPulseType(null);
+      try {
+        await audioEngine.playString(morsePattern, null, setPulseType);
+      } finally {
+        setPlayingChar(null);
+        setPulseType(null);
+        isPlayingRef.current = false;
+      }
     }
   };
 
@@ -297,9 +310,10 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       if (morsePattern) {
         setPlayingChar(target);
 
-        // Calculate rhythmic gap for penalty (3 dots * pauseFactor)
+        // Calculate rhythmic gap for penalty (matches APAK mapping: 2x + 1 dots)
         const dotLen = 6.0 / (wpm || 50);
-        const penaltyGapMs = dotLen * 3 * (pauseFactor || 1.0) * 1000;
+        const pFactorDots = (pauseFactor * 2.0) + 1.0;
+        const penaltyGapMs = dotLen * pFactorDots * 1000;
 
         for (let i = 0; i < 5; i++) {
           if (!isRunningRef.current) break;
@@ -574,6 +588,9 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
             <button onClick={() => setPauseFactor(Math.max(1.0, parseFloat((pauseFactor - 0.5).toFixed(1))))}>-</button>
             <span>x{pauseFactor.toFixed(1)}</span>
             <button onClick={() => setPauseFactor(Math.min(10.0, parseFloat((pauseFactor + 0.5).toFixed(1))))}>+</button>
+          </div>
+          <div style={{ fontSize: '10px', opacity: 0.5, textAlign: 'center', marginTop: '6px' }}>
+            {lang === 'RU' ? 'Общая скорость: ~' : 'Overall Speed: ~'}{Math.round(50 * wpm / (31 + 6.333 * ((pauseFactor * 2.0) + 1.0)))} {lang === 'RU' ? 'зн/мин' : 'CPM'}
           </div>
         </div>
 
