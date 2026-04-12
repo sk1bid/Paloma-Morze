@@ -68,7 +68,6 @@ function App() {
 
     socket.onopen = () => {
       console.log('[App] Connected to Morse Engine');
-      setKeyConnected(true);
       // Sync current settings immediately on connection
       socket.send('F' + frequency);
       socket.send('V' + volume);

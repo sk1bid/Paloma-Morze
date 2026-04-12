@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #include <termios.h>
 #include <unistd.h>
 #define SLEEP(ms) usleep((ms) * 1000)
@@ -252,7 +253,14 @@ int main(int argc, char** argv) {
             long long probe_start = get_time_ms();
             int test_fd = open(port.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
             if (test_fd != -1) {
-              SLEEP(20);
+              SLEEP(200); // Даем Arduino время прогрузиться после открытия порта
+              
+              // Управление DTR/RTS для пробуждения Arduino
+              int status;
+              ioctl(test_fd, TIOCMGET, &status);
+              status |= TIOCM_DTR;
+              status |= TIOCM_RTS;
+              ioctl(test_fd, TIOCMSET, &status);
               
               struct termios options;
               tcgetattr(test_fd, &options);
@@ -264,7 +272,8 @@ int main(int argc, char** argv) {
               options.c_oflag &= ~OPOST;
               tcsetattr(test_fd, TCSANOW, &options);
               tcflush(test_fd, TCIOFLUSH);
-              SLEEP(50);
+              SLEEP(100);
+              tcflush(test_fd, TCIFLUSH); // Финальная очистка перед вопросом
               
               // --- РУКОПОЖАТИЕ (СВОЙ-ЧУЖОЙ) БЫСТРОЕ ---
               long long hs_start_time = get_time_ms();
@@ -272,9 +281,9 @@ int main(int argc, char** argv) {
               std::string hs_str = "";
               long long last_send = 0;
 
-              while (get_time_ms() - hs_start_time < 3000) {
+              while (get_time_ms() - hs_start_time < 500) {
                 long long now = get_time_ms();
-                if (now - last_send > 200) {
+                if (now - last_send > 100) {
                   write(test_fd, "?\n", 2);
                   last_send = now;
                 }
@@ -316,7 +325,7 @@ int main(int argc, char** argv) {
         }
       }
       if (fd == -1)
-        SLEEP(2000);
+        SLEEP(500);
     }
 
     // Health check
