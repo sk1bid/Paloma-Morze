@@ -241,8 +241,8 @@ function App() {
                 <AlertTriangle size={18} className="warn-icon" />
                 <div className="error-text">
                   <strong>{lang === 'RU' ? 'ОШИБКА ДОСТУПА:' : 'PERMISSION DENIED:'}</strong>
-                  <span>{lang === 'RU' ? ' Недостаточно прав для работы с ключом. Выполните команду в терминале и перезагрузитесь:' : ' Insufficient rights for the key. Run this command and reboot:'}</span>
-                  <code className="error-code">sudo usermod -aG dialout,audio $USER</code>
+                  <span>{lang === 'RU' ? ' Недостаточно прав для работы с ключом. Запустите скрипт настройки и перезагрузитесь:' : ' Insufficient rights for the key. Run the setup script and reboot:'}</span>
+                  <code className="error-code">sudo bash scripts/setup_linux.sh</code>
                 </div>
                 <button className="close-error" onClick={() => setPermError(false)}><X size={16} /></button>
               </div>
