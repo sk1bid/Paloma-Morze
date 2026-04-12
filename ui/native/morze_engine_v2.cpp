@@ -259,7 +259,12 @@ int main(int argc, char** argv) {
               cfsetispeed(&options, B115200);
               cfsetospeed(&options, B115200);
               options.c_cflag |= (CLOCAL | CREAD | CS8);
+              options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+              options.c_iflag &= ~(IXON | IXOFF | IXANY);
+              options.c_oflag &= ~OPOST;
               tcsetattr(test_fd, TCSANOW, &options);
+              tcflush(test_fd, TCIOFLUSH);
+              SLEEP(50);
               
               // --- РУКОПОЖАТИЕ (СВОЙ-ЧУЖОЙ) БЫСТРОЕ ---
               long long hs_start_time = get_time_ms();
@@ -267,9 +272,9 @@ int main(int argc, char** argv) {
               std::string hs_str = "";
               long long last_send = 0;
 
-              while (get_time_ms() - hs_start_time < 500) {
+              while (get_time_ms() - hs_start_time < 3000) {
                 long long now = get_time_ms();
-                if (now - last_send > 100) {
+                if (now - last_send > 200) {
                   write(test_fd, "?\n", 2);
                   last_send = now;
                 }
@@ -282,8 +287,9 @@ int main(int argc, char** argv) {
                     handshake_ok = true;
                     break;
                   }
+                } else {
+                  SLEEP(5);
                 }
-                SLEEP(5);
               }
 
           if (handshake_ok) {
@@ -295,9 +301,18 @@ int main(int argc, char** argv) {
             break;
           } else {
             close(test_fd);
-            // printf("[Engine] Ignored %s (no PALOMA response)\n", port.c_str());
+            printf("[Engine] Ignored %s (no PALOMA response)\n", port.c_str());
             fflush(stdout);
           }
+        } else {
+            if (errno == EACCES) {
+                static bool perm_warned = false;
+                if (!perm_warned) {
+                    printf("[Engine] Permission denied for %s. Try: sudo usermod -aG dialout,audio $USER\n", port.c_str());
+                    fflush(stdout);
+                    perm_warned = true;
+                }
+            }
         }
       }
       if (fd == -1)

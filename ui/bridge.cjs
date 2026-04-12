@@ -13,6 +13,19 @@ function startEngine(isProduction = false, extraArgs = []) {
     wss = new WebSocketServer({ port: 8080 });
     console.log('[Bridge] WebSocket server started on port 8080');
 
+    // Linux-specific audio unmute (e.g. for Server/Mac Pro setups)
+    if (process.platform === 'linux') {
+        try {
+            const { execSync } = require('child_process');
+            console.log('[Bridge] Attempting to unmute ALSA channels...');
+            execSync("amixer -c 0 sset 'Master' 100% unmute", { stdio: 'ignore' });
+            execSync("amixer -c 0 sset 'Speaker' 100% unmute", { stdio: 'ignore' });
+            execSync("amixer -c 0 sset 'Headphone' 100% unmute", { stdio: 'ignore' });
+        } catch (e) {
+            console.log('[Bridge] ALSA unmute failed or amixer missing. Continuing...');
+        }
+    }
+
     wss.on('connection', (ws) => {
         console.log('[Bridge] UI Client connected');
         ws.send(isKeyConnected ? 'STATUS:CONNECTED' : 'STATUS:DISCONNECTED');
@@ -60,6 +73,8 @@ function startEngine(isProduction = false, extraArgs = []) {
                 } else if (l.includes('Disconnected') || l.includes('Reconnecting') || l.includes('Port lost')) {
                     isKeyConnected = false;
                     broadcast('STATUS:DISCONNECTED');
+                } else if (l.includes('Permission denied')) {
+                    broadcast('ERROR:PERMISSION_DENIED');
                 }
                 console.log(`[Engine]: ${l}`);
             });
@@ -82,7 +97,7 @@ function startEngine(isProduction = false, extraArgs = []) {
         } else if (isWin) {
             buildArgs = [engineSource, '-I', path.dirname(engineSource), '-o', enginePath, '-lpthread', '-lm', '-ldl', '-lwinmm'];
         } else {
-            buildArgs = [engineSource, '-I', path.dirname(engineSource), '-o', enginePath, '-lpthread', '-lm', '-ldl'];
+            buildArgs = [engineSource, '-I', path.dirname(engineSource), '-o', enginePath, '-lpthread', '-lm', '-ldl', '-lasound'];
         }
         
         const build = spawn('g++', buildArgs);

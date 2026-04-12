@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Zap, Speaker, Radio, Headphones, Settings, X } from 'lucide-react';
+import { Zap, Speaker, Radio, Headphones, Settings, X, AlertTriangle, Terminal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Transmission } from './Transmission';
 import { Reception } from './Reception';
@@ -48,6 +48,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [keyConnected, setKeyConnected] = useState(false);
   const [keyPressed, setKeyPressed] = useState(false);
+  const [permError, setPermError] = useState(false);
   const [wsNode, setWsNode] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -80,8 +81,9 @@ function App() {
 
     socket.onmessage = (event) => {
       if (typeof event.data === 'string') {
-        if (event.data === 'STATUS:CONNECTED') setKeyConnected(true);
+        if (event.data === 'STATUS:CONNECTED') { setKeyConnected(true); setPermError(false); }
         else if (event.data === 'STATUS:DISCONNECTED') { setKeyConnected(false); setKeyPressed(false); }
+        else if (event.data === 'ERROR:PERMISSION_DENIED') { setPermError(true); setKeyConnected(false); }
         else if (event.data === '1') setKeyPressed(true);
         else if (event.data === '0') setKeyPressed(false);
       }
@@ -225,6 +227,29 @@ function App() {
       transition={{ duration: 0.8, ease: "easeOut" }}
     >
       <div className="glass-panel main-panel">
+        
+        {/* Linux Permission Error Banner */}
+        <AnimatePresence>
+          {permError && !keyConnected && (
+            <motion.div 
+              className="error-banner"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="error-banner-content">
+                <AlertTriangle size={18} className="warn-icon" />
+                <div className="error-text">
+                  <strong>{lang === 'RU' ? 'ОШИБКА ДОСТУПА:' : 'PERMISSION DENIED:'}</strong>
+                  <span>{lang === 'RU' ? ' Недостаточно прав для работы с ключом. Выполните команду в терминале и перезагрузитесь:' : ' Insufficient rights for the key. Run this command and reboot:'}</span>
+                  <code className="error-code">sudo usermod -aG dialout,audio $USER</code>
+                </div>
+                <button className="close-error" onClick={() => setPermError(false)}><X size={16} /></button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Global Settings Header */}
         <header className="main-header">

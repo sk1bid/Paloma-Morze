@@ -21,7 +21,8 @@
     "publish:app": "npm run sync-version && electron-builder -mwl -p always",
     "lint": "eslint .",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "release": "bash ../scripts/tag_release.sh"
   },
   "build": {
     "appId": "com.paloma.morse",
