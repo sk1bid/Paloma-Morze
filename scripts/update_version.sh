@@ -15,10 +15,12 @@ if [ ! -f "$VERSION_FILE" ]; then
 fi
 
 # Read version, stripping any whitespace
-VERSION=$(cat "$VERSION_FILE" | xargs)
+VERSION=$(cat "$VERSION_FILE" | tr -d '[:space:]')
 
-if [ -z "$VERSION" ]; then
-    echo "Error: VERSION file is empty"
+# Validate version format (e.g. 0.1.2 or 1.2.3-beta.1)
+if [[ ! $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+    echo "Error: Invalid version format in VERSION file: '$VERSION'"
+    echo "Expected format: X.Y.Z (e.g. 1.0.0)"
     exit 1
 fi
 
@@ -32,4 +34,4 @@ else
     sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" "$PACKAGE_JSON"
 fi
 
-echo "Done!"
+echo "Successfully synced to $VERSION"

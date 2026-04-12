@@ -10,8 +10,10 @@ variables:
   ELECTRON_BUILDER_CACHE: "${CI_PROJECT_DIR}/ui/.cache/electron-builder"
   npm_config_cache: "${CI_PROJECT_DIR}/ui/.npm"
   ELECTRON_SKIP_BINARY_DOWNLOAD: "1" # По умолчанию пропускаем загрузку тяжелого бинарника в тестах
-  ELECTRON_MIRROR: "https://npmmirror.com/mirrors/electron/"
-  ELECTRON_BUILDER_BINARIES_MIRROR: "https://npmmirror.com/mirrors/electron-builder-binaries/"
+  ELECTRON_MIRROR: "https://registry.npmmirror.com/-/binary/electron/"
+  ELECTRON_BUILDER_BINARIES_MIRROR: "https://registry.npmmirror.com/-/binary/electron-builder-binaries/"
+  NPM_CONFIG_ELECTRON_MIRROR: "https://registry.npmmirror.com/-/binary/electron/"
+  NPM_CONFIG_ELECTRON_BUILDER_BINARIES_MIRROR: "https://registry.npmmirror.com/-/binary/electron-builder-binaries/"
 
 # Глобальная конфигурация кэша
 .npm_cache_config: &npm_cache_config
@@ -65,7 +67,7 @@ build:linux_win:
     - mkdir -p .apt-cache
     - cp /var/cache/apt/archives/*.deb .apt-cache/ || true
     - x86_64-w64-mingw32-g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app.exe -static -lpthread -lm
-    - g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app -lpthread -lm -ldl
+    - g++ ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app -lasound -lpthread -lm -ldl
     - cp ui/native/morze_app ui/native/morze_app_linux
     - cp ui/native/morze_app.exe ui/native/morze_app_win.exe
     - cd ui
@@ -132,14 +134,18 @@ release:
     - if: $CI_COMMIT_TAG
   script:
     - |
+      # Normalize tag: remove 'v' prefix if exists (e.g. v0.2.4 -> 0.2.4)
+      CLEAN_VERSION=$(echo "$CI_COMMIT_TAG" | sed 's/^v//')
+      echo "Normalized version: $CLEAN_VERSION"
+      
       release-cli create \
         --name "Release $CI_COMMIT_TAG" \
-        --description "Automatic build for Paloma Morse engine." \
+        --description "Automatic build for Paloma Morse engine ($CI_COMMIT_TAG)." \
         --tag-name "$CI_COMMIT_TAG" \
         --allow-update \
-        --assets-link "{\"name\":\"Windows Setup (.exe)\",\"url\":\"${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/release/Paloma-Morse.Setup.${CI_COMMIT_TAG}.exe?job=build:linux_win\"}" \
-        --assets-link "{\"name\":\"Linux Portable (.AppImage)\",\"url\":\"${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/release/Paloma-Morse.${CI_COMMIT_TAG}.AppImage?job=build:linux_win\"}" \
-        --assets-link "{\"name\":\"macOS Disk Image (.dmg)\",\"url\":\"${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/release/Paloma-Morse.${CI_COMMIT_TAG}.dmg?job=build:mac\"}" \
+        --assets-link "{\"name\":\"Windows Setup (.exe)\",\"url\":\"${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/release/Paloma-Morse.Setup.${CLEAN_VERSION}.exe?job=build:linux_win\"}" \
+        --assets-link "{\"name\":\"Linux Portable (.AppImage)\",\"url\":\"${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/release/Paloma-Morse.${CLEAN_VERSION}.AppImage?job=build:linux_win\"}" \
+        --assets-link "{\"name\":\"macOS Disk Image (.dmg)\",\"url\":\"${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/release/Paloma-Morse.${CLEAN_VERSION}.dmg?job=build:mac\"}" \
         --assets-link "{\"name\":\"Engine Console Windows (.exe)\",\"url\":\"${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app_win.exe?job=build:linux_win\"}" \
         --assets-link "{\"name\":\"Engine Console Linux (ELF)\",\"url\":\"${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app_linux?job=build:linux_win\"}" \
         --assets-link "{\"name\":\"Engine Console macOS (ARM64)\",\"url\":\"${CI_PROJECT_URL}/-/jobs/artifacts/${CI_COMMIT_TAG}/raw/ui/native/morze_app_macos?job=build:mac\"}"
