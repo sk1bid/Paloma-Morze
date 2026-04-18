@@ -84,8 +84,9 @@ function createWindow() {
   });
 
   if (!app.isPackaged) {
+    const port = process.env.VITE_PORT || 5173;
     // Development mode: Connect to Vite dev server
-    mainWindow.loadURL('http://localhost:5173').catch(() => {
+    mainWindow.loadURL(`http://localhost:${port}`).catch(() => {
       // Fallback if Vite is not running
       const indexPath = path.join(__dirname, 'dist', 'index.html');
       mainWindow.loadURL(`file://${indexPath}`);

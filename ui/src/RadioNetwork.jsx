@@ -30,7 +30,7 @@ export const RadioNetwork = ({
 
   if (!user || !participants) return null;
 
-  const myId = user.userId || user.id; // Consistent ID access
+  const myId = String(user?.userId || user?.id); // Consistent ID access
   const correspondent = participants.find(p => p.callsign?.toUpperCase() !== user.callsign?.toUpperCase());
 
   // Sync Remote Signal Changes to Remote Timeline
@@ -84,7 +84,7 @@ export const RadioNetwork = ({
         console.log(`[AUDIO] [LOCAL] KeyDown event detected. Turn owner: ${turnOwnerId}`);
         
         // INTERLOCK: Only transmit if it's your turn
-        if (turnOwnerId !== null && turnOwnerId !== myId) {
+        if (turnOwnerId !== null && String(turnOwnerId) !== myId) {
           console.log(`[AUDIO] [LOCAL] BLOCKED High-Level logic: Not my turn.`);
           return; 
         }
@@ -109,7 +109,7 @@ export const RadioNetwork = ({
         console.log(`[AUDIO] [LOCAL] KeyUp event detected. Turn owner: ${turnOwnerId}`);
         
         // Ignore if locked
-        if (turnOwnerId !== null && turnOwnerId !== myId) {
+        if (turnOwnerId !== null && String(turnOwnerId) !== myId) {
           console.log(`[AUDIO] [LOCAL] BLOCKED High-Level logic: Not my turn (for KeyUp). Potential Stick point!`);
           return; 
         }
@@ -165,7 +165,7 @@ export const RadioNetwork = ({
 
   // AUDIO SAFETY INTERLOCK: Stop tones immediately when turn is lost
   useEffect(() => {
-    const isMyTurn = turnOwnerId === myId;
+    const isMyTurn = String(turnOwnerId) === myId;
     if (!isMyTurn) {
       console.log(`[RadioNetwork] Turn lost or not mine. Safety stop for audio.`);
       audioEngine.keyUp();
@@ -209,7 +209,7 @@ export const RadioNetwork = ({
       <div className="dual-timeline-container">
         {/* TOP: YOUR TIMELINE */}
         {(() => {
-          const isMyTurn = turnOwnerId === myId;
+          const isMyTurn = String(turnOwnerId) === myId;
           return (
             <div className={`timeline-section self ${isMyTurn ? 'is-talking' : 'is-listening'}`}>
               <div className="timeline-meta">
@@ -234,7 +234,7 @@ export const RadioNetwork = ({
 
         {/* BOTTOM: CORRESPONDENT TIMELINE */}
         {(() => {
-          const isRemoteTurn = turnOwnerId !== null && turnOwnerId !== myId;
+          const isRemoteTurn = turnOwnerId !== null && String(turnOwnerId) !== myId;
           return (
             <div className={`timeline-section remote ${isRemoteTurn ? 'is-talking' : 'is-listening'}`}>
               <div className="timeline-meta">
@@ -255,7 +255,7 @@ export const RadioNetwork = ({
       </div>
       
       <div className="network-footer-tip">
-        {turnOwnerId === user.userId 
+        {String(turnOwnerId) === myId 
           ? (lang === 'RU' ? 'ВАШ ВЫХОД. ПЕРЕДАЙТЕ "K" ( - . - ) ДЛЯ СМЕНЫ ОЧЕРЕДИ' : 'YOUR TURN. SEND "K" ( - . - ) TO PASS TURN')
           : (lang === 'RU' ? 'ПРИЕМ. ОЖИДАЙТЕ ВЫЗОВА...' : 'RECEIVING. WAITING FOR CALLSIGN...')
         }
