@@ -30,7 +30,11 @@ export const RadioNetwork = ({
 
   if (!user || !participants) return null;
 
-  const myId = String(user?.userId || user?.id); // Consistent ID access
+  // ROBUST ID RESOLUTION: Try to find "me" in participants list first (server ground truth)
+  // as user object in localStorage might be old or corrupted.
+  const meInRoom = participants.find(p => p.callsign?.toUpperCase() === user.callsign?.toUpperCase());
+  const myId = String(meInRoom?.userId || meInRoom?.id || user?.userId || user?.id);
+
   const correspondent = participants.find(p => p.callsign?.toUpperCase() !== user.callsign?.toUpperCase());
 
   // Sync Remote Signal Changes to Remote Timeline
@@ -60,20 +64,20 @@ export const RadioNetwork = ({
   useEffect(() => {
     if (!socket?.current) return;
     
-    const handleTurnUpdate = ({ turnOwnerId }) => {
-      console.log(`[RadioNetwork] [TURN] Update: ${turnOwnerId}. My ID: ${myId}`);
-      setTurnOwnerId(turnOwnerId);
-    };
-
     // SYNC INITIAL TURN FROM PROP
     if (turnOwnerId === null && initialTurnOwner) {
       console.log(`[RadioNetwork] [SYNC] Setting initial turn owner from prop: ${initialTurnOwner}`);
       setTurnOwnerId(initialTurnOwner);
     }
 
+    const handleTurnUpdate = (data) => {
+      setTurnOwnerId(data.turnOwnerId);
+      console.log(`[RadioNetwork] [DEBUG] Turn shifted to ${data.turnOwnerId}. Current myId: ${myId} (isMyTurn: ${String(data.turnOwnerId) === myId})`);
+    };
+    
     socket.current.on('turn_update', handleTurnUpdate);
     return () => socket.current.off('turn_update', handleTurnUpdate);
-  }, [socket, initialTurnOwner]);
+  }, [socket, initialTurnOwner, myId]);
 
   // Handle Local Keyboard Input
   useEffect(() => {

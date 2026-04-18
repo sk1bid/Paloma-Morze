@@ -318,6 +318,19 @@ function App() {
     }
   }, [keyConnected]);
 
+  // Self-healing ID recovery: If user object is missing ID but found in participants list
+  useEffect(() => {
+    if (user && !user.userId && !user.id && participants.length > 0) {
+      const me = participants.find(p => p.callsign?.toUpperCase() === user.callsign?.toUpperCase());
+      if (me && (me.userId || me.id)) {
+        const updatedUser = { ...user, userId: me.userId || me.id };
+        console.log('[App] [RECOVERY] Restoring missing user ID from participants list:', updatedUser.userId);
+        setUser(updatedUser);
+        localStorage.setItem('paloma_user', JSON.stringify(updatedUser));
+      }
+    }
+  }, [user, participants]);
+
   const freqTimer = useRef(null);
   const volTimer = useRef(null);
 
