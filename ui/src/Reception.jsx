@@ -3,6 +3,8 @@ import { Play, Square, FastForward, Volume2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { audioEngine } from './audio';
 import { MORSE_RU, MNEMONICS_RU, MNEMONICS_EN } from './constants';
+import { getMorsePattern, getMnemonic } from './utils/morseProvider';
+import { Q_LESSON_GROUPS } from './utils/q_codes';
 
 const LESSONS = [
   { id: 1, chars: ['Е', 'Л', 'Ж', 'А'] },
@@ -14,7 +16,8 @@ const LESSONS = [
   { id: 7, chars: ['З', 'В', 'Ю', 'Я'] },
   { id: 8, chars: ['Э', 'Ч', 'Ш'] },
   { id: 9, chars: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'] },
-  { id: 10, chars: ['/', '=', '?'] }
+  { id: 10, chars: ['/', '=', '?'] },
+  ...Q_LESSON_GROUPS
 ];
 
 // Use shared constants
@@ -142,13 +145,21 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   const [exerciseIndex, setExerciseIndex] = useState(0); // 0 = Learning (Ex 1), 1 = Practice (Ex 2)
   const [groupCount, setGroupCount] = useState(5);
 
-  // Auto-disable manualMode (and clear selection if needed) 
-  // when switching to exercises that don't support it (Ex 1 & 2)
   useEffect(() => {
     if (exerciseIndex < 2 && manualMode) {
       setManualMode(false);
     }
   }, [exerciseIndex]);
+
+  const currentLesson = LESSONS[lessonIndex];
+  const isQCodeLesson = currentLesson && currentLesson.id >= 11;
+
+  // Restriction: Disable Ex 3/4 for Q-codes
+  useEffect(() => {
+    if (isQCodeLesson && exerciseIndex > 1) {
+      setExerciseIndex(1);
+    }
+  }, [lessonIndex, isQCodeLesson]);
 
   const [hoverChar, setHoverChar] = useState(null);
   const [playingChar, setPlayingChar] = useState(null);
@@ -177,18 +188,23 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   const waitingRef = useRef(false);
   const isPlayingRef = useRef(false); // Immediate lock for single char playback
 
-  const currentLesson = LESSONS[lessonIndex];
   const lessonChars = currentLesson.chars;
 
   // Logic for Exercise 3/4 pool: 
   // Base pool is letters up to current lesson.
   // Then we optionally add digits/symbols based on toggles OR if current lesson is 9/10.
   const getBasePool = () => {
-    let pool = LESSONS.slice(0, Math.min(8, lessonIndex + 1)).flatMap(l => l.chars);
-    if (lessonIndex === 8) pool = LESSONS[8].chars; // Digits lesson
-    if (lessonIndex === 9) pool = LESSONS[9].chars; // Symbols lesson
+    let pool = [];
+    const startIdx = isQCodeLesson ? 10 : 0;
+    const endIdx = lessonIndex;
+    
+    for (let i = startIdx; i <= endIdx; i++) {
+      if (LESSONS[i]) {
+        pool = [...pool, ...LESSONS[i].chars];
+      }
+    }
 
-    if (includeSymbols && lessonIndex < 9) {
+    if (includeSymbols && !isQCodeLesson && lessonIndex < 9) {
       pool = [...pool, ...LESSONS[9].chars];
     }
     return Array.from(new Set(pool));
@@ -207,29 +223,9 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     audioEngine.setDashRatio(dashRatio);
   }, [frequency, volume, wpm, pauseFactor, dashRatio]);
 
-  // Integrated Dictionary logic with Custom Overrides
-  const getMorsePattern = (char) => {
-    if (customOverrides?.[char]?.pattern) return customOverrides[char].pattern;
-    // Force 0 to be dash as per user request
-    if (char === '0') return '-';
-
-    // Search in both RU and EN dictionaries to handle character set mismatches
-    return Object.keys(MORSE_RU).find(k => MORSE_RU[k] === char) ||
-      Object.keys(MORSE_EN).find(k => MORSE_EN[k] === char);
-  };
-
-  const getMnemonic = (char) => {
-    if (customOverrides?.[char]?.mnemonic) return customOverrides[char].mnemonic;
-    // Force 0 mnemonic
-    if (char === '0') return lang === 'RU' ? 'НОЛЬ' : 'ZERO';
-
-    // Look up pattern first, then look up mnemonic by pattern
-    const pattern = getMorsePattern(char);
-    if (!pattern) return '';
-
-    const dict = lang === 'RU' ? MNEMONICS_RU : MNEMONICS_EN;
-    return dict[pattern] || MNEMONICS_RU[pattern] || MNEMONICS_EN[pattern] || '';
-  };
+  // Unified pattern/mnemonic lookup via provider
+  const getCharPattern = (char) => getMorsePattern(char, customOverrides);
+  const getCharMnemonic = (char) => getMnemonic(char, lang, customOverrides);
 
   const playSingleCharFiltered = async (char) => {
     // 1. FOR CUSTOM SELECTION: Strict lock (cannot select another until current finished)
@@ -265,7 +261,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     }
 
     // Audio Feedback / Preview
-    const morsePattern = getMorsePattern(char);
+    const morsePattern = getCharPattern(char);
     if (morsePattern) {
       isPlayingRef.current = true;
       setPlayingChar(char);
@@ -306,7 +302,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       await new Promise(r => setTimeout(r, 1000));
 
       // Play 5 times as penalty
-      const morsePattern = getMorsePattern(target);
+      const morsePattern = getCharPattern(target);
       if (morsePattern) {
         setPlayingChar(target);
 
@@ -359,7 +355,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       return;
     }
 
-    const morsePattern = getMorsePattern(target);
+    const morsePattern = getCharPattern(target);
     if (morsePattern) {
       if (exerciseIndex === 0) setPlayingChar(target); // Only highlight in Ex 1
       await audioEngine.playString(morsePattern, null, setPulseType);
@@ -413,7 +409,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
         sequence.push(' ');
       });
 
-      await audioEngine.playSequence(sequence, MORSE_RU, (char) => {
+      await audioEngine.playSequence(sequence, getCharPattern, (char) => {
         setPlayingChar(char);
       }, setPulseType);
 
@@ -432,7 +428,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       isRunningRef.current = true;
 
       try {
-        await audioEngine.playSequence(freshSequence, MORSE_RU, null, null);
+        await audioEngine.playSequence(freshSequence, getCharPattern, null, null);
       } catch (err) {
         console.error('[Reception] Playback Error:', err);
       }
@@ -477,7 +473,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   // Use the same logic for both exercises: if a char is active, show its info.
   if (activeChar && (!isRunning || (exerciseIndex < 3 && exerciseIndex >= 0))) {
     headerTitle = activeChar;
-    headerDesc = getMnemonic(activeChar);
+    headerDesc = getCharMnemonic(activeChar);
   }
 
   return (
@@ -517,7 +513,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
             <button
               disabled={isRunning || playingChar || manualMode}
               title={manualMode ? (lang === 'RU' ? 'Доступно в обычном режиме' : 'Available in standard mode') : ''}
-              onClick={() => setLessonIndex(Math.min(9, lessonIndex + 1))}
+              onClick={() => setLessonIndex(Math.min(LESSONS.length - 1, lessonIndex + 1))}
             >+</button>
           </div>
         </div>
@@ -529,12 +525,15 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
               disabled={isRunning || playingChar}
               onClick={() => setExerciseIndex(Math.max(0, exerciseIndex - 1))}
             >-</button>
-            <span>{exerciseIndex + 1}</span>
+            <span style={{ color: isQCodeLesson && exerciseIndex > 1 ? 'rgba(255,255,255,0.2)' : 'inherit' }}>
+              {exerciseIndex + 1}
+            </span>
             <button
-              disabled={isRunning || playingChar}
+              disabled={isRunning || playingChar || (isQCodeLesson && exerciseIndex >= 1)}
               onClick={() => setExerciseIndex(Math.min(3, exerciseIndex + 1))}
             >+</button>
           </div>
+          {isQCodeLesson && <div style={{ fontSize: '10px', opacity: 0.5, textAlign: 'center', marginTop: '4px' }}>{lang === 'RU' ? 'НЕДОСТУПНО ДЛЯ Щ-КОДОВ' : 'N/A FOR Q-CODES'}</div>}
         </div>
 
 
@@ -647,10 +646,10 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
 
         {exerciseIndex < 2 ? (
           <div
-            className={`letters-grid ${(playingChar || feedbackStatus || (isRunning && (exerciseIndex === 3 || !waitingForInput))) ? 'disabled' : ''}`}
+            className={`letters-grid ${isQCodeLesson ? 'q-codes-layout' : ''} ${(playingChar || feedbackStatus || (isRunning && (exerciseIndex === 3 || !waitingForInput))) ? 'disabled' : ''}`}
             onMouseLeave={() => setHoverChar(null)}
           >
-            {lessonChars.map((char, i) => {
+            {(exerciseIndex === 0 ? lessonChars : studiedPool).map((char, i) => {
               const isTarget = playingChar === char;
               return (
                 <div

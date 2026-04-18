@@ -11,6 +11,15 @@ function startEngine(isProduction = false, extraArgs = []) {
     if (wss) return; // Already started
 
     wss = new WebSocketServer({ port: 8080 });
+
+    wss.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.warn('[Bridge] Port 8080 is busy. Possibly another instance is running. Skipping server start.');
+        } else {
+            console.error('[Bridge] WebSocket Error:', err);
+        }
+    });
+
     console.log('[Bridge] WebSocket server started on port 8080');
 
     // Linux-specific audio unmute (e.g. for Server/Mac Pro setups)

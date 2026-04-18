@@ -1,10 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Zap, Speaker, Radio, Headphones, Settings, X, AlertTriangle, Terminal } from 'lucide-react';
+import { Zap, Speaker, Radio, Headphones, Settings, X, AlertTriangle, Terminal, LogOut, Globe } from 'lucide-react';
+import { io } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Transmission } from './Transmission';
 import { Reception } from './Reception';
+import Auth from './Auth';
+import LobbyBrowser from './LobbyBrowser';
+import { RadioNetwork } from './RadioNetwork';
 import { MORSE_RU, MORSE_EN, MNEMONICS_RU, MNEMONICS_EN } from './constants';
 import { UpdateChecker } from './UpdateChecker';
+import { getMorsePattern, getMnemonic } from './utils/morseProvider';
 import { sounds } from './utils/sounds';
 import { audioEngine } from './audio';
 import './App.css';
@@ -17,7 +22,14 @@ const CHARACTER_SETS = {
 };
 
 function App() {
-  const [activeTab, setActiveTab] = useState('transmission'); // 'transmission' or 'reception'
+  const [activeTab, setActiveTab] = useState('reception'); // 'transmission', 'reception', or 'online'
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('paloma_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [token, setToken] = useState(() => localStorage.getItem('paloma_token'));
+  const [roomId, setRoomId] = useState(null);
+  const [roomAuth, setRoomAuth] = useState(null); // Stores password for joining
 
   // Persistence Initialization
   const loadSetting = (key, defaultValue) => {
@@ -53,7 +65,14 @@ function App() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [showCustomizer, setShowCustomizer] = useState(false);
-  const [focusedField, setFocusedField] = useState(null); // Tracks which field is currently being edited
+  const [focusedField, setFocusedField] = useState(null);
+
+  // Multiplayer / Network Session State
+  const [participants, setParticipants] = useState([]);
+  const [currentRoomOwner, setCurrentRoomOwner] = useState(null);
+  const [isNetworkActive, setIsNetworkActive] = useState(false);
+  const [remoteSignal, setRemoteSignal] = useState(0); // 1 or 0
+  const socketRef = useRef(null);
 
   const ws = useRef(null);
   const reconnectTimer = useRef(null);
@@ -79,12 +98,23 @@ function App() {
     };
 
     socket.onmessage = (event) => {
-      if (typeof event.data === 'string') {
-        if (event.data === 'STATUS:CONNECTED') { setKeyConnected(true); setPermError(false); }
-        else if (event.data === 'STATUS:DISCONNECTED') { setKeyConnected(false); setKeyPressed(false); }
-        else if (event.data === 'ERROR:PERMISSION_DENIED') { setPermError(true); setKeyConnected(false); }
-        else if (event.data === '1') setKeyPressed(true);
-        else if (event.data === '0') setKeyPressed(false);
+      const val = event.data;
+      if (typeof val === 'string') {
+        if (val === 'STATUS:CONNECTED') { setKeyConnected(true); setPermError(false); }
+        else if (val === 'STATUS:DISCONNECTED') { setKeyConnected(false); setKeyPressed(false); }
+        else if (val === 'ERROR:PERMISSION_DENIED') { setPermError(true); setKeyConnected(false); }
+        else if (val === '1') {
+          setKeyPressed(true);
+          if (socketRef.current && roomId) {
+            socketRef.current.emit('morse_event', { roomId, value: 1 });
+          }
+        }
+        else if (val === '0') {
+          setKeyPressed(false);
+          if (socketRef.current && roomId) {
+            socketRef.current.emit('morse_event', { roomId, value: 0 });
+          }
+        }
       }
     };
 
@@ -97,7 +127,7 @@ function App() {
 
     socket.onerror = (err) => {
       console.error('[App] WebSocket error:', err);
-      socket.close();
+      // socket.close(); // avoid double close
     };
 
     setWsNode(socket);
@@ -110,6 +140,60 @@ function App() {
       connectWebSocket();
     }, 2000);
   };
+
+  /**
+   * Multiplayer / Network Logic
+   */
+  useEffect(() => {
+    if (!token || !roomId) {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      setParticipants([]);
+      setIsNetworkActive(false);
+      return;
+    }
+
+    console.log('[App] Initializing Socket.io for Room:', roomId);
+    // Use the remote relay server IP
+    const socket = io('http://5.128.203.189:3001');
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('[App] Connected to Relay Server');
+      socket.emit('join', { roomId, password: roomAuth, token });
+    });
+
+    socket.on('room_update', ({ participants, owner }) => {
+      console.log('[App] Room update:', participants, 'Owner:', owner);
+      setParticipants(participants);
+      setCurrentRoomOwner(owner);
+    });
+
+    socket.on('session_ended', () => {
+      console.log('[App] Network session terminated by server');
+      setIsNetworkActive(false);
+    });
+
+    socket.on('remote_morse', ({ callsign, value }) => {
+      setRemoteSignal(value);
+      if (value === 1) audioEngine.keyDown();
+      else audioEngine.keyUp();
+    });
+
+    socket.on('session_started', () => {
+      console.log('[App] Network session activated');
+      setIsNetworkActive(true);
+    });
+
+    socket.on('error', (err) => alert('Relay Error: ' + err));
+
+    return () => {
+      console.log('[App] Cleaning up socket...');
+      socket.disconnect();
+    };
+  }, [roomId, token]);
 
   useEffect(() => {
     connectWebSocket();
@@ -216,6 +300,26 @@ function App() {
     }, 50);
   };
 
+  const handleAuthSuccess = (userData, userToken) => {
+    setUser(userData);
+    setToken(userToken);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('paloma_token');
+    localStorage.removeItem('paloma_user');
+    setToken(null);
+    setUser(null);
+    setRoomId(null);
+  };
+
+  const handleJoinRoom = (id, password = '') => {
+    setRoomId(id);
+    setRoomAuth(password);
+  };
+
+  if (isBindingKey) { /* ... */ } // Placeholder kept for context if needed, but not actually changed here
+
   return (
     <motion.div
       className="app-container"
@@ -281,6 +385,16 @@ function App() {
               <Settings size={20} />
             </button>
 
+            {token && (
+              <button 
+                className="icon-btn logout" 
+                onClick={handleLogout} 
+                title={lang === 'RU' ? 'ВЫХОД ИЗ АККАУНТА' : 'LOGOUT'}
+                style={{ width: '34px', height: '34px', borderRadius: '10px' }}
+              >
+                <LogOut size={18} />
+              </button>
+            )}
             <UpdateChecker />
           </div>
         </header>
@@ -323,8 +437,6 @@ function App() {
 
                 <div className="sidebar-separator" style={{ margin: '20px 0' }}></div>
 
-                <div className="sidebar-separator" style={{ margin: '20px 0' }}></div>
-
                 <button
                   className="open-customizer-btn"
                   onClick={() => setShowCustomizer(true)}
@@ -343,28 +455,35 @@ function App() {
           )}
         </AnimatePresence>
 
-        {/* Huge Tab Selection Overlay */}
+        {/* Tab Selection */}
         <div className="tab-selector">
           <button
-            className={`tab-btn ${activeTab === 'transmission' ? 'active' : ''}`}
-            onClick={() => setActiveTab('transmission')}
+            className={`tab-btn ${activeTab === 'reception' ? 'active' : ''} ${isNetworkActive ? 'disabled' : ''}`}
+            onClick={() => !isNetworkActive && setActiveTab('reception')}
+          >
+            <Headphones size={18} /> {lang === 'RU' ? 'ПРИЕМ' : 'RECEPTION'}
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'transmission' ? 'active' : ''} ${isNetworkActive ? 'disabled' : ''}`}
+            onClick={() => !isNetworkActive && setActiveTab('transmission')}
           >
             <Radio size={18} /> {lang === 'RU' ? 'ПЕРЕДАЧА' : 'TRANSMISSION'}
           </button>
           <button
-            className={`tab-btn ${activeTab === 'reception' ? 'active' : ''}`}
-            onClick={() => setActiveTab('reception')}
+            className={`tab-btn ${activeTab === 'online' ? 'active' : ''}`}
+            onClick={() => setActiveTab('online')}
           >
-            <Headphones size={18} /> {lang === 'RU' ? 'ПРИЕМ' : 'RECEPTION'}
+            <Globe size={18} /> {lang === 'RU' ? 'ЭФИР' : 'ONLINE'}
           </button>
         </div>
 
-        {/* Persistent Content (Keep-alive) */}
+        {/* Tab Content Area */}
         <div className="tab-content">
           <motion.div
             animate={{
               opacity: activeTab === 'transmission' ? 1 : 0,
               x: activeTab === 'transmission' ? 0 : -20,
+              display: activeTab === 'transmission' ? 'block' : 'none',
               pointerEvents: activeTab === 'transmission' ? 'auto' : 'none'
             }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
@@ -380,8 +499,11 @@ function App() {
               dashRatio={dashRatio}
               pauseFactor={pauseFactor}
               transmissionKey={transmissionKey}
-              disabled={showSettings}
+              disabled={showSettings || activeTab !== 'transmission'}
               customOverrides={customOverrides}
+              roomId={roomId}
+              token={token}
+              socketRef={socketRef}
             />
           </motion.div>
 
@@ -389,6 +511,7 @@ function App() {
             animate={{
               opacity: activeTab === 'reception' ? 1 : 0,
               x: activeTab === 'reception' ? 0 : 20,
+              display: activeTab === 'reception' ? 'block' : 'none',
               pointerEvents: activeTab === 'reception' ? 'auto' : 'none'
             }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
@@ -405,7 +528,65 @@ function App() {
               pauseFactor={pauseFactor}
               setPauseFactor={setPauseFactor}
               customOverrides={customOverrides}
+              roomId={roomId}
+              token={token}
             />
+          </motion.div>
+
+          <motion.div
+            animate={{
+              opacity: activeTab === 'online' ? 1 : 0,
+              y: activeTab === 'online' ? 0 : 20,
+              display: activeTab === 'online' ? 'block' : 'none',
+              pointerEvents: activeTab === 'online' ? 'auto' : 'none'
+            }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="tab-motion-wrapper"
+          >
+            <div className="online-tab-container">
+              {!token ? (
+                <Auth onAuthSuccess={handleAuthSuccess} />
+              ) : isNetworkActive ? (
+                <RadioNetwork 
+                  user={user}
+                  participants={participants}
+                  socket={socketRef}
+                  roomId={roomId}
+                  remoteSignal={remoteSignal}
+                  lang={lang}
+                  transmissionKey={transmissionKey}
+                  wpm={transWpm}
+                  dashRatio={dashRatio}
+                  onQuit={() => {
+                    if (socketRef.current && roomId) {
+                      socketRef.current.emit('leave_room', { roomId });
+                    }
+                    setRoomId(null);
+                    setCurrentRoomOwner(null);
+                    setIsNetworkActive(false);
+                  }}
+                />
+              ) : (
+                <LobbyBrowser 
+                  user={user} 
+                  onJoinRoom={handleJoinRoom} 
+                  onLogout={handleLogout} 
+                  activeRoomId={roomId}
+                  onLeaveRoom={() => {
+                    if (socketRef.current) socketRef.current.emit('leave_room', { roomId });
+                    setRoomId(null);
+                    setCurrentRoomOwner(null);
+                  }}
+                  lang={lang}
+                  participants={participants}
+                  currentRoomOwner={currentRoomOwner}
+                  onStartSession={() => {
+                    if (socketRef.current) socketRef.current.emit('start_session', { roomId });
+                  }}
+                  socketRef={socketRef}
+                />
+              )}
+            </div>
           </motion.div>
         </div>
 
@@ -473,8 +654,8 @@ function App() {
                         const morseDict = currentIsRU ? MORSE_RU : MORSE_EN;
                         const mnemDict = currentIsRU ? MNEMONICS_RU : MNEMONICS_EN;
 
-                        const defaultCode = Object.keys(morseDict).find(k => morseDict[k] === char) || '';
-                        const defaultMnemonic = mnemDict[defaultCode] || '';
+                        const defaultCode = getMorsePattern(char);
+                        const defaultMnemonic = getMnemonic(char, currentIsRU ? 'RU' : 'EN');
 
                         return (
                           <div key={char} className="customizer-row">

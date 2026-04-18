@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  callsign     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  lobbies      Lobby[]  @relation("LobbyOwner")
+}
+
+model Lobby {
+  id           String   @id @default(cuid())
+  name         String
+  passwordHash String?  // Optional password
+  ownerId      String
+  owner        User     @relation("LobbyOwner", fields: [ownerId], references: [id])
+  createdAt    DateTime @default(now())
+  active       Boolean  @default(true)
+}

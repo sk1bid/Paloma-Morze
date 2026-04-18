@@ -85,6 +85,12 @@ class MorseAudioEngine {
 
     for (let i = 0; i < morseStr.length; i++) {
       const symbol = morseStr[i];
+      
+      if (symbol === ' ') {
+        time += intraCharGap * 2; // Extra gap (space in pattern means extra pause)
+        continue;
+      }
+
       const type = symbol === '-' ? 'dash' : 'dot';
       const duration = symbol === '-' ? dashLen : dotLen;
 
@@ -165,7 +171,9 @@ class MorseAudioEngine {
           continue;
         }
 
-        const morsePattern = Object.keys(morseDict).find(k => morseDict[k] === char);
+        const morsePattern = typeof morseDict === 'function' 
+          ? morseDict(char)
+          : Object.keys(morseDict).find(k => morseDict[k] === char);
         if (morsePattern) {
           if (onCharPlay) {
             const charDelayMs = (nextStartTime - this.ctx.currentTime) * 1000;

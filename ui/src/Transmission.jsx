@@ -1,22 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Terminal, Zap, History, Speaker, Settings, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { io } from 'socket.io-client';
 import { audioEngine } from './audio';
 import { MORSE_EN, MORSE_RU, MNEMONICS_RU as MNEMONICS } from './constants';
+import { decodeMorse, getMnemonic, getQCodeMeaning } from './utils/morseProvider';
+import { TapeDisplay } from './TapeDisplay';
 import './App.css';
 
-// Use shared constants
 
-export const Transmission = ({ frequency, volume, lang, ws, wpm: initialWpm, setWpm: setWpmProp, transmissionKey, disabled, customOverrides = {} }) => {
+export const Transmission = ({ 
+  frequency, volume, lang, ws, wpm: initialWpm, 
+  setWpm: setWpmProp, transmissionKey, disabled, 
+  customOverrides = {}, roomId, token, socketRef 
+}) => {
   const [isPressed, setIsPressed] = useState(false);
   const [decodedText, setDecodedText] = useState('');
   const [lastMnemonic, setLastMnemonic] = useState('');
   const [morseBuffer, setMorseBuffer] = useState('');
-  
   const [wpm, setWpm] = useState(15); // Reverted to fixed 15 for stability
   const isPressedRef = useRef(false); // Ref for stable animation loop
   
-  const canvasRef = useRef(null);
   const lastPressTime = useRef(Date.now());
   const lastDotDuration = useRef(1200 / wpm);
   const textScrollRef = useRef(null);
@@ -37,70 +41,14 @@ export const Transmission = ({ frequency, volume, lang, ws, wpm: initialWpm, set
     }
   }, [decodedText, morseBuffer]);
 
-  // Tape Animation Logic
+  // TapeDisplay uses refs and state from Transmission
+  // Multiplayer signaling is now managed at the App level to support the Radio Direction mode.
+  // We only emit the local pulse here if a socket and roomId are provided.
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d'); // Restore alpha for transparency
-    let animationFrame;
-    const pixelsPerMs = wpm / 150;
-    const centerY = canvas.height / 2;
-    const rightMargin = 100;
-
-    const render = () => {
-      const now = Date.now();
-      ctx.clearRect(0, 0, canvas.width, canvas.height); // Restore transparency
-      
-      // Draw Axis
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-      ctx.setLineDash([5, 5]);
-      ctx.beginPath(); ctx.moveTo(0, centerY); ctx.lineTo(canvas.width, centerY); ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Draw Pointer
-      ctx.strokeStyle = 'rgba(0, 210, 255, 0.5)';
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(canvas.width - rightMargin, 10); ctx.lineTo(canvas.width - rightMargin, canvas.height - 10); ctx.stroke();
-
-      // Draw Finished Events
-      events.current.forEach(ev => {
-        const xStart = canvas.width - rightMargin + (ev.start - now) * pixelsPerMs;
-        const xEnd = ev.end ? canvas.width - rightMargin + (ev.end - now) * pixelsPerMs : canvas.width - rightMargin;
-        const width = xEnd - xStart;
-        
-        // CULLING: Only draw if visible on canvas
-        if (xEnd > 0 && xStart < canvas.width) {
-          if (ev.type === 'too-long') ctx.fillStyle = '#ff5555'; // Red
-          else if (ev.type === 'dash') ctx.fillStyle = '#ff79c6'; // Pink
-          else ctx.fillStyle = '#50fa7b'; // Green (dot)
-          
-          ctx.shadowBlur = 6; ctx.shadowColor = ctx.fillStyle + '80'; // Subtler glow for history
-          ctx.beginPath(); ctx.roundRect(xStart, centerY - 15, Math.max(width, 4), 30, 6); ctx.fill();
-          ctx.shadowBlur = 0;
-        }
-      });
-
-      // Draw Active Press
-      if (isPressedRef.current) {
-        const xStart = canvas.width - rightMargin + (lastPressTime.current - now) * pixelsPerMs;
-        const width = (canvas.width - rightMargin) - xStart;
-        const duration = now - lastPressTime.current;
-        
-        // Color active press based on duration
-        if (duration > lastDotDuration.current * 4.5) ctx.fillStyle = '#ff5555';
-        else if (duration >= dashThreshold) ctx.fillStyle = '#ff79c6';
-        else ctx.fillStyle = '#50fa7b';
-
-        ctx.shadowBlur = 25; ctx.shadowColor = ctx.fillStyle; // Strong glow for active press
-        ctx.beginPath(); ctx.roundRect(xStart, centerY - 15, width, 30, 6); ctx.fill();
-        ctx.shadowBlur = 0;
-      }
-
-      animationFrame = requestAnimationFrame(render);
-    };
-    render();
-    return () => cancelAnimationFrame(animationFrame);
-  }, [wpm, dashThreshold]); // NO isPressed dependency anymore!
+    if (socketRef && roomId) {
+      socketRef.current?.emit('morse_event', { roomId, value: isPressed ? 1 : 0 });
+    }
+  }, [isPressed, roomId, socketRef]);
 
   useEffect(() => {
     // If ws is passed as a ref, pull the current object. If it's the socket itself, use it.
@@ -127,27 +75,10 @@ export const Transmission = ({ frequency, volume, lang, ws, wpm: initialWpm, set
         setMorseBuffer(prev => {
           const next = prev + (type === 'dot' ? '.' : '-');
           
-          // Dictionary Merge Logic
-          const baseCodes = lang === 'RU' ? MORSE_RU : MORSE_EN;
-          // Create lookup: pattern -> char
-          const lookup = { ...baseCodes };
-          Object.keys(customOverrides).forEach(c => {
-            if (customOverrides[c].pattern) lookup[customOverrides[c].pattern] = c;
-          });
+          const char = decodeMorse(next, lang, customOverrides);
+          setPreviewChar(char);
           
-          // Explicitly prioritize T/Т for single dash to avoid collisions with 0
-          lookup['-'] = lang === 'RU' ? 'Т' : 'T';
-          
-          setPreviewChar(lookup[next] || '?');
-          
-          // Mnemonic Merge Logic
-          const mnemonics = { ...MNEMONICS };
-          Object.keys(customOverrides).forEach(c => {
-            if (customOverrides[c].mnemonic && customOverrides[c].pattern) {
-              mnemonics[customOverrides[c].pattern] = customOverrides[c].mnemonic;
-            }
-          });
-          setPreviewMnemonic(mnemonics[next] || ''); // Live mnemonic preview
+          setPreviewMnemonic(getMnemonic(char, lang, customOverrides)); // Live mnemonic preview
           return next;
         });
         events.current.push({ start: lastPressTime.current, end: now, type });
@@ -200,9 +131,9 @@ export const Transmission = ({ frequency, volume, lang, ws, wpm: initialWpm, set
 
         setMorseBuffer(prev => {
           const next = prev + (type === 'dot' ? '.' : '-');
-          const codes = lang === 'RU' ? MORSE_RU : MORSE_EN;
-          setPreviewChar(codes[next] || '?');
-          setPreviewMnemonic(MNEMONICS[next] || '');
+          const char = decodeMorse(next, lang, customOverrides);
+          setPreviewChar(char);
+          setPreviewMnemonic(getMnemonic(char, lang, customOverrides));
           return next;
         });
         events.current.push({ start: lastPressTime.current, end: now, type });
@@ -236,7 +167,7 @@ export const Transmission = ({ frequency, volume, lang, ws, wpm: initialWpm, set
 
       // Character gap - finalize current character
       if (morseBuffer && gap > charGapThreshold) {
-        decodeMorse(morseBuffer);
+        decodeMorseChar(morseBuffer);
         setMorseBuffer('');
       }
 
@@ -262,25 +193,19 @@ export const Transmission = ({ frequency, volume, lang, ws, wpm: initialWpm, set
     return () => clearInterval(cleanup);
   }, [wpm]);
 
-  const decodeMorse = (buffer) => {
-    // Dictionary Merge Logic
-    const baseCodes = lang === 'RU' ? MORSE_RU : MORSE_EN;
-    const lookup = { ...baseCodes };
-    Object.keys(customOverrides).forEach(c => {
-      if (customOverrides[c].pattern) lookup[customOverrides[c].pattern] = c;
-    });
+  const decodeMorseChar = (buffer) => {
+    const char = decodeMorse(buffer, lang, customOverrides);
+    const newText = decodedText + char;
+    setDecodedText(newText);
 
-    const char = lookup[buffer] || '?';
-    setDecodedText(prev => prev + char);
+    // Check for Q-code meaning in the recently typed text
+    const qMeaning = getQCodeMeaning(newText);
+    if (qMeaning) {
+      setLastMnemonic(qMeaning);
+    } else {
+      setLastMnemonic(getMnemonic(char, lang, customOverrides));
+    }
 
-    const mnemonics = { ...MNEMONICS };
-    Object.keys(customOverrides).forEach(c => {
-      if (customOverrides[c].mnemonic && customOverrides[c].pattern) {
-        mnemonics[customOverrides[c].pattern] = customOverrides[c].mnemonic;
-      }
-    });
-
-    setLastMnemonic(mnemonics[buffer] || '');
     setPreviewChar('');
     setPreviewMnemonic(''); // Clear preview when confirmed
   };
@@ -292,7 +217,14 @@ export const Transmission = ({ frequency, volume, lang, ws, wpm: initialWpm, set
       <main>
 
           <section className="scrolling-tape-container">
-            <canvas ref={canvasRef} width={800} height={100} className="tape-canvas" />
+            <TapeDisplay 
+              events={events}
+              isPressed={isPressed}
+              lastPressTime={lastPressTime}
+              wpm={15}
+              dashThreshold={dashThreshold}
+              lastDotDuration={lastDotDuration.current}
+            />
           </section>
 
           <section className="output-panel">
