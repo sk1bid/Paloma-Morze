@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Radio, ArrowLeftRight, Activity } from 'lucide-react';
 import { TapeDisplay } from './TapeDisplay';
 import { audioEngine } from './audio';
+import { decodeMorse } from './utils/morseProvider';
 
 export const RadioNetwork = ({ 
   user, 
@@ -14,16 +15,23 @@ export const RadioNetwork = ({
   transmissionKey = 'Space',
   wpm = 15,
   dashRatio = 3.0,
+  initialTurnOwner = null,
   onQuit
 }) => {
   const [isLocalPressed, setIsLocalPressed] = useState(false);
+  const [turnOwnerId, setTurnOwnerId] = useState(null);
   const localEvents = useRef([]);
   const remoteEvents = useRef([]);
   
   const lastLocalPressTime = useRef(Date.now());
   const lastRemotePressTime = useRef(Date.now());
-  
-  const correspondent = participants.find(p => p.callsign !== user.callsign);
+  const morseBuffer = useRef(''); // Robust buffer like in Transmission
+  const turnSwitchTimeout = useRef(null);
+
+  if (!user || !participants) return null;
+
+  const myId = user.userId || user.id; // Consistent ID access
+  const correspondent = participants.find(p => p.callsign?.toUpperCase() !== user.callsign?.toUpperCase());
 
   // Sync Remote Signal Changes to Remote Timeline
   const prevRemoteSignal = useRef(0);
@@ -48,12 +56,42 @@ export const RadioNetwork = ({
     prevRemoteSignal.current = remoteSignal;
   }, [remoteSignal]);
 
+  // Sync turn ownership from server
+  useEffect(() => {
+    if (!socket?.current) return;
+    
+    const handleTurnUpdate = ({ turnOwnerId }) => {
+      console.log(`[RadioNetwork] [TURN] Update: ${turnOwnerId}. My ID: ${myId}`);
+      setTurnOwnerId(turnOwnerId);
+    };
+
+    // SYNC INITIAL TURN FROM PROP
+    if (turnOwnerId === null && initialTurnOwner) {
+      console.log(`[RadioNetwork] [SYNC] Setting initial turn owner from prop: ${initialTurnOwner}`);
+      setTurnOwnerId(initialTurnOwner);
+    }
+
+    socket.current.on('turn_update', handleTurnUpdate);
+    return () => socket.current.off('turn_update', handleTurnUpdate);
+  }, [socket, initialTurnOwner]);
+
   // Handle Local Keyboard Input
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.repeat) return;
       if (e.code === transmissionKey) {
         e.preventDefault();
+        console.log(`[AUDIO] [LOCAL] KeyDown event detected. Turn owner: ${turnOwnerId}`);
+        
+        // INTERLOCK: Only transmit if it's your turn
+        if (turnOwnerId !== null && turnOwnerId !== myId) {
+          console.log(`[AUDIO] [LOCAL] BLOCKED High-Level logic: Not my turn.`);
+          return; 
+        }
+
+        console.log(`[AUDIO] [LOCAL] Accepting KeyDown. Calling Engines...`);
+        if (turnSwitchTimeout.current) clearTimeout(turnSwitchTimeout.current);
+
         const now = Date.now();
         lastLocalPressTime.current = now;
         setIsLocalPressed(true);
@@ -68,6 +106,15 @@ export const RadioNetwork = ({
     const handleKeyUp = (e) => {
       if (e.code === transmissionKey) {
         e.preventDefault();
+        console.log(`[AUDIO] [LOCAL] KeyUp event detected. Turn owner: ${turnOwnerId}`);
+        
+        // Ignore if locked
+        if (turnOwnerId !== null && turnOwnerId !== myId) {
+          console.log(`[AUDIO] [LOCAL] BLOCKED High-Level logic: Not my turn (for KeyUp). Potential Stick point!`);
+          return; 
+        }
+
+        console.log(`[AUDIO] [LOCAL] Accepting KeyUp. Calling Engines...`);
         const now = Date.now();
         setIsLocalPressed(false);
         audioEngine.keyUp();
@@ -76,7 +123,7 @@ export const RadioNetwork = ({
         }
         
         const duration = now - lastLocalPressTime.current;
-        const unit = 1200 / 15; // Standard 15 WPM visual unit
+        const unit = 1200 / 15;
         let type = 'dot';
         if (duration >= unit * 2) {
           type = (duration > unit * 4.5) ? 'too-long' : 'dash';
@@ -87,6 +134,23 @@ export const RadioNetwork = ({
           end: now, 
           type 
         });
+
+        // Robust Detection like in Transmission.jsx
+        morseBuffer.current += (type === 'dot' ? '.' : '-');
+        console.log(`[RadioNetwork] Morse buffer: ${morseBuffer.current}`);
+
+        // After a "letter gap", decode and check for K
+        turnSwitchTimeout.current = setTimeout(() => {
+          const decoded = decodeMorse(morseBuffer.current, lang);
+          console.log(`[RadioNetwork] Decoded char: "${decoded}"`);
+          
+          if (decoded === 'K' || decoded === 'К') {
+            console.log("[RadioNetwork] CRITICAL: 'K' (Invitation to Transmit) detected! Passing turn...");
+            socket.current.emit('pass_turn', { roomId });
+          }
+          
+          morseBuffer.current = ''; // Always clear after character completion
+        }, 400); // Letter gap threshold
       }
     };
 
@@ -95,8 +159,23 @@ export const RadioNetwork = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      if (turnSwitchTimeout.current) clearTimeout(turnSwitchTimeout.current);
     };
-  }, [transmissionKey, socket, roomId, wpm]);
+  }, [transmissionKey, socket, roomId, wpm, turnOwnerId, myId]);
+
+  // AUDIO SAFETY INTERLOCK: Stop tones immediately when turn is lost
+  useEffect(() => {
+    const isMyTurn = turnOwnerId === myId;
+    if (!isMyTurn) {
+      console.log(`[RadioNetwork] Turn lost or not mine. Safety stop for audio.`);
+      audioEngine.keyUp();
+      setIsLocalPressed(false);
+    }
+  }, [turnOwnerId, myId]);
+
+  useEffect(() => {
+    console.log(`[RadioNetwork] [DEBUG] Turn shifted to ${turnOwnerId}. Current myId: ${myId}`);
+  }, [turnOwnerId, myId]);
 
   // Cleanup old events
   useEffect(() => {
@@ -129,46 +208,57 @@ export const RadioNetwork = ({
 
       <div className="dual-timeline-container">
         {/* TOP: YOUR TIMELINE */}
-        <div className="timeline-section self">
-          <div className="timeline-meta">
-            <span className="owner-label">{lang === 'RU' ? 'ВЫ' : 'YOU'}</span>
-            <div className={`active-indicator ${isLocalPressed ? 'on' : ''}`}></div>
-          </div>
-          <TapeDisplay 
-            events={localEvents}
-            isPressed={isLocalPressed}
-            lastPressTime={lastLocalPressTime}
-            wpm={15}
-            height={140}
-            colorMode="local"
-          />
-        </div>
+        {(() => {
+          const isMyTurn = turnOwnerId === myId;
+          return (
+            <div className={`timeline-section self ${isMyTurn ? 'is-talking' : 'is-listening'}`}>
+              <div className="timeline-meta">
+                <span className="owner-label">{lang === 'RU' ? 'ВЫ' : 'YOU'}</span>
+                <div className={`active-indicator ${isLocalPressed ? 'on' : ''}`}></div>
+              </div>
+              <TapeDisplay 
+                events={localEvents}
+                isPressed={isLocalPressed}
+                lastPressTime={lastLocalPressTime}
+                wpm={15}
+                height={140}
+                colorMode="local"
+              />
+            </div>
+          );
+        })()}
 
         <div className="timeline-divider">
           <ArrowLeftRight size={24} className="divider-icon" />
         </div>
 
         {/* BOTTOM: CORRESPONDENT TIMELINE */}
-        <div className="timeline-section remote">
-          <div className="timeline-meta">
-            <span className="owner-label">{correspondent?.callsign || '...'}</span>
-            <div className={`active-indicator remote ${remoteSignal === 1 ? 'on' : ''}`}></div>
-          </div>
-          <TapeDisplay 
-            events={remoteEvents}
-            isPressed={remoteSignal === 1}
-            lastPressTime={lastRemotePressTime}
-            wpm={15}
-            height={140}
-            colorMode="remote"
-          />
-        </div>
+        {(() => {
+          const isRemoteTurn = turnOwnerId !== null && turnOwnerId !== myId;
+          return (
+            <div className={`timeline-section remote ${isRemoteTurn ? 'is-talking' : 'is-listening'}`}>
+              <div className="timeline-meta">
+                <span className="owner-label">{correspondent?.callsign || '...'}</span>
+                <div className={`active-indicator remote ${remoteSignal === 1 ? 'on' : ''}`}></div>
+              </div>
+              <TapeDisplay 
+                events={remoteEvents}
+                isPressed={remoteSignal === 1}
+                lastPressTime={lastRemotePressTime}
+                wpm={15}
+                height={140}
+                colorMode="remote"
+              />
+            </div>
+          );
+        })()}
       </div>
       
       <div className="network-footer-tip">
-        {lang === 'RU' 
-          ? 'НАЖИМАЙТЕ ПРОБЕЛ ДЛЯ ПЕРЕДАЧИ В ЭФИР' 
-          : 'USE SPACEBAR TO TRANSMIT TO AIR'}
+        {turnOwnerId === user.userId 
+          ? (lang === 'RU' ? 'ВАШ ВЫХОД. ПЕРЕДАЙТЕ "K" ( - . - ) ДЛЯ СМЕНЫ ОЧЕРЕДИ' : 'YOUR TURN. SEND "K" ( - . - ) TO PASS TURN')
+          : (lang === 'RU' ? 'ПРИЕМ. ОЖИДАЙТЕ ВЫЗОВА...' : 'RECEIVING. WAITING FOR CALLSIGN...')
+        }
       </div>
     </div>
   );

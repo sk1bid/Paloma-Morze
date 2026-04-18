@@ -25,10 +25,10 @@ const Auth = ({ onAuthSuccess }) => {
         password
       });
 
-      const { token, user } = response.data;
+      const { token, user: serverUser } = response.data;
       localStorage.setItem('paloma_token', token);
-      localStorage.setItem('paloma_user', JSON.stringify(user));
-      onAuthSuccess(user, token);
+      localStorage.setItem('paloma_user', JSON.stringify(serverUser));
+      onAuthSuccess(serverUser, token);
     } catch (err) {
       setError(err.response?.data?.error || 'Authentication failed');
     } finally {

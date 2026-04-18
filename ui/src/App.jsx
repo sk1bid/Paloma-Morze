@@ -56,6 +56,7 @@ function App() {
   const [transmissionKey, setTransmissionKey] = useState(() => loadSetting('transmissionKey', 'Space'));
   const [customOverrides, setCustomOverrides] = useState(() => loadSetting('customOverrides', {}));
   const [isBindingKey, setIsBindingKey] = useState(false);
+  const [initialTurnOwner, setInitialTurnOwner] = useState(null);
 
   const [showSettings, setShowSettings] = useState(false);
   const [keyConnected, setKeyConnected] = useState(false);
@@ -72,6 +73,19 @@ function App() {
   const [currentRoomOwner, setCurrentRoomOwner] = useState(null);
   const [isNetworkActive, setIsNetworkActive] = useState(false);
   const [remoteSignal, setRemoteSignal] = useState(0); // 1 or 0
+  
+  // Use refs to avoid stale closures in socket handlers
+  const participantsRef = useRef([]);
+  const currentRoomOwnerRef = useRef(null);
+
+  useEffect(() => {
+    participantsRef.current = participants;
+  }, [participants]);
+
+  useEffect(() => {
+    currentRoomOwnerRef.current = currentRoomOwner;
+  }, [currentRoomOwner]);
+
   const socketRef = useRef(null);
 
   const ws = useRef(null);
@@ -142,27 +156,29 @@ function App() {
   };
 
   /**
-   * Multiplayer / Network Logic
+   * Multiplayer / Network Logic - GLOBAL CONNECTION
    */
   useEffect(() => {
-    if (!token || !roomId) {
+    if (!token) {
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
       }
-      setParticipants([]);
-      setIsNetworkActive(false);
       return;
     }
 
-    console.log('[App] Initializing Socket.io for Room:', roomId);
-    // Use the remote relay server IP
-    const socket = io('http://5.128.203.189:3001');
+    console.log('[App] Initializing Global Socket.io Connection');
+    const socket = io('http://5.128.203.189:3001', {
+      auth: { callsign: user.callsign }
+    });
     socketRef.current = socket;
 
     socket.on('connect', () => {
       console.log('[App] Connected to Relay Server');
-      socket.emit('join', { roomId, password: roomAuth, token });
+      // If we already have a direct roomId (e.g. from invite), join it
+      if (roomId) {
+        socket.emit('join', { roomId, password: roomAuth, token });
+      }
     });
 
     socket.on('room_update', ({ participants, owner }) => {
@@ -182,17 +198,38 @@ function App() {
       else audioEngine.keyUp();
     });
 
-    socket.on('session_started', () => {
-      console.log('[App] Network session activated');
+    socket.on('session_started', (data) => {
+      let turnOwnerId = data?.turnOwnerId;
+      if (!turnOwnerId && currentRoomOwnerRef.current && participantsRef.current.length > 0) {
+        const ownerParticipant = participantsRef.current.find(p => p.callsign?.toUpperCase() === currentRoomOwnerRef.current.toUpperCase());
+        if (ownerParticipant) turnOwnerId = ownerParticipant.userId || ownerParticipant.id;
+      }
+      setInitialTurnOwner(turnOwnerId);
       setIsNetworkActive(true);
     });
 
     socket.on('error', (err) => alert('Relay Error: ' + err));
 
     return () => {
-      console.log('[App] Cleaning up socket...');
+      console.log('[App] Cleaning up global socket...');
       socket.disconnect();
     };
+  }, [token]);
+
+  /**
+   * Room Join/Leave Logic
+   */
+  useEffect(() => {
+    if (socketRef.current && socketRef.current.connected && token) {
+      if (roomId) {
+        console.log('[App] Joining Room:', roomId);
+        socketRef.current.emit('join', { roomId, password: roomAuth, token });
+      } else {
+        // If we were in a room but no longer are, the server handles cleanup,
+        // but it's good practice to have a 'leave' if needed. 
+        // Our server currently handles it via 'join' to a new room or disconnect.
+      }
+    }
   }, [roomId, token]);
 
   useEffect(() => {
@@ -557,6 +594,7 @@ function App() {
                   transmissionKey={transmissionKey}
                   wpm={transWpm}
                   dashRatio={dashRatio}
+                  initialTurnOwner={initialTurnOwner}
                   onQuit={() => {
                     if (socketRef.current && roomId) {
                       socketRef.current.emit('leave_room', { roomId });

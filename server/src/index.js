@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { PrismaClient } from '@prisma/client';
+const roomSessions = new Map();
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
@@ -46,7 +47,7 @@ app.post('/api/auth/register', async (req, res) => {
       data: { callsign: callsign.toUpperCase(), passwordHash: hashedPassword }
     });
     const token = jwt.sign({ userId: user.id, callsign: user.callsign }, JWT_SECRET);
-    res.json({ token, user: { callsign: user.callsign } });
+    res.json({ token, user: { userId: user.id, callsign: user.callsign } });
   } catch (e) {
     res.status(400).json({ error: 'Callsign already taken' });
   }
@@ -57,16 +58,35 @@ app.post('/api/auth/login', async (req, res) => {
   const { callsign, password } = req.body;
   const user = await prisma.user.findUnique({ where: { callsign: callsign?.toUpperCase() } });
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    return res.status(400).json({ error: 'Invalid credentials' });
+    return res.status(401).json({ error: 'Invalid callsign or password' });
   }
   const token = jwt.sign({ userId: user.id, callsign: user.callsign }, JWT_SECRET);
-  res.json({ token, user: { callsign: user.callsign } });
+  res.json({ token, user: { userId: user.id, callsign: user.callsign } });
 });
 
 // --- Lobbies ---
 app.get('/api/lobbies', async (req, res) => {
-  const lobbies = await prisma.lobby.findMany();
-  res.json(lobbies.map(l => ({ id: l.id, name: l.name, owner: l.owner, hasPassword: !!l.passwordHash })));
+  try {
+    const lobbies = await prisma.lobby.findMany({
+      include: {
+        owner: {
+          select: { callsign: true }
+        }
+      }
+    });
+    
+    const result = lobbies.map(l => ({ 
+      id: l.id, 
+      name: l.name, 
+      owner: l.owner ? l.owner.callsign : '?', 
+      hasPassword: !!l.passwordHash 
+    }));
+    
+    res.json(result);
+  } catch (err) {
+    console.error('Error fetching lobbies:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.post('/api/lobbies', async (req, res) => {
@@ -108,8 +128,24 @@ app.post('/api/lobbies', async (req, res) => {
 
 const roomParticipants = new Map(); // roomId -> Array of {id, callsign}
 
+const broadcastOnlineCount = () => {
+  const uniqueCallsigns = new Set();
+  for (const [id, socket] of io.of("/").sockets) {
+    const callsign = socket.handshake.auth?.callsign;
+    if (callsign) {
+      uniqueCallsigns.add(callsign.toUpperCase());
+    }
+  }
+  const count = uniqueCallsigns.size || io.engine.clientsCount;
+  console.log(`[Relay] Broadcasting unique online count: ${count} (${Array.from(uniqueCallsigns).join(', ')})`);
+  io.emit('global_online', count);
+};
+
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
+  // Send initial count only to this user immediately
+  socket.emit('global_online', io.engine.clientsCount);
+  broadcastOnlineCount();
 
   socket.on('join', async ({ roomId, password, token }) => {
     try {
@@ -136,17 +172,25 @@ io.on('connection', (socket) => {
       const participants = roomParticipants.get(roomId);
       
       // Check if user already in list to avoid duplicates on reconnect
-      if (!participants.find(p => p.callsign === decoded.callsign)) {
+      if (!participants.find(p => p.userId === decoded.userId)) {
         participants.push({ 
           id: socket.id, 
-          callsign: decoded.callsign,
+          callsign: decoded.callsign, 
           userId: decoded.userId 
         });
+        roomParticipants.set(roomId, participants);
       }
       
       console.log(`${decoded.callsign} joined room ${roomId}`);
       io.to(roomId).emit('user_joined', { callsign: decoded.callsign });
+      console.log(`[Relay] Room ${roomId} update. Participants:`, JSON.stringify(participants), 'Owner:', lobby.owner.callsign);
       io.to(roomId).emit('room_update', { participants, owner: lobby.owner.callsign });
+
+      // Send current session state (turn owner) to the newly joined user
+      const session = roomSessions.get(roomId);
+      if (session) {
+        socket.emit('turn_update', { turnOwnerId: session.turnOwnerId });
+      }
     } catch (e) {
       socket.emit('error', 'Auth failed');
     }
@@ -160,12 +204,60 @@ io.on('connection', (socket) => {
   });
 
   socket.on('start_session', async ({ roomId }) => {
-    const lobby = await prisma.lobby.findUnique({ where: { id: roomId } });
-    if (lobby && socket.data.user && socket.data.user.userId === lobby.ownerId) {
-      io.to(roomId).emit('session_started');
-    } else {
-      socket.emit('error', 'Only the owner can start the session');
+    console.log(`[Relay] start_session requested for room: ${roomId} by socket: ${socket.id}`);
+    const lobby = await prisma.lobby.findUnique({ 
+      where: { id: roomId },
+      include: { owner: true }
+    });
+    
+    if (!lobby) {
+      console.log(`[Relay] start_session failed: Lobby ${roomId} not found.`);
+      return socket.emit('error', 'Lobby not found');
     }
+    
+    const ownerId = lobby.ownerId || lobby.owner?.id;
+    console.log(`[Relay] Starting session. Owner ID Resolved: ${ownerId}`);
+    
+    // Explicitly log structural issues
+    if (!ownerId) {
+      console.error(`[Relay] CRITICAL: Could not resolve ownerId for lobby. Full Object:`, JSON.stringify(lobby));
+    }
+    
+    // Set initial turn to owner
+    roomSessions.set(roomId, { turnOwnerId: ownerId });
+    
+    // BROADCAST: Explicitly include turnOwnerId in session_started for immediate sync
+    io.to(roomId).emit('session_started', { turnOwnerId: ownerId });
+    
+    // Keep turn_update for compatibility
+    io.to(roomId).emit('turn_update', { turnOwnerId: ownerId });
+    console.log(`[Relay] Session started successfully for room ${roomId}. Broadcasted turn: ${ownerId}`);
+  });
+
+  socket.on('pass_turn', ({ roomId }) => {
+    console.log(`[Relay] Turn pass requested for room: ${roomId}`);
+    const participants = roomParticipants.get(roomId);
+    const session = roomSessions.get(roomId);
+    
+    if (!participants || !session) {
+      console.log(`[Relay] Error: No participants or session found for room ${roomId}`);
+      return;
+    }
+    
+    // Find index of current turn owner
+    const currentIndex = participants.findIndex(p => p.userId === session.turnOwnerId);
+    if (currentIndex === -1) {
+      console.log(`[Relay] Error: Current owner ${session.turnOwnerId} not in participants list`);
+      return;
+    }
+    
+    // Next index (circular)
+    const nextIndex = (currentIndex + 1) % participants.length;
+    const nextOwner = participants[nextIndex];
+    
+    session.turnOwnerId = nextOwner.userId;
+    console.log(`[Relay] Turn passed: ${participants[currentIndex].callsign} -> ${nextOwner.callsign}`);
+    io.to(roomId).emit('turn_update', { turnOwnerId: nextOwner.userId });
   });
 
   socket.on('leave_room', async ({ roomId }) => {
@@ -179,6 +271,7 @@ io.on('connection', (socket) => {
         if (remaining.length === 0) {
           console.log(`Room ${roomId} is empty, deleting...`);
           roomParticipants.delete(roomId);
+          roomSessions.delete(roomId);
           await prisma.lobby.delete({ where: { id: roomId } }).catch(e => console.error('Delete error:', e));
           io.emit('lobby_update'); // Notify everyone that a room is gone
         } else {
@@ -223,9 +316,10 @@ io.on('connection', (socket) => {
         if (remaining.length === 0) {
           console.log(`Room ${roomId} is empty after disconnect, deleting...`);
           roomParticipants.delete(roomId);
-          // Only attempt delete if it actually exists (avoid crash on double disconnect/race)
-          await prisma.lobby.delete({ where: { id: roomId } }).catch(() => {});
-          io.emit('lobby_update'); // Notify everyone that a room is gone
+          roomSessions.delete(roomId);
+          // Use deleteMany to avoid 404/P2025 errors if already gone
+          await prisma.lobby.deleteMany({ where: { id: roomId } }).catch(e => console.error("Lobby cleanup error:", e));
+          io.emit('lobby_update'); 
         } else {
           io.to(roomId).emit('session_ended');
           
@@ -233,13 +327,13 @@ io.on('connection', (socket) => {
           let currentOwnerCallsign = '';
           
           if (lobby && socket.data.user && socket.data.user.userId === lobby.ownerId) {
-            // Owner disconnected! Transfer to first remaining person
             const newOwner = remaining[0];
             console.log(`Transferring ownership of room ${roomId} to ${newOwner.callsign} after disconnect`);
-            await prisma.lobby.update({
+            // Safe update
+            await prisma.lobby.updateMany({
               where: { id: roomId },
               data: { ownerId: newOwner.userId }
-            });
+            }).catch(e => console.error("Ownership transfer error:", e));
             currentOwnerCallsign = newOwner.callsign;
           } else {
             const fullLobby = await prisma.lobby.findUnique({
@@ -253,6 +347,7 @@ io.on('connection', (socket) => {
         }
       }
     }
+    broadcastOnlineCount();
     console.log('User disconnected:', socket.id);
   });
 });

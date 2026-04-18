@@ -2872,3 +2872,33 @@ header {
   gap: 10px;
   font-size: 0.8rem !important;
 }
+
+.timeline-section {
+  transition: all 0.4s ease;
+}
+
+.timeline-section.is-listening {
+  opacity: 0.4;
+  filter: grayscale(0.5);
+  pointer-events: none;
+}
+
+.timeline-section.is-talking {
+  opacity: 1;
+  filter: none;
+  background: rgba(0, 242, 254, 0.04); 
+  border: 1px solid rgba(0, 242, 254, 0.2);
+  box-shadow: inset 0 0 25px rgba(0, 242, 254, 0.05);
+}
+
+.timeline-section.is-talking .owner-label {
+  color: var(--accent-color);
+  text-shadow: 0 0 12px rgba(0, 242, 254, 0.6);
+  font-weight: 900;
+}
+
+.timeline-section.is-listening {
+  opacity: 0.3;
+  filter: grayscale(0.8);
+  pointer-events: none;
+}

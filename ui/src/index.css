@@ -89,6 +89,50 @@ p {
   margin: 0;
 }
 
+/* Online Badge & Pulse */
+.online-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 255, 242, 0.1);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #00fff2;
+  border: 1px solid rgba(0, 255, 242, 0.2);
+  margin-left: 15px;
+  letter-spacing: 1px;
+}
+
+.online-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #00fff2;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+.online-sep {
+  margin: 0 4px;
+  opacity: 0.3;
+  color: #fff;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 242, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(0, 255, 242, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 242, 0);
+  }
+}
+
 code,
 .counter {
   font-family: var(--mono);

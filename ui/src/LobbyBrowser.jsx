@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Users, Lock, Unlock, LogOut, RefreshCw, X, Zap } from 'lucide-react';
+import { Plus, Users, Lock, Unlock, LogOut, RefreshCw, X, Zap, Globe } from 'lucide-react';
 import './App.css';
 
 const API_URL = 'http://5.128.203.189:3001/api';
@@ -24,12 +24,17 @@ const LobbyBrowser = ({
   const [isPrivate, setIsPrivate] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomPassword, setNewRoomPassword] = useState('');
+  const [latency, setLatency] = useState(0);
+  const [totalOnline, setTotalOnline] = useState(0);
 
   const fetchLobbies = async () => {
     // Only show loading on initial fetch to avoid flickering
     if (lobbies.length === 0) setLoading(true);
     try {
+      const startTime = performance.now();
       const response = await axios.get(`${API_URL}/lobbies`);
+      const endTime = performance.now();
+      setLatency(endTime - startTime);
       setLobbies(response.data);
     } catch (e) {
       console.error(e);
@@ -38,20 +43,33 @@ const LobbyBrowser = ({
     }
   };
 
+  const getSignalBars = (ms) => {
+    if (ms === 0) return 0;
+    if (ms < 150) return 3;
+    if (ms < 400) return 2;
+    return 1;
+  };
+
   useEffect(() => {
     fetchLobbies();
 
-    // Listen for real-time updates from server
     const socket = socketRef?.current;
     if (socket) {
       socket.on('lobby_update', fetchLobbies);
+      socket.on('global_online', (count) => {
+        console.log('[Lobby] Global online updated:', count);
+        setTotalOnline(count);
+      });
     }
 
     // Safety polling every 15s
     const interval = setInterval(fetchLobbies, 15000);
 
     return () => {
-      if (socket) socket.off('lobby_update', fetchLobbies);
+      if (socket) {
+        socket.off('lobby_update', fetchLobbies);
+        socket.off('global_online');
+      }
       clearInterval(interval);
     };
   }, [socketRef, socketRef?.current]);
@@ -103,7 +121,12 @@ const LobbyBrowser = ({
         <div className="active-user-status">
           <div className="status-dot pulsed"></div>
           <span className="user-callsign">{user.callsign}</span>
-          <span className="status-label">{lang === 'RU' ? 'В ЭФИРЕ' : 'ON AIR'}</span>
+          {totalOnline > 0 && (
+            <div className="online-tag">
+              <span className="online-sep">/</span>
+              ONLINE: {totalOnline}
+            </div>
+          )}
         </div>
         
         <div className="header-actions">
@@ -132,15 +155,16 @@ const LobbyBrowser = ({
           >
             <div className="presence-header">
               <Users size={20} className="glow-icon" />
-              <h3>{lang === 'RU' ? 'ОПЕРАТОРЫ В КАНАЛЕ' : 'OPERATORS IN CHANNEL'}</h3>
+              <h3>{lobbies.find(l => l.id === activeRoomId)?.name || (lang === 'RU' ? 'КАНАЛ' : 'CHANNEL')}</h3>
             </div>
             
             <div className="participants-list">
+              {console.log('[LobbyBrowser] Rendering participants:', participants)}
               {participants.map(p => (
                 <div key={p.id} className="participant-item">
                   <div className="participant-dot"></div>
-                  <span className={`participant-callsign ${p.callsign === user.callsign ? 'self-highlight' : ''}`}>
-                    {p.callsign}
+                  <span className={`participant-callsign ${p.callsign === user?.callsign ? 'self-highlight' : ''}`}>
+                    {p.callsign || 'UNKNOWN'}
                   </span>
                 </div>
               ))}
@@ -206,10 +230,10 @@ const LobbyBrowser = ({
                   </div>
                   <div className="lobby-meta-signals">
                     {lobby.hasPassword ? <Lock size={14} className="lock-icon" /> : <Unlock size={14} className="unlock-icon" />}
-                    <div className="signal-bars">
-                      <div className="bar active"></div>
-                      <div className="bar active"></div>
-                      <div className="bar"></div>
+                    <div className="signal-bars" title={`Latency: ${Math.round(latency)}ms`}>
+                      <div className={`bar ${getSignalBars(latency) >= 1 ? 'active' : ''}`}></div>
+                      <div className={`bar ${getSignalBars(latency) >= 2 ? 'active' : ''}`}></div>
+                      <div className={`bar ${getSignalBars(latency) >= 3 ? 'active' : ''}`}></div>
                     </div>
                   </div>
                 </motion.div>
