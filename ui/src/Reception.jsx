@@ -48,7 +48,7 @@ const UI_STRINGS = {
     closeReport: 'ЗАКРЫТЬ',
     examTitle: 'ТЕКСТ КОНТРОЛЬНОЙ',
     digits: 'ЦИФРЫ',
-    symbols: 'СИМВОЛЫ',
+    symbols: 'ЗНАКИ',
     selectLetters: 'ВЫБРАТЬ БУКВЫ'
   },
   EN: {
@@ -69,7 +69,7 @@ const UI_STRINGS = {
     closeReport: 'CLOSE',
     examTitle: 'EXAM TEXT',
     digits: 'DIGITS',
-    symbols: 'SYMBOLS',
+    symbols: 'SIGNS',
     selectLetters: 'SELECT LETTERS'
   }
 };
@@ -194,6 +194,11 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   // Base pool is letters up to current lesson.
   // Then we optionally add digits/symbols based on toggles OR if current lesson is 9/10.
   const getBasePool = () => {
+    // Lesson 9 (id 9) is index 8: ONLY digits
+    if (lessonIndex === 8) return [...LESSONS[8].chars];
+    // Lesson 10 (id 10) is index 9: ONLY signs
+    if (lessonIndex === 9) return [...LESSONS[9].chars];
+
     let pool = [];
     const startIdx = isQCodeLesson ? 10 : 0;
     const endIdx = lessonIndex;
@@ -204,7 +209,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       }
     }
 
-    if (includeSymbols && !isQCodeLesson && lessonIndex < 9) {
+    if (includeSymbols && !isQCodeLesson && lessonIndex < 8) {
       pool = [...pool, ...LESSONS[9].chars];
     }
     return Array.from(new Set(pool));
@@ -649,7 +654,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
             className={`letters-grid ${isQCodeLesson ? 'q-codes-layout' : ''} ${(playingChar || feedbackStatus || (isRunning && (exerciseIndex === 3 || !waitingForInput))) ? 'disabled' : ''}`}
             onMouseLeave={() => setHoverChar(null)}
           >
-            {(exerciseIndex === 0 ? lessonChars : studiedPool).map((char, i) => {
+            {(exerciseIndex < 2 ? lessonChars : studiedPool).map((char, i) => {
               const isTarget = playingChar === char;
               return (
                 <div

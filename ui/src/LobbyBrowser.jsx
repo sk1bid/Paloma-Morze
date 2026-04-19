@@ -124,7 +124,7 @@ const LobbyBrowser = ({
           {totalOnline > 0 && (
             <div className="online-tag">
               <span className="online-sep">/</span>
-              ONLINE: {totalOnline}
+              {lang === 'RU' ? 'В СЕТИ' : 'ONLINE'}: {totalOnline}
             </div>
           )}
         </div>
