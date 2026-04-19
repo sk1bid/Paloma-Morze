@@ -9,6 +9,7 @@ export const RadioNetwork = ({
   user, 
   participants, 
   socket, 
+  ws,
   roomId, 
   remoteSignal, 
   lang = 'RU',
@@ -166,6 +167,65 @@ export const RadioNetwork = ({
       if (turnSwitchTimeout.current) clearTimeout(turnSwitchTimeout.current);
     };
   }, [transmissionKey, socket, roomId, wpm, turnOwnerId, myId]);
+  
+  // Handle Hardware Key Input via WebSocket
+  useEffect(() => {
+    // If ws is passed as a ref, pull the current object. If it's the socket itself, use it.
+    const hwSocket = ws?.current || ws;
+    if (!hwSocket) return;
+    
+    const handleHwMessage = (event) => {
+      const isMyTurn = String(turnOwnerId) === myId;
+      if (!isMyTurn) return; // Locked: Not my turn
+
+      const val = event.data;
+      const now = Date.now();
+      
+      if (val === '1') {
+        lastLocalPressTime.current = now;
+        setIsLocalPressed(true);
+        audioEngine.init();
+        audioEngine.keyDown();
+        if (socket?.current && roomId) {
+          socket.current.emit('morse_event', { roomId, value: 1 });
+        }
+      } else if (val === '0') {
+        setIsLocalPressed(false);
+        audioEngine.keyUp();
+        if (socket?.current && roomId) {
+          socket.current.emit('morse_event', { roomId, value: 0 });
+        }
+        
+        const duration = now - lastLocalPressTime.current;
+        const unit = 1200 / 15;
+        let type = 'dot';
+        if (duration >= unit * 2) {
+          type = (duration > unit * 4.5) ? 'too-long' : 'dash';
+        }
+        
+        localEvents.current.push({ 
+          start: lastLocalPressTime.current, 
+          end: now, 
+          type 
+        });
+
+        morseBuffer.current += (type === 'dot' ? '.' : '-');
+        
+        // After a "letter gap", decode and check for K
+        if (turnSwitchTimeout.current) clearTimeout(turnSwitchTimeout.current);
+        turnSwitchTimeout.current = setTimeout(() => {
+          const decoded = decodeMorse(morseBuffer.current, lang);
+          if (decoded === 'K' || decoded === 'К') {
+            socket.current.emit('pass_turn', { roomId });
+          }
+          morseBuffer.current = ''; 
+        }, 400);
+      }
+    };
+    
+    hwSocket.addEventListener('message', handleHwMessage);
+    return () => hwSocket.removeEventListener('message', handleHwMessage);
+  }, [ws, ws?.current, turnOwnerId, myId, socket, roomId, lang]);
 
   // AUDIO SAFETY INTERLOCK: Stop tones immediately when turn is lost
   useEffect(() => {

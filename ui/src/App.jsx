@@ -601,6 +601,7 @@ function App() {
                   user={user}
                   participants={participants}
                   socket={socketRef}
+                  ws={wsNode}
                   roomId={roomId}
                   remoteSignal={remoteSignal}
                   lang={lang}
