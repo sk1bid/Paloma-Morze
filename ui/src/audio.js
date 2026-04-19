@@ -6,6 +6,8 @@ class MorseAudioEngine {
     this.frequency = 700;
     this.volume = 0.5;
     this.dashRatio = 3.0;
+    this.charWpm = 50;
+    this.pauseFactor = 1.0;
     this.activeTimeouts = new Set();
   }
 
@@ -70,8 +72,9 @@ class MorseAudioEngine {
     const token = { cancel: () => { isCancelled = true; } };
     this.cancelTokens.push(token);
 
-    const currentSpeed = isFinite(this.charWpm) ? (this.charWpm || 60) : 60;
-    const dotLen = 6.0 / currentSpeed;
+    const currentSpeed = isFinite(this.charWpm) ? (this.charWpm || 50) : 50;
+    // APAK Speed 50 = 118.5ms dot. 5.925 / 50 = 0.1185
+    const dotLen = 5.925 / currentSpeed;
     const dashLen = dotLen * (this.dashRatio || 3.0);
     const intraCharGap = dotLen;
     const attack = 0.005; // Standard 5ms
@@ -149,15 +152,18 @@ class MorseAudioEngine {
     this.cancelTokens.push(token);
 
     try {
-      const currentSpeed = this.charWpm || 60;
-      const dotLen = 6.0 / currentSpeed;
+      const currentSpeed = this.charWpm || 50;
+      const dotLen = 5.925 / currentSpeed;
+      const uiPause = this.pauseFactor || 1.0; 
+      
+      console.log(`[AudioEngine] Starting sequence: Speed=${currentSpeed} CPM, Pause=x${uiPause}`);
 
-      const uiPause = this.pauseFactor || 3.0; 
-      // APAK mapping: x1.0 -> 3 dots, x2.0 -> 5 dots, x3.0 -> 7 dots.
-      const pFactor = (uiPause * 2.0) + 1.0; 
-
-      const interCharGap = dotLen * pFactor; 
-      const wordGap = dotLen * (pFactor * (7.0 / 3.0)); // Proportional word gap
+      // APAK Timing Sync:
+      // Letter gap = Dot * (Factor + 1) * 1.5
+      // Word gap = Dot * (Factor + 1) * 3
+      // For x1.0 (standard): 3/6 dots. For x3.0: 6/12 dots.
+      const interCharGap = dotLen * (uiPause + 1) * 1.5; 
+      const wordGap = dotLen * (uiPause + 1) * 3;
       const extraWordGap = wordGap - interCharGap;
 
       let nextStartTime = this.ctx.currentTime + 0.1;

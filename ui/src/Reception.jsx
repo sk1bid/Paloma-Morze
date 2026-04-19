@@ -593,9 +593,6 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
             <span>x{pauseFactor.toFixed(1)}</span>
             <button onClick={() => setPauseFactor(Math.min(10.0, parseFloat((pauseFactor + 0.5).toFixed(1))))}>+</button>
           </div>
-          <div style={{ fontSize: '10px', opacity: 0.5, textAlign: 'center', marginTop: '6px' }}>
-            {lang === 'RU' ? 'Общая скорость: ~' : 'Overall Speed: ~'}{Math.round(50 * wpm / (31 + 6.333 * ((pauseFactor * 2.0) + 1.0)))} {lang === 'RU' ? 'зн/мин' : 'CPM'}
-          </div>
         </div>
 
         <div className="control-group" style={{
