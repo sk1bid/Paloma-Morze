@@ -234,14 +234,29 @@ export const RadioNetwork = ({
       console.log(`[RadioNetwork] Turn lost or not mine. Safety stop for audio.`);
       audioEngine.keyUp();
       setIsLocalPressed(false);
+      // Mute hardware sidetone in C++ engine when it's not our turn
+      if (ws?.current || ws) {
+        const bridgeSocket = ws.current || ws;
+        if (bridgeSocket.readyState === 1) bridgeSocket.send('M1');
+      }
+    } else {
+      // Unmute hardware sidetone for direct zero-latency monitoring
+      if (ws?.current || ws) {
+        const bridgeSocket = ws.current || ws;
+        if (bridgeSocket.readyState === 1) bridgeSocket.send('M0');
+      }
     }
     
     return () => {
-      // Robust unmount cleanup: ensure no sound leaks when exiting the tab
+      // Robust unmount cleanup: ensure no sound leaks and restore HW sidetone for practice
       audioEngine.keyUp();
       setIsLocalPressed(false);
+      if (ws?.current || ws) {
+        const bridgeSocket = ws.current || ws;
+        if (bridgeSocket.readyState === 1) bridgeSocket.send('M0');
+      }
     };
-  }, [turnOwnerId, myId]);
+  }, [turnOwnerId, myId, ws, ws?.current]);
 
   useEffect(() => {
     console.log(`[RadioNetwork] [DEBUG] Turn shifted to ${turnOwnerId}. Current myId: ${myId}`);

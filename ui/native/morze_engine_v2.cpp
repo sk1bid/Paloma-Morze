@@ -32,6 +32,7 @@ struct MorseState {
   float targetVolume;
   float maxVolume;
   double sampleRate;
+  bool isMuted; // New: Mute hardware sidetone while keeping serial data throughput
 };
 
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
@@ -150,6 +151,9 @@ void process_command(const char* cmd, MorseState& state) {
       if (state.targetVolume > 0.0f)
         state.targetVolume = state.maxVolume;
     }
+  } else if (cmd[0] == 'M') {
+    // M1 = Mute HW sidetone, M0 = Unmute HW sidetone
+    state.isMuted = (cmd[1] == '1');
   }
 }
 
@@ -161,6 +165,7 @@ int main(int argc, char** argv) {
   state.currentVolume = 0.0f;
   state.targetVolume = 0.0f;
   state.maxVolume = 0.5f;
+  state.isMuted = false;
   std::string testMode = "";
 
 
@@ -317,7 +322,7 @@ int main(int argc, char** argv) {
             if (errno == EACCES) {
                 static bool perm_warned = false;
                 if (!perm_warned) {
-                    printf("[Engine] Permission denied for %s. Try: sudo usermod -aG dialout,audio $USER\n", port.c_str());
+                    printf("ERROR:EACCES (Permission denied for %s)\n", port.c_str());
                     fflush(stdout);
                     perm_warned = true;
                 }
@@ -348,7 +353,7 @@ int main(int argc, char** argv) {
       ssize_t n = read(fd, buf, 1);
       if (n > 0) {
         if (buf[0] == '1') {
-          state.targetVolume = state.maxVolume;
+          if (!state.isMuted) state.targetVolume = state.maxVolume;
           printf("1\n");
         } else if (buf[0] == '0') {
           state.targetVolume = 0.0f;
@@ -463,7 +468,7 @@ int main(int argc, char** argv) {
         if (bytes_read > 0) {
           lastDataTime = get_time_ms();
           if (bufWIN[0] == '1') {
-            state.targetVolume = state.maxVolume;
+            if (!state.isMuted) state.targetVolume = state.maxVolume;
             printf("1\n");
           } else if (bufWIN[0] == '0') {
             state.targetVolume = 0.0f;

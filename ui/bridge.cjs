@@ -41,7 +41,8 @@ function startEngine(isProduction = false, extraArgs = []) {
         ws.on('message', (message) => {
             const str = message.toString();
             if (activeEngine) {
-                if (str.startsWith('F') || str.startsWith('V')) {
+                if (str.startsWith('F') || str.startsWith('V') || str.startsWith('M')) {
+                    console.log(`[Bridge] Command to Engine: ${str}`);
                     activeEngine.stdin.write(str + '\n');
                 }
             }
@@ -82,7 +83,7 @@ function startEngine(isProduction = false, extraArgs = []) {
                 } else if (l.includes('Disconnected') || l.includes('Reconnecting') || l.includes('Port lost')) {
                     isKeyConnected = false;
                     broadcast('STATUS:DISCONNECTED');
-                } else if (l.includes('Permission denied')) {
+                } else if (l.includes('Permission denied') || l.includes('ERROR:EACCES')) {
                     broadcast('ERROR:PERMISSION_DENIED');
                 }
                 console.log(`[Engine]: ${l}`);
