@@ -227,7 +227,7 @@ export const RadioNetwork = ({
     return () => hwSocket.removeEventListener('message', handleHwMessage);
   }, [ws, ws?.current, turnOwnerId, myId, socket, roomId, lang]);
 
-  // AUDIO SAFETY INTERLOCK: Stop tones immediately when turn is lost
+  // AUDIO SAFETY INTERLOCK: Stop tones immediately when turn is lost or component unmounts
   useEffect(() => {
     const isMyTurn = String(turnOwnerId) === myId;
     if (!isMyTurn) {
@@ -235,6 +235,12 @@ export const RadioNetwork = ({
       audioEngine.keyUp();
       setIsLocalPressed(false);
     }
+    
+    return () => {
+      // Robust unmount cleanup: ensure no sound leaks when exiting the tab
+      audioEngine.keyUp();
+      setIsLocalPressed(false);
+    };
   }, [turnOwnerId, myId]);
 
   useEffect(() => {

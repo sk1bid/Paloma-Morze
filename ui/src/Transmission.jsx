@@ -56,6 +56,9 @@ export const Transmission = ({
     if (!socket) return;
     
     const handleMessage = (event) => {
+      // INTERLOCK: Ignore hardware signals if the component is disabled (e.g., Online mode turn-taking)
+      if (disabled) return;
+      
       const val = event.data;
       const now = Date.now();
       const duration = now - lastPressTime.current;
@@ -90,7 +93,7 @@ export const Transmission = ({
     return () => {
       socket.removeEventListener('message', handleMessage);
     };
-  }, [lang, dashThreshold, charGapThreshold, ws, ws?.current]);
+  }, [lang, dashThreshold, charGapThreshold, ws, ws?.current, disabled]);
 
   // Keyboard Handling
   useEffect(() => {

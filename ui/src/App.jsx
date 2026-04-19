@@ -190,6 +190,9 @@ function App() {
     socket.on('session_ended', () => {
       console.log('[App] Network session terminated by server');
       setIsNetworkActive(false);
+      // Safety: Stop all tones when session ends
+      audioEngine.keyUp();
+      setRemoteSignal(0);
     });
 
     socket.on('remote_morse', ({ callsign, value }) => {
@@ -333,6 +336,14 @@ function App() {
 
   const freqTimer = useRef(null);
   const volTimer = useRef(null);
+
+  // GLOBAL SAFETY EFFECT: Kill audio when leaving multiplayer
+  useEffect(() => {
+    if (!isNetworkActive) {
+      audioEngine.keyUp();
+      setRemoteSignal(0);
+    }
+  }, [isNetworkActive]);
 
   const updateFrequency = (val) => {
     setFrequency(val);
@@ -613,6 +624,9 @@ function App() {
                     if (socketRef.current && roomId) {
                       socketRef.current.emit('leave_room', { roomId });
                     }
+                    // Safety: kill audio on manual exit
+                    audioEngine.keyUp();
+                    setRemoteSignal(0);
                     setRoomId(null);
                     setCurrentRoomOwner(null);
                     setIsNetworkActive(false);
