@@ -258,7 +258,7 @@ int main(int argc, char** argv) {
             long long probe_start = get_time_ms();
             int test_fd = open(port.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
             if (test_fd != -1) {
-              SLEEP(200); // Даем Arduino время прогрузиться после открытия порта
+              SLEEP(1000); // Даем FTDI/Arduino больше времени продышаться (особенно важно для Linux ftdi_sio)
               
               // Управление DTR/RTS для пробуждения Arduino
               int status;
@@ -277,18 +277,19 @@ int main(int argc, char** argv) {
               options.c_oflag &= ~OPOST;
               tcsetattr(test_fd, TCSANOW, &options);
               tcflush(test_fd, TCIOFLUSH);
-              SLEEP(100);
-              tcflush(test_fd, TCIFLUSH); // Финальная очистка перед вопросом
+              SLEEP(500); // Еще немного на стабилизацию после tcsetattr
+              tcflush(test_fd, TCIFLUSH);
               
-              // --- РУКОПОЖАТИЕ (СВОЙ-ЧУЖОЙ) БЫСТРОЕ ---
+              // --- РУКОПОЖАТИЕ (СВОЙ-ЧУЖОЙ) ТЕРПЕЛИВОЕ ---
               long long hs_start_time = get_time_ms();
               bool handshake_ok = false;
               std::string hs_str = "";
               long long last_send = 0;
 
-              while (get_time_ms() - hs_start_time < 500) {
+              // Даем плате 2.5 секунды на ответ (важно для медленных загрузчиков)
+              while (get_time_ms() - hs_start_time < 2500) {
                 long long now = get_time_ms();
-                if (now - last_send > 100) {
+                if (now - last_send > 200) {
                   write(test_fd, "?\n", 2);
                   last_send = now;
                 }
@@ -297,12 +298,19 @@ int main(int argc, char** argv) {
                 int r = read(test_fd, &hc, 1);
                 if (r > 0) {
                   hs_str += hc;
+                  // Проверка 1: Явное слово-пароль
                   if (hs_str.find("PALOMA") != std::string::npos) {
                     handshake_ok = true;
                     break;
                   }
+                  // Проверка 2: Ленивая аутентификация (если пошли данные 1/0)
+                  if (hs_str.find('1') != std::string::npos || hs_str.find('0') != std::string::npos) {
+                    printf("[Engine] Auth OK via pulse data for %s\n", port.c_str());
+                    handshake_ok = true;
+                    break;
+                  }
                 } else {
-                  SLEEP(5);
+                  SLEEP(10);
                 }
               }
 

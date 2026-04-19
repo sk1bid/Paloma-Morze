@@ -73,7 +73,7 @@ function App() {
   const [currentRoomOwner, setCurrentRoomOwner] = useState(null);
   const [isNetworkActive, setIsNetworkActive] = useState(false);
   const [remoteSignal, setRemoteSignal] = useState(0); // 1 or 0
-  
+
   // Use refs to avoid stale closures in socket handlers
   const participantsRef = useRef([]);
   const currentRoomOwnerRef = useRef(null);
@@ -391,11 +391,11 @@ function App() {
       transition={{ duration: 0.8, ease: "easeOut" }}
     >
       <div className="glass-panel main-panel">
-        
+
         {/* Linux Permission Error Banner */}
         <AnimatePresence>
           {permError && !keyConnected && (
-            <motion.div 
+            <motion.div
               className="error-banner"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
@@ -406,12 +406,12 @@ function App() {
                 <AlertTriangle size={18} className="warn-icon" />
                 <div className="error-text">
                   <strong>{lang === 'RU' ? 'ОШИБКА ДОСТУПА:' : 'PERMISSION DENIED:'}</strong>
-                  <span>{lang === 'RU' 
-                    ? ' Недостаточно прав для работы с ключом. Выполните команду и перезагрузитесь:' 
+                  <span>{lang === 'RU'
+                    ? ' Недостаточно прав для работы с ключом. Выполните команду и перезагрузитесь:'
                     : ' Insufficient rights for the key. Run this command and reboot:'}</span>
                   <code className="error-code">sudo usermod -aG dialout,audio $USER</code>
                   <div style={{ marginTop: '4px', opacity: 0.8, fontSize: '11px' }}>
-                    {lang === 'RU' ? 'Или запустите установочный скрипт:' : 'Or run the setup script:'} 
+                    {lang === 'RU' ? 'Или запустите установочный скрипт:' : 'Or run the setup script:'}
                     <code style={{ marginLeft: '5px', background: 'rgba(255,255,255,0.1)', padding: '2px 4px', borderRadius: '4px' }}>sudo bash scripts/setup_linux.sh</code>
                   </div>
                 </div>
@@ -453,9 +453,9 @@ function App() {
             </button>
 
             {token && (
-              <button 
-                className="icon-btn logout" 
-                onClick={handleLogout} 
+              <button
+                className="icon-btn logout"
+                onClick={handleLogout}
                 title={lang === 'RU' ? 'ВЫХОД ИЗ АККАУНТА' : 'LOGOUT'}
                 style={{ width: '34px', height: '34px', borderRadius: '10px' }}
               >
@@ -614,7 +614,7 @@ function App() {
               {!token ? (
                 <Auth onAuthSuccess={handleAuthSuccess} />
               ) : isNetworkActive ? (
-                <RadioNetwork 
+                <RadioNetwork
                   user={user}
                   participants={participants}
                   socket={socketRef}
@@ -639,10 +639,10 @@ function App() {
                   }}
                 />
               ) : (
-                <LobbyBrowser 
-                  user={user} 
-                  onJoinRoom={handleJoinRoom} 
-                  onLogout={handleLogout} 
+                <LobbyBrowser
+                  user={user}
+                  onJoinRoom={handleJoinRoom}
+                  onLogout={handleLogout}
                   activeRoomId={roomId}
                   onLeaveRoom={() => {
                     if (socketRef.current) socketRef.current.emit('leave_room', { roomId });
