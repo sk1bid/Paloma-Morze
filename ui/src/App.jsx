@@ -119,15 +119,9 @@ function App() {
         else if (val === 'ERROR:PERMISSION_DENIED') { setPermError(true); setKeyConnected(false); }
         else if (val === '1') {
           setKeyPressed(true);
-          if (socketRef.current && roomId) {
-            socketRef.current.emit('morse_event', { roomId, value: 1 });
-          }
         }
         else if (val === '0') {
           setKeyPressed(false);
-          if (socketRef.current && roomId) {
-            socketRef.current.emit('morse_event', { roomId, value: 0 });
-          }
         }
       }
     };

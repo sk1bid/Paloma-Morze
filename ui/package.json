@@ -1,7 +1,7 @@
 {
   "name": "ui",
   "private": true,
-  "version": "0.4.10",
+  "version": "0.4.11",
   "author": "Paloma Morse Team",
   "description": "Premium Morse Code Training application with cross-platform C++ engine.",
   "repository": {
