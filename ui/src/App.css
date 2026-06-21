@@ -2915,3 +2915,170 @@ header {
   filter: grayscale(0.8);
   pointer-events: none;
 }
+
+/* Transmission Radiogram Layout */
+.transmission-container {
+  display: flex;
+  gap: 24px;
+  height: 100%;
+}
+
+.transmission-sidebar {
+  width: 170px;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.transmission-main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+}
+
+/* Radiogram UI Mode */
+.radiogram-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100%;
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.radiogram-placeholder .start-hint {
+  font-size: 0.9rem;
+  opacity: 0.6;
+  text-transform: uppercase;
+}
+
+.radiogram-display {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+}
+
+.radiogram-group {
+  display: flex;
+  gap: 4px;
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  width: 120px;
+  justify-content: center;
+}
+
+.radiogram-char {
+  position: relative;
+  color: rgba(255, 255, 255, 0.25);
+  transition: all 0.15s ease;
+}
+
+.radiogram-char.correct {
+  color: #50fa7b;
+  text-shadow: 0 0 10px rgba(80, 250, 123, 0.4);
+}
+
+.radiogram-char.wrong {
+  color: #ff5555;
+  text-shadow: 0 0 10px rgba(255, 85, 85, 0.4);
+  animation: shake 0.2s ease-in-out;
+}
+
+.radiogram-char.current {
+  color: var(--text-primary);
+}
+
+.radiogram-char.current::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent-color);
+  box-shadow: 0 0 8px var(--accent-color);
+  border-radius: 2px;
+  animation: blink 1s infinite;
+}
+
+.radiogram-stats-header {
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
+  padding: 12px 24px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.radiogram-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.radiogram-stat-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.radiogram-stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.radiogram-progress-container {
+  box-sizing: border-box;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.radiogram-progress-bar {
+  height: 100%;
+  background: var(--accent-gradient);
+  box-shadow: 0 0 8px var(--accent-glow);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+

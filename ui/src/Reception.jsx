@@ -6,7 +6,7 @@ import { MORSE_RU, MNEMONICS_RU, MNEMONICS_EN } from './constants';
 import { getMorsePattern, getMnemonic } from './utils/morseProvider';
 import { Q_LESSON_GROUPS } from './utils/q_codes';
 
-const LESSONS = [
+export const LESSONS = [
   { id: 1, chars: ['Е', 'Л', 'Ж', 'А'] },
   { id: 2, chars: ['С', 'Щ', 'Т', 'Ц'] },
   { id: 3, chars: ['Д', 'О', 'Р', 'И'] },
@@ -74,7 +74,7 @@ const UI_STRINGS = {
   }
 };
 
-const generateSequence = (activePool, totalCount, exerciseIndex, symbolsPerGroup = 5) => {
+export const generateSequence = (activePool, totalCount, exerciseIndex, symbolsPerGroup = 5) => {
   if (!activePool || activePool.length === 0) return [];
 
   // For Exercises 1 & 2, totalCount might be small. 
