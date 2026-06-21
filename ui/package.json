@@ -48,7 +48,9 @@
       "native/**/*"
     ],
     "mac": {
-      "identity": null,
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
       "icon": "assets/icon.icns",
       "artifactName": "${productName}.${version}.${ext}",
       "target": [
