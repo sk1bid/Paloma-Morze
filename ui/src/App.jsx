@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Zap, Speaker, Radio, Headphones, Settings, X, AlertTriangle, Terminal, LogOut, Globe } from 'lucide-react';
+import { Zap, Speaker, Radio, Headphones, Settings, X, AlertTriangle, Terminal, LogOut, Globe, Sun, Moon } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Transmission } from './Transmission';
@@ -49,6 +49,7 @@ function App() {
   const [frequency, setFrequency] = useState(() => loadSetting('frequency', 700));
   const [volume, setVolume] = useState(() => loadSetting('volume', 50));
   const [lang, setLang] = useState(() => loadSetting('lang', 'RU'));
+  const [theme, setTheme] = useState(() => loadSetting('theme', 'system')); // 'system' | 'light' | 'dark'
   const [wpm, setWpm] = useState(() => loadSetting('wpm', 50)); // Default to 50 Signs Per Minute (CPM) for Reception
   const [transWpm, setTransWpm] = useState(() => loadSetting('transWpm', 50)); // Independent Transmission WPM (reverted to 1200/wpm scale)
   const [dashRatio, setDashRatio] = useState(() => loadSetting('dashRatio', 3.0));
@@ -274,9 +275,24 @@ function App() {
 
   // Persistence Sync Effect
   useEffect(() => {
-    const settings = { frequency, volume, lang, wpm, transWpm, dashRatio, pauseFactor, transmissionKey, customOverrides };
+    const settings = { frequency, volume, lang, theme, wpm, transWpm, dashRatio, pauseFactor, transmissionKey, customOverrides };
     localStorage.setItem('paloma_morse_v1', JSON.stringify(settings));
-  }, [frequency, volume, lang, wpm, transWpm, dashRatio, pauseFactor, transmissionKey, customOverrides]);
+  }, [frequency, volume, lang, theme, wpm, transWpm, dashRatio, pauseFactor, transmissionKey, customOverrides]);
+
+  // Apply theme to <html data-theme>; 'system' follows the OS preference live.
+  useEffect(() => {
+    const root = document.documentElement;
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = () => {
+      const resolved = theme === 'system' ? (mql.matches ? 'dark' : 'light') : theme;
+      root.setAttribute('data-theme', resolved);
+    };
+    apply();
+    if (theme === 'system') {
+      mql.addEventListener('change', apply);
+      return () => mql.removeEventListener('change', apply);
+    }
+  }, [theme]);
 
   // Sync Web Audio engine settings (used for previews/exercises)
   useEffect(() => {
@@ -293,6 +309,7 @@ function App() {
       setFrequency(700);
       setVolume(50);
       setLang('RU');
+      setTheme('system');
       setWpm(50);
       setTransWpm(50);
       setDashRatio(3.0);
@@ -480,6 +497,15 @@ function App() {
                   <div className="lang-toggle">
                     <button className={lang === 'RU' ? 'active' : ''} onClick={() => setLang('RU')}>RU</button>
                     <button className={lang === 'EN' ? 'active' : ''} onClick={() => setLang('EN')}>EN</button>
+                  </div>
+                </div>
+
+                <div className="setting-row">
+                  <label>{lang === 'RU' ? 'ТЕМА' : 'THEME'}</label>
+                  <div className="lang-toggle theme-toggle">
+                    <button className={theme === 'system' ? 'active' : ''} onClick={() => setTheme('system')} title={lang === 'RU' ? 'Авто' : 'Auto'}>A</button>
+                    <button className={theme === 'light' ? 'active' : ''} onClick={() => setTheme('light')} title={lang === 'RU' ? 'Светлая' : 'Light'}><Sun size={15} /></button>
+                    <button className={theme === 'dark' ? 'active' : ''} onClick={() => setTheme('dark')} title={lang === 'RU' ? 'Тёмная' : 'Dark'}><Moon size={15} /></button>
                   </div>
                 </div>
 
