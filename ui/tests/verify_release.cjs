@@ -7,8 +7,9 @@ const releaseDir = path.join(__dirname, '..', 'release');
 function verifyMetadata(filename) {
   const yamlPath = path.join(releaseDir, filename);
   if (!fs.existsSync(yamlPath)) {
-    console.log(`[Skip] ${filename} not found (platform build might be missing)`);
-    return true;
+    // Without it installed apps on that platform cannot find the update
+    console.error(`[FAIL] ${filename} not found: auto-update metadata missing from the release`);
+    return false;
   }
 
   try {
@@ -34,7 +35,9 @@ function verifyMetadata(filename) {
   return true;
 }
 
-const ok = verifyMetadata('latest.yml') && verifyMetadata('latest-mac.yml');
+const ok = ['latest.yml', 'latest-mac.yml', 'latest-linux.yml']
+  .map(verifyMetadata)
+  .every(Boolean);
 
 if (!ok) {
   process.exit(1);

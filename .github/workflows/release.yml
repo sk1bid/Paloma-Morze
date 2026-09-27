@@ -46,6 +46,7 @@ jobs:
           name: artifacts-linux
           path: |
             ui/release/*.AppImage
+            ui/release/latest-linux.yml
             ui/native/morze_app_linux
           if-no-files-found: error
 
