@@ -2,13 +2,14 @@ import { jest } from '@jest/globals';
 import { audioEngine } from '../src/audio.js';
 
 describe('MorseAudioEngine Mathematical Timings', () => {
-  let mockSetTargetAtTime, mockSetValueCurveAtTime, mockSetValueAtTime;
+  let mockSetTargetAtTime, mockSetValueCurveAtTime, mockSetValueAtTime, mockLinearRamp;
 
   beforeAll(() => {
     // Mock AudioContext for Node environment
     mockSetTargetAtTime = jest.fn();
     mockSetValueCurveAtTime = jest.fn();
     mockSetValueAtTime = jest.fn();
+    mockLinearRamp = jest.fn();
 
     global.window = {
       AudioContext: class {
@@ -22,7 +23,7 @@ describe('MorseAudioEngine Mathematical Timings', () => {
             gain: {
               value: 0,
               setValueAtTime: mockSetValueAtTime,
-              linearRampToValueAtTime: jest.fn(),
+              linearRampToValueAtTime: mockLinearRamp,
               setTargetAtTime: mockSetTargetAtTime,
               setValueCurveAtTime: mockSetValueCurveAtTime,
               cancelScheduledValues: jest.fn(),
@@ -109,20 +110,55 @@ describe('MorseAudioEngine Mathematical Timings', () => {
     expect(releaseCurve[31]).toBeCloseTo(0, 3);
   });
 
-  test('4. Confirms Hardware Key methods use safe setTargetAtTime to prevent transient pops', () => {
+  test('4. Live key tone ramps linearly like the native engine sidetone (0.001 per sample @ 44.1 kHz)', () => {
     audioEngine.setVolume(50);
     audioEngine.keyDown();
-    // Should use setTargetAtTime with 0.005 time constant
-    expect(mockSetTargetAtTime).toHaveBeenCalledWith(0.5, 0, 0.005); // volume 0.5 because default is 50
+    // 0 -> 0.5 takes 500 samples = 0.5 / 44.1 s, same as morze_engine_v2.cpp
+    expect(mockLinearRamp).toHaveBeenLastCalledWith(0.5, 0.5 / 44.1);
     
     audioEngine.keyUp();
-    expect(mockSetTargetAtTime).toHaveBeenCalledWith(0, 0, 0.005);
+    expect(mockLinearRamp).toHaveBeenLastCalledWith(0, expect.any(Number));
     
     audioEngine.stopAll();
     expect(mockSetTargetAtTime).toHaveBeenCalledWith(0, 0, 0.005);
     
     // Must NOT call setValueCurveAtTime abruptly for external unsync events!
     expect(mockSetValueCurveAtTime).not.toHaveBeenCalled();
+  });
+
+  test('4a. Own key and correspondent share one tone: it stops only when both are released', () => {
+    audioEngine.setVolume(50);
+    const lastTarget = () => mockLinearRamp.mock.calls.at(-1)?.[0];
+
+    audioEngine.keyDown('remote');
+    audioEngine.keyDown('local');
+    audioEngine.keyUp('local');
+    expect(lastTarget()).toBe(0.5); // correspondent still keying
+
+    audioEngine.keyDown('local');
+    audioEngine.keyUp('remote');
+    expect(lastTarget()).toBe(0.5); // my key still held
+
+    audioEngine.keyUp('local');
+    expect(lastTarget()).toBe(0);
+  });
+
+  test('4b. keyUp() without a source and stopAll() release every source', () => {
+    const lastTarget = () => mockLinearRamp.mock.calls.at(-1)?.[0];
+
+    audioEngine.keyDown('local');
+    audioEngine.keyDown('remote');
+    audioEngine.keyUp();
+    expect(lastTarget()).toBe(0);
+    audioEngine.keyDown('local');
+    audioEngine.keyUp('local');
+    expect(lastTarget()).toBe(0);
+
+    audioEngine.keyDown('remote');
+    audioEngine.stopAll();
+    audioEngine.keyDown('local');
+    audioEngine.keyUp('local');
+    expect(lastTarget()).toBe(0);
   });
 
   test('5. Validates PARIS effective WPM formulation matches simulation exactly', async () => {

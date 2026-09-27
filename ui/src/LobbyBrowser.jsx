@@ -3,8 +3,9 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Users, Lock, Unlock, LogOut, RefreshCw, X, Zap, Globe } from 'lucide-react';
 import './App.css';
+import { RELAY_URL } from './relayConfig';
 
-const API_URL = 'http://5.128.203.189:3001/api';
+const API_URL = `${RELAY_URL}/api`;
 
 const LobbyBrowser = ({ 
   user, 

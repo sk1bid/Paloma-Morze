@@ -13,6 +13,7 @@ import { getMorsePattern, getMnemonic } from './utils/morseProvider';
 import { sounds } from './utils/sounds';
 import { audioEngine } from './audio';
 import './App.css';
+import { RELAY_URL } from './relayConfig';
 
 const CHARACTER_SETS = {
   'РУССКИЙ (RU)': 'АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЬЭЮЯ'.split(''),
@@ -57,7 +58,6 @@ function App() {
   const [transmissionKey, setTransmissionKey] = useState(() => loadSetting('transmissionKey', 'Space'));
   const [customOverrides, setCustomOverrides] = useState(() => loadSetting('customOverrides', {}));
   const [isBindingKey, setIsBindingKey] = useState(false);
-  const [initialTurnOwner, setInitialTurnOwner] = useState(null);
 
   const [showSettings, setShowSettings] = useState(false);
   const [keyConnected, setKeyConnected] = useState(false);
@@ -74,18 +74,7 @@ function App() {
   const [currentRoomOwner, setCurrentRoomOwner] = useState(null);
   const [isNetworkActive, setIsNetworkActive] = useState(false);
   const [remoteSignal, setRemoteSignal] = useState(0); // 1 or 0
-
-  // Use refs to avoid stale closures in socket handlers
-  const participantsRef = useRef([]);
-  const currentRoomOwnerRef = useRef(null);
-
-  useEffect(() => {
-    participantsRef.current = participants;
-  }, [participants]);
-
-  useEffect(() => {
-    currentRoomOwnerRef.current = currentRoomOwner;
-  }, [currentRoomOwner]);
+  const [networkCollision, setNetworkCollision] = useState(false);
 
   const socketRef = useRef(null);
 
@@ -163,7 +152,7 @@ function App() {
     }
 
     console.log('[App] Initializing Global Socket.io Connection');
-    const socket = io('http://5.128.203.189:3001', {
+    const socket = io(RELAY_URL, {
       auth: { callsign: user.callsign }
     });
     socketRef.current = socket;
@@ -192,17 +181,11 @@ function App() {
 
     socket.on('remote_morse', ({ callsign, value }) => {
       setRemoteSignal(value);
-      if (value === 1) audioEngine.keyDown();
-      else audioEngine.keyUp();
+      if (value === 1) audioEngine.keyDown('remote');
+      else audioEngine.keyUp('remote');
     });
 
-    socket.on('session_started', (data) => {
-      let turnOwnerId = data?.turnOwnerId;
-      if (!turnOwnerId && currentRoomOwnerRef.current && participantsRef.current.length > 0) {
-        const ownerParticipant = participantsRef.current.find(p => p.callsign?.toUpperCase() === currentRoomOwnerRef.current.toUpperCase());
-        if (ownerParticipant) turnOwnerId = ownerParticipant.userId || ownerParticipant.id;
-      }
-      setInitialTurnOwner(turnOwnerId);
+    socket.on('session_started', () => {
       setIsNetworkActive(true);
     });
 
@@ -234,14 +217,14 @@ function App() {
     connectWebSocket();
 
     // Listen for power resume from main process
-    const { ipcRenderer } = window.require('electron');
+    const ipcRenderer = window.require ? window.require('electron').ipcRenderer : null;
     const handleResume = () => {
       console.log('[App] Received power-resume, checking connection...');
       if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
         connectWebSocket();
       }
     };
-    ipcRenderer.on('power-resume', handleResume);
+    ipcRenderer?.on('power-resume', handleResume);
 
     // Safety fallback: Show UI after 2.5s even if WS is slow
     const loadTimeout = setTimeout(() => {
@@ -249,7 +232,7 @@ function App() {
     }, 2500);
 
     return () => {
-      ipcRenderer.removeListener('power-resume', handleResume);
+      ipcRenderer?.removeListener('power-resume', handleResume);
       if (ws.current) {
         ws.current.onclose = null; // Prevent reconnect on intentional unmount
         ws.current.close();
@@ -401,7 +384,7 @@ function App() {
       animate={{ opacity: isLoaded ? 1 : 0 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
     >
-      <div className="glass-panel main-panel">
+      <div className={`glass-panel main-panel ${networkCollision ? 'collision-glow' : ''}`}>
 
         {/* Linux Permission Error Banner */}
         <AnimatePresence>
@@ -643,9 +626,9 @@ function App() {
                   remoteSignal={remoteSignal}
                   lang={lang}
                   transmissionKey={transmissionKey}
+                  onCollisionChange={setNetworkCollision}
                   wpm={transWpm}
                   dashRatio={dashRatio}
-                  initialTurnOwner={initialTurnOwner}
                   onQuit={() => {
                     if (socketRef.current && roomId) {
                       socketRef.current.emit('leave_room', { roomId });

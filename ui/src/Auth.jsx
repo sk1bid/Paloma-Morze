@@ -3,8 +3,9 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Lock, ArrowRight } from 'lucide-react';
 import './App.css';
+import { RELAY_URL } from './relayConfig';
 
-const API_URL = 'http://5.128.203.189:3001/api/auth'; // Remote VPS IP
+const API_URL = `${RELAY_URL}/api/auth`;
 
 const Auth = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);

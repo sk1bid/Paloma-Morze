@@ -35,9 +35,34 @@ void test_volume_command() {
     std::cout << "test_volume_command passed" << std::endl;
 }
 
+void test_mute_command_mid_press() {
+    MorseState state = {0};
+    state.maxVolume = 0.5f;
+
+    key_press(state);
+    assert(state.targetVolume == 0.5f);
+
+    process_command("M1", state); // Mute while the key is held: tone stops now
+    assert(state.targetVolume == 0.0f);
+
+    process_command("M0", state); // Unmute while still held: tone resumes
+    assert(state.targetVolume == 0.5f);
+
+    key_release(state);
+    process_command("M0", state); // Unmute with key up: stays silent
+    assert(state.targetVolume == 0.0f);
+
+    process_command("M1", state);
+    key_press(state); // Press while muted: silent
+    assert(state.targetVolume == 0.0f);
+
+    std::cout << "test_mute_command_mid_press passed" << std::endl;
+}
+
 int main() {
     test_frequency_command();
     test_volume_command();
+    test_mute_command_mid_press();
     std::cout << "--- ALL ENGINE TESTS PASSED ---" << std::endl;
     return 0;
 }

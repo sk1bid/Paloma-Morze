@@ -33,7 +33,18 @@ struct MorseState {
   float maxVolume;
   double sampleRate;
   bool isMuted; // New: Mute hardware sidetone while keeping serial data throughput
+  bool keyHeld; // Physical key state, so mute/unmute applies even mid-press
 };
+
+void key_press(MorseState& state) {
+  state.keyHeld = true;
+  if (!state.isMuted) state.targetVolume = state.maxVolume;
+}
+
+void key_release(MorseState& state) {
+  state.keyHeld = false;
+  state.targetVolume = 0.0f;
+}
 
 void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
                    ma_uint32 frameCount) {
@@ -152,8 +163,9 @@ void process_command(const char* cmd, MorseState& state) {
         state.targetVolume = state.maxVolume;
     }
   } else if (cmd[0] == 'M') {
-    // M1 = Mute HW sidetone, M0 = Unmute HW sidetone
+    // M1 = Mute HW sidetone, M0 = Unmute HW sidetone (applies immediately, even mid-press)
     state.isMuted = (cmd[1] == '1');
+    state.targetVolume = (state.keyHeld && !state.isMuted) ? state.maxVolume : 0.0f;
   }
 }
 
@@ -166,6 +178,7 @@ int main(int argc, char** argv) {
   state.targetVolume = 0.0f;
   state.maxVolume = 0.5f;
   state.isMuted = false;
+  state.keyHeld = false;
   std::string testMode = "";
 
 
@@ -349,7 +362,7 @@ int main(int argc, char** argv) {
         if (access(connectedPort.c_str(), F_OK) != 0) {
           close(fd);
           fd = -1;
-          state.targetVolume = 0.0f;
+          key_release(state);
           connectedPort.clear();
           printf("[Engine] Port lost. Reconnecting...\n");
           fflush(stdout);
@@ -361,17 +374,17 @@ int main(int argc, char** argv) {
       ssize_t n = read(fd, buf, 1);
       if (n > 0) {
         if (buf[0] == '1') {
-          if (!state.isMuted) state.targetVolume = state.maxVolume;
+          key_press(state);
           printf("1\n");
         } else if (buf[0] == '0') {
-          state.targetVolume = 0.0f;
+          key_release(state);
           printf("0\n");
         }
         fflush(stdout);
       } else if (n == 0 || (n < 0 && errno != EAGAIN)) {
         close(fd);
         fd = -1;
-        state.targetVolume = 0.0f;
+        key_release(state);
         printf("[Engine] Disconnected. Reconnecting...\n");
         fflush(stdout);
       }
@@ -462,7 +475,7 @@ int main(int argc, char** argv) {
         if (!ClearCommError(hComm, &errors, &comStat) || errors != 0) {
           CloseHandle(hComm);
           hComm = INVALID_HANDLE_VALUE;
-          state.targetVolume = 0.0f;
+          key_release(state);
           connectedPort.clear();
           printf("[Engine] Port error detected. Reconnecting...\n");
           fflush(stdout);
@@ -476,10 +489,10 @@ int main(int argc, char** argv) {
         if (bytes_read > 0) {
           lastDataTime = get_time_ms();
           if (bufWIN[0] == '1') {
-            if (!state.isMuted) state.targetVolume = state.maxVolume;
+            key_press(state);
             printf("1\n");
           } else if (bufWIN[0] == '0') {
-            state.targetVolume = 0.0f;
+            key_release(state);
             printf("0\n");
           }
           fflush(stdout);
@@ -487,7 +500,7 @@ int main(int argc, char** argv) {
       } else {
         CloseHandle(hComm);
         hComm = INVALID_HANDLE_VALUE;
-        state.targetVolume = 0.0f;
+        key_release(state);
         connectedPort.clear();
         lastDataTime = 0;
         printf("[Engine] Disconnected. Reconnecting...\n");

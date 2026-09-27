@@ -9,6 +9,7 @@ class MorseAudioEngine {
     this.charWpm = 50;
     this.pauseFactor = 1.0;
     this.activeTimeouts = new Set();
+    this.activeSources = new Set();
   }
 
   init() {
@@ -201,23 +202,41 @@ class MorseAudioEngine {
     }
   }
 
-  keyDown() {
-    this.init();
-    if (this.gain && this.ctx) {
-      this.gain.gain.cancelScheduledValues(this.ctx.currentTime);
-      this.gain.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.005);
-    }
+  // Live key tone. Mirrors the native engine sidetone (morze_engine_v2.cpp) so the
+  // keyboard and the hardware key sound the same: a linear ramp of 0.001 per sample
+  // at 44.1 kHz, i.e. 44.1 gain units per second.
+  rampKeyTone(target) {
+    if (!this.gain || !this.ctx) return;
+    const param = this.gain.gain;
+    const now = this.ctx.currentTime;
+    const current = param.value;
+    if (param.cancelAndHoldAtTime) param.cancelAndHoldAtTime(now);
+    else param.cancelScheduledValues(now);
+    param.setValueAtTime(current, now);
+    param.linearRampToValueAtTime(target, now + Math.abs(target - current) / 44.1);
   }
 
-  keyUp() {
-    if (this.gain && this.ctx) {
-      this.gain.gain.cancelScheduledValues(this.ctx.currentTime);
-      this.gain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.005);
+  // Optional `source` ('local', 'remote') lets several keys share one tone: it stays
+  // on while at least one source is held. keyUp() without a source is a hard stop.
+  keyDown(source) {
+    this.init();
+    if (source) this.activeSources.add(source);
+    this.rampKeyTone(this.volume);
+  }
+
+  keyUp(source) {
+    if (source) {
+      this.activeSources.delete(source);
+      if (this.activeSources.size > 0) return;
+    } else {
+      this.activeSources.clear();
     }
+    this.rampKeyTone(0);
   }
 
   stopAll() {
     this.clearAllTimeouts();
+    this.activeSources.clear();
     if (this.cancelTokens) {
       this.cancelTokens.forEach(t => t.cancel());
       this.cancelTokens = [];
