@@ -1,0 +1,5 @@
+# Vendor third-party single-header libraries and legacy binary bundles
+# so GitHub repository language statistics accurately reflect the primary codebase (JavaScript/React/C++)
+ui/native/miniaudio.h linguist-vendored
+ui/native/test_parser linguist-vendored
+apak/** linguist-vendored
