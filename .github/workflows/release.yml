@@ -1,0 +1,186 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev
+
+      - name: Compile Linux native engine
+        run: |
+          g++ -O3 ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app -lasound -lpthread -lm -ldl
+          cp ui/native/morze_app ui/native/morze_app_linux
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Build UI and package AppImage
+        working-directory: ui
+        run: |
+          npm ci
+          npm run build
+          npx electron-builder --linux -p never
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-linux
+          path: |
+            ui/release/*.AppImage
+            ui/native/morze_app_linux
+          if-no-files-found: error
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile Windows native engine
+        shell: bash
+        run: |
+          g++ -O3 ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app.exe -static -lpthread -lm
+          cp ui/native/morze_app.exe ui/native/morze_app_win.exe
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Build UI and package Windows installer
+        working-directory: ui
+        shell: bash
+        run: |
+          npm ci
+          npm run build
+          npx electron-builder --win -p never
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-windows
+          path: |
+            ui/release/*.exe
+            ui/release/*.blockmap
+            ui/release/latest.yml
+            ui/native/morze_app_win.exe
+          if-no-files-found: error
+
+  build-mac:
+    name: Build macOS
+    runs-on: ${{ vars.MAC_RUNNER || 'macos-latest' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile macOS native engine
+        run: |
+          cd ui
+          g++ native/morze_engine_v2.cpp -I native -o native/morze_app -lpthread -lm -ldl -framework CoreAudio -framework AudioUnit -framework CoreFoundation
+          cp native/morze_app native/morze_app_macos
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Build UI and package macOS DMG & ZIP
+        working-directory: ui
+        run: |
+          npm ci
+          npm run build
+          npx electron-builder --mac -p never
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-mac
+          path: |
+            ui/release/*.dmg
+            ui/release/*.zip
+            ui/release/*.blockmap
+            ui/release/latest-mac.yml
+            ui/native/morze_app_macos
+          if-no-files-found: error
+
+  publish:
+    name: Verify & Publish Release
+    needs: [build-linux, build-windows, build-mac]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-artifacts
+
+      - name: Assemble release directory structure
+        run: |
+          mkdir -p ui/release ui/native
+          
+          # Copy release packages and updater metadata
+          find downloaded-artifacts -type f \( -name "*.AppImage" -o -name "*.exe" -o -name "*.dmg" -o -name "*.zip" -o -name "*.yml" -o -name "*.blockmap" \) -exec cp {} ui/release/ \;
+          
+          # Copy native console engine binaries
+          find downloaded-artifacts -type f \( -name "morze_app_linux" -o -name "morze_app_win.exe" -o -name "morze_app_macos" \) -exec cp {} ui/native/ \;
+          
+          echo "=== Assembled Release Files ==="
+          ls -la ui/release/
+          echo "=== Assembled Native Binaries ==="
+          ls -la ui/native/
+
+      - name: Verify release metadata and file integrity
+        working-directory: ui
+        run: |
+          npm install js-yaml
+          node tests/verify_release.cjs
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            ui/release/*.dmg
+            ui/release/*.zip
+            ui/release/*.AppImage
+            ui/release/*.exe
+            ui/release/*.yml
+            ui/release/*.blockmap
+            ui/native/morze_app_linux
+            ui/native/morze_app_macos
+            ui/native/morze_app_win.exe

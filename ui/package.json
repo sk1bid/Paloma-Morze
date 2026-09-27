@@ -6,7 +6,7 @@
   "description": "Premium Morse Code Training application with cross-platform C++ engine.",
   "repository": {
     "type": "git",
-    "url": "https://gitlab.sk1bid.ru/root/paloma-morze.git"
+    "url": "https://github.com/sk1bid/Paloma-Morze.git"
   },
   "type": "module",
   "main": "electron-main.cjs",
