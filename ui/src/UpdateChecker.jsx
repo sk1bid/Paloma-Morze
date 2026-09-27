@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Download, Check, X, RotateCw } from 'lucide-react';
 
-const CURRENT_VERSION = __APP_VERSION__;
+// Build-time fallback; in Electron the real version comes from app.getVersion(),
+// the same one the auto-updater compares against.
+const BUILD_VERSION = __APP_VERSION__;
 
 // Get IPC renderer if in Electron
 const ipcRenderer = (() => {
@@ -13,9 +15,14 @@ const ipcRenderer = (() => {
 
 export function UpdateChecker() {
   const [status, setStatus] = useState('idle');
+  const [currentVersion, setCurrentVersion] = useState(BUILD_VERSION);
   const [latestVersion, setLatestVersion] = useState('');
   const [downloadPercent, setDownloadPercent] = useState(0);
   const [showToast, setShowToast] = useState(false);
+
+  useEffect(() => {
+    ipcRenderer?.invoke('get-app-version').then(setCurrentVersion).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!ipcRenderer) return;
@@ -81,49 +88,49 @@ export function UpdateChecker() {
         {status === 'idle' && (
           <button className="update-btn" onClick={checkForUpdate} title="Проверить обновления">
             <RefreshCw size={16} />
-            <span>v{CURRENT_VERSION}</span>
+            <span>v{currentVersion}</span>
           </button>
         )}
 
         {status === 'checking' && (
           <button className="update-btn checking" disabled>
             <RefreshCw size={16} className="spin" />
-            <span>v{CURRENT_VERSION}</span>
+            <span>v{currentVersion}</span>
           </button>
         )}
 
         {status === 'available' && (
           <button className="update-btn available" onClick={downloadUpdate} title={`Скачать ${latestVersion}`}>
             <Download size={16} />
-            <span>v{CURRENT_VERSION}</span>
+            <span>v{currentVersion}</span>
           </button>
         )}
 
         {status === 'downloading' && (
           <button className="update-btn downloading" disabled>
             <RotateCw size={16} className="spin" />
-            <span>v{CURRENT_VERSION}</span>
+            <span>v{currentVersion}</span>
           </button>
         )}
 
         {status === 'downloaded' && (
           <button className="update-btn downloaded" onClick={installUpdate} title="Установить и перезапустить">
             <Check size={16} style={{ color: '#50fa7b' }} />
-            <span>v{CURRENT_VERSION}</span>
+            <span>v{currentVersion}</span>
           </button>
         )}
 
         {status === 'uptodate' && (
           <button className="update-btn uptodate" disabled>
             <Check size={16} />
-            <span>v{CURRENT_VERSION}</span>
+            <span>v{currentVersion}</span>
           </button>
         )}
 
         {status === 'error' && (
           <button className="update-btn error-state" onClick={checkForUpdate}>
             <X size={16} />
-            <span>v{CURRENT_VERSION}</span>
+            <span>v{currentVersion}</span>
           </button>
         )}
       </div>
@@ -135,7 +142,7 @@ export function UpdateChecker() {
             <Download size={16} />
             <div className="toast-text">
               <strong>Доступно обновление {latestVersion}</strong>
-              <span>Текущая: v{CURRENT_VERSION}</span>
+              <span>Текущая: v{currentVersion}</span>
             </div>
           </div>
           <div className="toast-actions">

@@ -108,12 +108,23 @@ jobs:
           cache: 'npm'
           cache-dependency-path: ui/package-lock.json
 
+      - name: Import macOS signing certificate
+        env:
+          MAC_CERT_P12_BASE64: ${{ secrets.MAC_CERT_P12_BASE64 }}
+          MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+        run: bash scripts/import_mac_cert.sh
+
       - name: Build UI and package macOS DMG & ZIP
         working-directory: ui
         run: |
           npm ci
           npm run build
           npx electron-builder --mac -p never
+
+      - name: Remove signing keychain
+        if: always()
+        run: |
+          if [ -n "${MAC_SIGN_KEYCHAIN:-}" ]; then security delete-keychain "$MAC_SIGN_KEYCHAIN" || true; fi
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4

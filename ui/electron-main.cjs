@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, powerMonitor } = require('electron');
+const { app, BrowserWindow, ipcMain, powerMonitor, dialog } = require('electron');
 
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
@@ -57,6 +57,7 @@ function setupAutoUpdater() {
   });
 
   // IPC handlers from renderer
+  ipcMain.handle('get-app-version', () => app.getVersion());
   ipcMain.on('check-for-update', () => {
     autoUpdater.checkForUpdates();
   });
@@ -129,8 +130,38 @@ function createWindow() {
   });
 }
 
+// macOS: an app launched from a DMG or Downloads runs from a read-only
+// translocated copy, and Squirrel cannot install updates over it.
+// Offer to move it into /Applications; on success Electron relaunches it there.
+function offerMoveToApplications() {
+  if (process.platform !== 'darwin' || !app.isPackaged || app.isInApplicationsFolder()) return false;
+
+  const ru = app.getLocale().toLowerCase().startsWith('ru');
+  const choice = dialog.showMessageBoxSync({
+    type: 'question',
+    buttons: ru ? ['Переместить', 'Не сейчас'] : ['Move to Applications', 'Not Now'],
+    defaultId: 0,
+    cancelId: 1,
+    message: ru ? 'Переместить Paloma Morse в папку «Программы»?' : 'Move Paloma Morse to the Applications folder?',
+    detail: ru
+      ? 'Приложение запущено не из «Программ». Так автоматические обновления не смогут установиться.'
+      : 'The app is not running from Applications, so automatic updates cannot be installed.',
+  });
+  if (choice !== 0) return false;
+
+  try {
+    const moved = app.moveToApplicationsFolder();
+    console.log(`[Main] Move to Applications: ${moved ? 'done, relaunching' : 'not moved'}`);
+    return moved;
+  } catch (err) {
+    console.error('[Main] Move to Applications failed:', err.message);
+    return false;
+  }
+}
+
 app.on('ready', () => {
   console.log(`[Main] Starting Paloma Morse (Packaged: ${app.isPackaged})`);
+  if (offerMoveToApplications()) return; // relaunching from /Applications
   bridge.start(app.isPackaged);
   setupAutoUpdater();
   createWindow();

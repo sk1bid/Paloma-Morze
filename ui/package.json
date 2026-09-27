@@ -40,6 +40,7 @@
     "directories": {
       "output": "release"
     },
+    "afterPack": "scripts/mac-sign.cjs",
     "files": [
       "dist/**/*",
       "electron-main.cjs",
@@ -48,7 +49,7 @@
       "native/**/*"
     ],
     "mac": {
-      "identity": "-",
+      "identity": null,
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
       "icon": "assets/icon.icns",
