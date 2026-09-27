@@ -42,7 +42,39 @@ if [ -z "$IDENTITY" ]; then
     exit 1
 fi
 
-echo "Imported signing identity $IDENTITY"
+# On CI the keychain must be on the user search list: codesign resolves the
+# identity's certificate chain only through that list.
+if [ -n "${CI:-}" ]; then
+    # shellcheck disable=SC2046
+    security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+fi
+
+# Prove the identity can actually sign before the (long) app build starts
+probe_sign() {
+    local probe="$KEYCHAIN_DIR/paloma-sign-probe"
+    cp /usr/bin/true "$probe"
+    local ok=0
+    codesign --force --sign "$IDENTITY" --keychain "$KEYCHAIN" "$probe" >/dev/null 2>&1 || ok=1
+    rm -f "$probe"
+    return $ok
+}
+
+if ! probe_sign; then
+    if [ -n "${CI:-}" ]; then
+        # Throwaway CI machine: trust the self-signed certificate for code signing
+        echo "Signing probe failed; trusting the certificate for code signing on this runner"
+        CERT_PEM="$KEYCHAIN_DIR/paloma-signing.pem"
+        security find-certificate -a -p "$KEYCHAIN" > "$CERT_PEM"
+        sudo -n security add-trusted-cert -d -r trustRoot -p codeSign -k /Library/Keychains/System.keychain "$CERT_PEM"
+        rm -f "$CERT_PEM"
+    fi
+    if ! probe_sign; then
+        echo "::error::codesign cannot sign with identity $IDENTITY from $KEYCHAIN."
+        exit 1
+    fi
+fi
+
+echo "Imported signing identity $IDENTITY (signing probe OK)"
 if [ -n "${GITHUB_ENV:-}" ]; then
     echo "MAC_SIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
     echo "MAC_SIGN_KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
