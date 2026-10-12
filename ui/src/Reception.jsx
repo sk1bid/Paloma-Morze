@@ -140,7 +140,7 @@ export const generateSequence = (activePool, totalCount, exerciseIndex, symbolsP
   return sequence;
 };
 
-export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setWpm, dashRatio, setDashRatio, pauseFactor, setPauseFactor, customOverrides = {} }) => {
+export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setWpm, dashRatio, setDashRatio, pauseFactor, setPauseFactor, front = 6, waveform = 'sine', customOverrides = {} }) => {
   const [lessonIndex, setLessonIndex] = useState(0);
   const [exerciseIndex, setExerciseIndex] = useState(0); // 0 = Learning (Ex 1), 1 = Practice (Ex 2)
   const [groupCount, setGroupCount] = useState(5);
@@ -226,7 +226,9 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     audioEngine.setCharWpm(wpm);
     audioEngine.setPauseFactor(pauseFactor);
     audioEngine.setDashRatio(dashRatio);
-  }, [frequency, volume, wpm, pauseFactor, dashRatio]);
+    audioEngine.setFront(front);
+    audioEngine.setWaveform(waveform);
+  }, [frequency, volume, wpm, pauseFactor, dashRatio, front, waveform]);
 
   // Unified pattern/mnemonic lookup via provider
   const getCharPattern = (char) => getMorsePattern(char, customOverrides);
@@ -271,7 +273,8 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       isPlayingRef.current = true;
       setPlayingChar(char);
       try {
-        await audioEngine.playString(morsePattern, null, setPulseType);
+        const result = await audioEngine.playString(morsePattern, null, setPulseType);
+        if (result.cancelled) { clearCancelledPlayback(); return; }
       } finally {
         setPlayingChar(null);
         setPulseType(null);
@@ -311,18 +314,12 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       if (morsePattern) {
         setPlayingChar(target);
 
-        // Calculate rhythmic gap for penalty (matches APAK mapping: 2x + 1 dots)
-        const dotLen = 6.0 / (wpm || 50);
-        const pFactorDots = (pauseFactor * 2.0) + 1.0;
-        const penaltyGapMs = dotLen * pFactorDots * 1000;
-
-        for (let i = 0; i < 5; i++) {
-          if (!isRunningRef.current) break;
-          const playPromise = audioEngine.playString(morsePattern, null, setPulseType);
-          await playPromise;
-          if (!isRunningRef.current) break;
-          await new Promise(r => setTimeout(r, penaltyGapMs));
-        }
+        // Use the same PCM/timing model as normal playback; no JS sleep between signs.
+        const result = await audioEngine.playSequence(
+          Array(5).fill(target), getCharPattern, null, setPulseType, { spacing: 'repeat' }
+        );
+        if (result.cancelled) { clearCancelledPlayback(); return; }
+        if (!isRunningRef.current) return;
         setPlayingChar(null);
         setPulseType(null);
         if (!isRunningRef.current) return;
@@ -363,7 +360,8 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     const morsePattern = getCharPattern(target);
     if (morsePattern) {
       if (exerciseIndex === 0) setPlayingChar(target); // Only highlight in Ex 1
-      await audioEngine.playString(morsePattern, null, setPulseType);
+      const result = await audioEngine.playString(morsePattern, null, setPulseType);
+      if (result.cancelled) { clearCancelledPlayback(); return; }
       if (!isRunningRef.current) {
         setPlayingChar(null);
         setPulseType(null);
@@ -381,6 +379,11 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     setIsRunning(false);
     isRunningRef.current = false;
     setShowReport(true);
+  };
+
+  const clearCancelledPlayback = () => {
+    setIsRunning(false); isRunningRef.current = false;
+    setPlayingChar(null); setPulseType(null); setWaitingForInput(false); waitingRef.current = false;
   };
 
   const startExercise = async () => {
@@ -414,9 +417,10 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
         sequence.push(' ');
       });
 
-      await audioEngine.playSequence(sequence, getCharPattern, (char) => {
+      const result = await audioEngine.playSequence(sequence, getCharPattern, (char) => {
         setPlayingChar(char);
-      }, setPulseType);
+      }, setPulseType, { spacing: 'learning' });
+      if (result.cancelled) { clearCancelledPlayback(); return; }
 
       setIsRunning(false);
       isRunningRef.current = false;
@@ -433,7 +437,8 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       isRunningRef.current = true;
 
       try {
-        await audioEngine.playSequence(freshSequence, getCharPattern, null, null);
+        const result = await audioEngine.playSequence(freshSequence, getCharPattern, null, null);
+        if (result.cancelled) { clearCancelledPlayback(); return; }
       } catch (err) {
         console.error('[Reception] Playback Error:', err);
       }
@@ -484,12 +489,11 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   return (
     <div className="reception-container">
       <div className="reception-sidebar">
+        <div className="reception-controls">
         <button
           className={`toggle-btn main-select ${manualMode ? 'active' : ''}`}
           onClick={() => setManualMode(!manualMode)}
           style={{
-            marginBottom: '12px',
-            padding: '12px 0',
             opacity: exerciseIndex < 2 ? 0.3 : 1,
             pointerEvents: 'auto',
             cursor: exerciseIndex < 2 ? 'not-allowed' : 'pointer'
@@ -571,27 +575,27 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
         <div className="control-group">
           <label>{ui.charSpeed}</label>
           <div className="number-stepper">
-            <button onClick={() => setWpm(Math.max(20, wpm - 5))}>-</button>
+            <button disabled={isRunning || !!playingChar} onClick={() => setWpm(Math.max(30, wpm - 5))}>-</button>
             <span>{wpm}</span>
-            <button onClick={() => setWpm(Math.min(250, wpm + 5))}>+</button>
+            <button disabled={isRunning || !!playingChar} onClick={() => setWpm(Math.min(150, wpm + 5))}>+</button>
           </div>
         </div>
 
         <div className="control-group">
           <label>{ui.ratio}</label>
           <div className="number-stepper">
-            <button onClick={() => setDashRatio(Math.max(2.0, parseFloat((dashRatio - 0.5).toFixed(1))))}>-</button>
+            <button disabled={isRunning || !!playingChar} onClick={() => setDashRatio(Math.max(2.0, parseFloat((dashRatio - 0.5).toFixed(1))))}>-</button>
             <span>{dashRatio.toFixed(1)}</span>
-            <button onClick={() => setDashRatio(Math.min(5.0, parseFloat((dashRatio + 0.5).toFixed(1))))}>+</button>
+            <button disabled={isRunning || !!playingChar} onClick={() => setDashRatio(Math.min(4.5, parseFloat((dashRatio + 0.5).toFixed(1))))}>+</button>
           </div>
         </div>
 
         <div className="control-group">
           <label>{ui.pause}</label>
           <div className="number-stepper">
-            <button onClick={() => setPauseFactor(Math.max(1.0, parseFloat((pauseFactor - 0.5).toFixed(1))))}>-</button>
+            <button disabled={isRunning || !!playingChar} onClick={() => setPauseFactor(Math.max(1.0, parseFloat((pauseFactor - 0.5).toFixed(1))))}>-</button>
             <span>x{pauseFactor.toFixed(1)}</span>
-            <button onClick={() => setPauseFactor(Math.min(10.0, parseFloat((pauseFactor + 0.5).toFixed(1))))}>+</button>
+            <button disabled={isRunning || !!playingChar} onClick={() => setPauseFactor(Math.min(6.0, parseFloat((pauseFactor + 0.5).toFixed(1))))}>+</button>
           </div>
         </div>
 
@@ -600,7 +604,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
           pointerEvents: 'auto',
           cursor: exerciseIndex < 2 ? 'not-allowed' : 'default',
           marginTop: '6px',
-          marginBottom: '16px'
+          marginBottom: '4px'
         }}>
           <button
             className={`toggle-btn ${includeSymbols ? 'active' : ''}`}
@@ -615,6 +619,8 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
           >
             {ui.symbols}
           </button>
+        </div>
+
         </div>
 
         <button

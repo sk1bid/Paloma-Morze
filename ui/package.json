@@ -1,7 +1,7 @@
 {
   "name": "ui",
   "private": true,
-  "version": "0.4.19",
+  "version": "0.4.20",
   "author": "Paloma Morse Team",
   "description": "Premium Morse Code Training application with cross-platform C++ engine.",
   "repository": {
@@ -46,7 +46,8 @@
       "electron-main.cjs",
       "bridge.cjs",
       "assets/icon.*",
-      "native/**/*"
+      "native/morze_app",
+      "native/morze_app.exe"
     ],
     "mac": {
       "identity": null,

@@ -1,0 +1,255 @@
+{
+  "settings": {
+    "speed": 50,
+    "frequency": 479.3478260869565,
+    "front": 6,
+    "ratio": 3,
+    "pause": 3
+  },
+  "capture": "Original APAK2 2.12 executed in CrossOver; waveOutWrite PCM, volume before OS mixer",
+  "records": [
+    {
+      "index": 5,
+      "timeMs": 238698576,
+      "frames": 2644,
+      "char": "E",
+      "pat": ".",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 6,
+      "timeMs": 238699458,
+      "frames": 2644,
+      "char": "E",
+      "pat": ".",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 7,
+      "timeMs": 238700293,
+      "frames": 2644,
+      "char": "E",
+      "pat": ".",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 8,
+      "timeMs": 238701161,
+      "frames": 2644,
+      "char": "E",
+      "pat": ".",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 9,
+      "timeMs": 238702066,
+      "frames": 2644,
+      "char": "E",
+      "pat": ".",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 10,
+      "timeMs": 238702902,
+      "frames": 2644,
+      "char": "E",
+      "pat": ".",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 11,
+      "timeMs": 238704817,
+      "frames": 13220,
+      "char": "L",
+      "pat": ".-..",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 12,
+      "timeMs": 238706608,
+      "frames": 13220,
+      "char": "L",
+      "pat": ".-..",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 13,
+      "timeMs": 238708477,
+      "frames": 13220,
+      "char": "L",
+      "pat": ".-..",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 14,
+      "timeMs": 238710347,
+      "frames": 13220,
+      "char": "L",
+      "pat": ".-..",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 15,
+      "timeMs": 238712174,
+      "frames": 13220,
+      "char": "L",
+      "pat": ".-..",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 16,
+      "timeMs": 238714053,
+      "frames": 13220,
+      "char": "L",
+      "pat": ".-..",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 17,
+      "timeMs": 238715932,
+      "frames": 13220,
+      "char": "L",
+      "pat": ".-..",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 18,
+      "timeMs": 238718804,
+      "frames": 13220,
+      "char": "V",
+      "pat": "...-",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 19,
+      "timeMs": 238720671,
+      "frames": 13220,
+      "char": "V",
+      "pat": "...-",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 20,
+      "timeMs": 238722545,
+      "frames": 13220,
+      "char": "V",
+      "pat": "...-",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 21,
+      "timeMs": 238724401,
+      "frames": 13220,
+      "char": "V",
+      "pat": "...-",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 22,
+      "timeMs": 238726272,
+      "frames": 13220,
+      "char": "V",
+      "pat": "...-",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 23,
+      "timeMs": 238728152,
+      "frames": 13220,
+      "char": "V",
+      "pat": "...-",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 24,
+      "timeMs": 238730031,
+      "frames": 13220,
+      "char": "V",
+      "pat": "...-",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 25,
+      "timeMs": 238732845,
+      "frames": 7932,
+      "char": "A",
+      "pat": ".-",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 26,
+      "timeMs": 238734156,
+      "frames": 7932,
+      "char": "A",
+      "pat": ".-",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 27,
+      "timeMs": 238735557,
+      "frames": 7932,
+      "char": "A",
+      "pat": ".-",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 28,
+      "timeMs": 238736953,
+      "frames": 7932,
+      "char": "A",
+      "pat": ".-",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 29,
+      "timeMs": 238738332,
+      "frames": 7932,
+      "char": "A",
+      "pat": ".-",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 30,
+      "timeMs": 238739725,
+      "frames": 7932,
+      "char": "A",
+      "pat": ".-",
+      "count": 0,
+      "max": 0
+    },
+    {
+      "index": 31,
+      "timeMs": 238741121,
+      "frames": 7932,
+      "char": "A",
+      "pat": ".-",
+      "count": 0,
+      "max": 0
+    }
+  ]
+}

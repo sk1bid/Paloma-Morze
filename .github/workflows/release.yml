@@ -6,10 +6,20 @@ on:
       - 'v*'
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
+  validate:
+    name: Release validation
+    uses: ./.github/workflows/ci.yml
+
   build-linux:
+    needs: validate
+    timeout-minutes: 30
     name: Build Linux
     runs-on: ubuntu-latest
     steps:
@@ -23,13 +33,13 @@ jobs:
 
       - name: Compile Linux native engine
         run: |
-          g++ -O3 ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app -lasound -lpthread -lm -ldl
+          g++ -std=c++17 -O3 ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app -lasound -lpthread -lm -ldl
           cp ui/native/morze_app ui/native/morze_app_linux
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: ui/package-lock.json
 
@@ -51,6 +61,8 @@ jobs:
           if-no-files-found: error
 
   build-windows:
+    needs: validate
+    timeout-minutes: 30
     name: Build Windows
     runs-on: windows-latest
     steps:
@@ -60,13 +72,13 @@ jobs:
       - name: Compile Windows native engine
         shell: bash
         run: |
-          g++ -O3 ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app.exe -static -lpthread -lm
+          g++ -std=c++17 -O3 ui/native/morze_engine_v2.cpp -I ui/native -o ui/native/morze_app.exe -static -lpthread -lm
           cp ui/native/morze_app.exe ui/native/morze_app_win.exe
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: ui/package-lock.json
 
@@ -90,6 +102,8 @@ jobs:
           if-no-files-found: error
 
   build-mac:
+    needs: validate
+    timeout-minutes: 30
     name: Build macOS
     runs-on: ${{ vars.MAC_RUNNER || 'macos-latest' }}
     steps:
@@ -99,13 +113,13 @@ jobs:
       - name: Compile macOS native engine
         run: |
           cd ui
-          g++ native/morze_engine_v2.cpp -I native -o native/morze_app -lpthread -lm -ldl -framework CoreAudio -framework AudioUnit -framework CoreFoundation
+          g++ -std=c++17 native/morze_engine_v2.cpp -I native -o native/morze_app -lpthread -lm -ldl -framework CoreAudio -framework AudioUnit -framework CoreFoundation
           cp native/morze_app native/morze_app_macos
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: ui/package-lock.json
 
@@ -140,6 +154,9 @@ jobs:
           if-no-files-found: error
 
   publish:
+    permissions:
+      contents: write
+    timeout-minutes: 15
     name: Verify & Publish Release
     needs: [build-linux, build-windows, build-mac]
     runs-on: ubuntu-latest
@@ -150,7 +167,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
@@ -175,7 +192,7 @@ jobs:
       - name: Verify release metadata and file integrity
         working-directory: ui
         run: |
-          npm install js-yaml
+          npm ci --ignore-scripts
           node tests/verify_release.cjs
 
       - name: Publish to GitHub Releases

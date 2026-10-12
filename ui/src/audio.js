@@ -1,252 +1,97 @@
-class MorseAudioEngine {
+import { APAK_RATE, normalizeAudioSettings } from './audioSettings.js';
+
+// A control client only: there is no browser audio output or synthesis here.
+export class MorseAudioEngine {
   constructor() {
-    this.ctx = null;
-    this.osc = null;
-    this.gain = null;
-    this.frequency = 700;
-    this.volume = 0.5;
-    this.dashRatio = 3.0;
-    this.charWpm = 50;
-    this.pauseFactor = 1.0;
-    this.activeTimeouts = new Set();
-    this.activeSources = new Set();
+    this.socket=null;this.ready=false;this.nextId=1;
+    this.frequency=APAK_RATE/23;this.volume=50;this.charWpm=50;
+    this.dashRatio=3;this.pauseFactor=3;this.front=6;
+    this.waveform='sine';
+    this.pending=new Map();this.activeSources=new Set();this.onError=null;
   }
-
-  init() {
-    if (!this.ctx) {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      this.gain = this.ctx.createGain();
-      this.gain.connect(this.ctx.destination);
-      this.gain.gain.value = 0;
-
-      this.osc = this.ctx.createOscillator();
-      this.osc.type = 'sine';
-      this.osc.frequency.value = this.frequency;
-      this.osc.connect(this.gain);
-      this.osc.start();
+  init() { return this.ready; }
+  settings() {
+    return {speed:this.charWpm,frequency:this.frequency,volume:this.volume,ratio:this.dashRatio,
+      pause:this.pauseFactor,front:this.front,waveform:this.waveform,quality:'clean'};
+  }
+  bindSocket(socket) {
+    if(this.socket===socket)return;
+    this.detach?.();this.failAll('Соединение со звуковым движком изменилось',false);
+    this.socket=socket;this.ready=false;
+    const message=event=>this.handleMessage(event.data);
+    const close=()=>{this.ready=false;this.failAll('Нет соединения со звуковым движком');};
+    socket.addEventListener('message',message);socket.addEventListener('close',close);
+    const blur=()=>{if(this.activeSources.has('local'))this.keyUp('local');};
+    globalThis.window?.addEventListener?.('blur',blur);
+    this.detach=()=>{socket.removeEventListener('message',message);socket.removeEventListener('close',close);globalThis.window?.removeEventListener?.('blur',blur);};
+  }
+  send(message) {
+    if(!this.ready||this.socket?.readyState!==1)return false;
+    this.socket.send(JSON.stringify({type:'audio',...message}));return true;
+  }
+  sync() {this.send({op:'settings',settings:this.settings()});}
+  setFrequency(value){this.frequency=normalizeAudioSettings({frequency:value}).frequency;this.sync();}
+  setVolume(value){this.volume=Math.min(100,Math.max(0,Number(value)||0));this.sync();}
+  setCharWpm(value){this.charWpm=normalizeAudioSettings({speed:value}).speed;this.sync();}
+  setPauseFactor(value){this.pauseFactor=normalizeAudioSettings({pause:value}).pause;this.sync();}
+  setDashRatio(value){this.dashRatio=normalizeAudioSettings({ratio:value}).ratio;this.sync();}
+  setFront(value){this.front=normalizeAudioSettings({front:value}).front;this.sync();}
+  setWaveform(value){this.waveform=value==='square'?'square':'sine';this.sync();}
+  finish(id,cancelled,error) {
+    const entry=this.pending.get(id);if(!entry)return;
+    this.pending.delete(id);entry.onChar?.(null);entry.onPulse?.(null);
+    entry.resolve({cancelled,...(error?{error}:{})});
+  }
+  failAll(message,report=true) {
+    const hadPending=this.pending.size>0;
+    for(const id of [...this.pending.keys()])this.finish(id,true,message);
+    this.activeSources.clear();
+    if(report&&hadPending)this.onError?.(message);
+  }
+  handleMessage(data) {
+    let m;try{m=JSON.parse(data);}catch{return;}
+    if(m.type!=='audio')return;
+    if(m.event==='ready'){this.ready=true;this.sync();this.onError?.(null);return;}
+    if(m.event==='unavailable'){this.ready=false;this.failAll(m.message);return;}
+    const entry=this.pending.get(String(m.id));
+    if(m.event==='error'){
+      const message=m.message||m.value||'Ошибка звукового движка';
+      this.finish(String(m.id),true,message);this.onError?.(message);return;
     }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+    if(!entry)return; // Ignore late events from cancelled or replaced sessions.
+    if(m.event==='char')entry.onChar?.(entry.characters[m.value]);
+    else if(m.event==='pulse')entry.onPulse?.(m.value===1?'dot':m.value===2?'dash':null);
+    else if(m.event==='done')this.finish(String(m.id),m.value!==0);
+  }
+  playSequence(sequence,morseDict,onCharPlay=null,onPulse=null,options={}) {
+    const lookup=typeof morseDict==='function'?morseDict:char=>Object.keys(morseDict).find(key=>morseDict[key]===char);
+    const patterns=[],characters=[];
+    for(const char of sequence){
+      if(/^\s+$/.test(char)){patterns.push('/');characters.push(null);continue;}
+      const pattern=lookup(char);
+      if(pattern&&/^[.\-\s]+$/.test(pattern)){patterns.push(pattern.trim().split(/\s+/).join(','));characters.push(char);}
     }
-  }
-
-  registerTimeout(callback, ms) {
-    const id = setTimeout(() => {
-      this.activeTimeouts.delete(id);
-      callback();
-    }, ms);
-    this.activeTimeouts.add(id);
-    return id;
-  }
-
-  clearAllTimeouts() {
-    this.activeTimeouts.forEach(id => clearTimeout(id));
-    this.activeTimeouts.clear();
-  }
-
-  setFrequency(freq) {
-    this.frequency = freq;
-    if (this.osc && this.ctx) this.osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-  }
-
-  setVolume(vol) {
-    this.volume = vol / 100;
-  }
-
-  setCharWpm(wpm) {
-    this.charWpm = wpm;
-  }
-
-  setPauseFactor(factor) {
-    this.pauseFactor = factor;
-  }
-
-  setDashRatio(ratio) {
-    this.dashRatio = ratio;
-  }
-
-  // Returns a Promise that resolves when the sound finishes
-  playString(morseStr, startTime, onPulse = null) {
-    this.init();
-    let isCancelled = false;
-    this.cancelTokens = this.cancelTokens || [];
-    const token = { cancel: () => { isCancelled = true; } };
-    this.cancelTokens.push(token);
-
-    const currentSpeed = isFinite(this.charWpm) ? (this.charWpm || 50) : 50;
-    // APAK Speed 50 = 118.5ms dot. 5.925 / 50 = 0.1185
-    const dotLen = 5.925 / currentSpeed;
-    const dashLen = dotLen * (this.dashRatio || 3.0);
-    const intraCharGap = dotLen;
-    const attack = 0.005; // Standard 5ms
-    const release = 0.005;
-
-    // Safety: ensure startTime is finite and in the future
-    let time = (typeof startTime === 'number' && isFinite(startTime)) ? startTime : this.ctx.currentTime;
-    if (time < this.ctx.currentTime) time = this.ctx.currentTime;
-    time += 0.020; // 20ms buffer to strictly prevent scheduling in the past
-    const baseTime = this.ctx.currentTime;
-
-    for (let i = 0; i < morseStr.length; i++) {
-      const symbol = morseStr[i];
-      
-      if (symbol === ' ') {
-        time += intraCharGap * 2; // Extra gap (space in pattern means extra pause)
-        continue;
-      }
-
-      const type = symbol === '-' ? 'dash' : 'dot';
-      const duration = symbol === '-' ? dashLen : dotLen;
-
-      if (onPulse) {
-        const pulseStartMs = (time - baseTime) * 1000;
-        const pulseEndMs = (time + duration - baseTime) * 1000;
-        this.registerTimeout(() => { if (!isCancelled) onPulse(type); }, Math.max(0, pulseStartMs));
-        this.registerTimeout(() => { if (!isCancelled) onPulse(null); }, Math.max(0, pulseEndMs));
-      }
-
-      // Attack: LCWO (jscwlib) style raised-cosine envelope (Hann window half)
-      const e_attack = new Float32Array(32);
-      for (let j=0; j<32; j++) {
-        e_attack[j] = this.volume * (0.5 - 0.5 * Math.cos(Math.PI * (j / 31)));
-      }
-      this.gain.gain.setValueCurveAtTime(e_attack, time, attack);
-
-      time += duration;
-
-      // Release: LCWO style
-      const e_release = new Float32Array(32);
-      for (let j=0; j<32; j++) {
-        e_release[j] = this.volume * (0.5 + 0.5 * Math.cos(Math.PI * (j / 31)));
-      }
-      this.gain.gain.setValueCurveAtTime(e_release, time, release);
-
-      if (i < morseStr.length - 1) {
-        time += intraCharGap;
-      }
+    if(!patterns.some(p=>p!=='/'))return Promise.resolve({cancelled:false});
+    if(!this.ready||this.socket?.readyState!==1){
+      const error='Звуковой движок ещё не готов. Подождите или перезапустите приложение.';
+      this.onError?.(error);return Promise.resolve({cancelled:true,error});
     }
-
-    const finishTime = time + release;
-    const waitTimeMs = (finishTime - this.ctx.currentTime) * 1000;
-
-    const promise = new Promise(r => {
-      this.registerTimeout(() => {
-        this.cancelTokens = this.cancelTokens.filter(t => t !== token);
-        r();
-      }, Math.max(0, waitTimeMs));
-    });
-    promise.finishTime = finishTime;
+    const id=String(this.nextId++);
+    const promise=new Promise(resolve=>this.pending.set(id,{resolve,characters,onChar:onCharPlay,onPulse}));
+    this.send({op:'play',id,patterns,settings:this.settings(),spacing:options.spacing||'text'});
     return promise;
   }
-
-  async playSequence(sequence, morseDict, onCharPlay = null, onPulse = null) {
-    this.init();
-    let isCancelled = false;
-    this.cancelTokens = this.cancelTokens || [];
-    const token = {
-      cancel: () => {
-        isCancelled = true;
-        if (onCharPlay) onCharPlay(null);
-        if (onPulse) onPulse(null);
-      }
-    };
-    this.cancelTokens.push(token);
-
-    try {
-      const currentSpeed = this.charWpm || 50;
-      const dotLen = 5.925 / currentSpeed;
-      const uiPause = this.pauseFactor || 1.0; 
-      
-      console.log(`[AudioEngine] Starting sequence: Speed=${currentSpeed} CPM, Pause=x${uiPause}`);
-
-      // APAK Timing Sync:
-      // Letter gap = Dot * (Factor + 1) * 1.5
-      // Word gap = Dot * (Factor + 1) * 3
-      // For x1.0 (standard): 3/6 dots. For x3.0: 6/12 dots.
-      const interCharGap = dotLen * (uiPause + 1) * 1.5; 
-      const wordGap = dotLen * (uiPause + 1) * 3;
-      const extraWordGap = wordGap - interCharGap;
-
-      let nextStartTime = this.ctx.currentTime + 0.1;
-
-      for (let i = 0; i < sequence.length; i++) {
-        if (isCancelled) break;
-        const char = sequence[i];
-
-        if (char === ' ') {
-          nextStartTime += extraWordGap;
-          continue;
-        }
-
-        const morsePattern = typeof morseDict === 'function' 
-          ? morseDict(char)
-          : Object.keys(morseDict).find(k => morseDict[k] === char);
-        if (morsePattern) {
-          if (onCharPlay) {
-            const charDelayMs = (nextStartTime - this.ctx.currentTime) * 1000;
-            this.registerTimeout(() => {
-              if (!isCancelled) onCharPlay(char);
-            }, Math.max(0, charDelayMs));
-          }
-
-          const playPromise = this.playString(morsePattern, nextStartTime, onPulse);
-          await playPromise;
-          const finishTime = playPromise.finishTime;
-
-          // Prepare for next char
-          nextStartTime = finishTime + interCharGap;
-        }
-      }
-    } finally {
-      this.cancelTokens = this.cancelTokens.filter(t => t !== token);
-    }
+  playString(pattern,_startTime,onPulse=null){return this.playSequence(['_'],()=>pattern,null,onPulse);}
+  keyDown(source='local') {
+    if(!['local','remote'].includes(source)||this.activeSources.has(source))return;
+    if(this.send({op:'key',source,down:true}))this.activeSources.add(source);
+    else this.onError?.('Звуковой движок недоступен. Перезапустите приложение.');
   }
-
-  // Live key tone. Mirrors the native engine sidetone (morze_engine_v2.cpp) so the
-  // keyboard and the hardware key sound the same: a linear ramp of 0.001 per sample
-  // at 44.1 kHz, i.e. 44.1 gain units per second.
-  rampKeyTone(target) {
-    if (!this.gain || !this.ctx) return;
-    const param = this.gain.gain;
-    const now = this.ctx.currentTime;
-    const current = param.value;
-    if (param.cancelAndHoldAtTime) param.cancelAndHoldAtTime(now);
-    else param.cancelScheduledValues(now);
-    param.setValueAtTime(current, now);
-    param.linearRampToValueAtTime(target, now + Math.abs(target - current) / 44.1);
-  }
-
-  // Optional `source` ('local', 'remote') lets several keys share one tone: it stays
-  // on while at least one source is held. keyUp() without a source is a hard stop.
-  keyDown(source) {
-    this.init();
-    if (source) this.activeSources.add(source);
-    this.rampKeyTone(this.volume);
-  }
-
   keyUp(source) {
-    if (source) {
-      this.activeSources.delete(source);
-      if (this.activeSources.size > 0) return;
-    } else {
-      this.activeSources.clear();
-    }
-    this.rampKeyTone(0);
+    const sources=source?[source]:[...this.activeSources];
+    for(const key of sources){this.activeSources.delete(key);this.send({op:'key',source:key,down:false});}
   }
-
-  stopAll() {
-    this.clearAllTimeouts();
-    this.activeSources.clear();
-    if (this.cancelTokens) {
-      this.cancelTokens.forEach(t => t.cancel());
-      this.cancelTokens = [];
-    }
-    if (this.gain && this.ctx) {
-      this.gain.gain.cancelScheduledValues(this.ctx.currentTime);
-      // Cancel without setting any harsh value, decay naturally from current position
-      this.gain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.005);
-    }
-  }
+  notice(name){this.send({op:'notice',name});}
+  stopAll(){this.send({op:'reset'});this.failAll('Отменено',false);}
 }
-
-export const audioEngine = new MorseAudioEngine();
+export const audioEngine=new MorseAudioEngine();

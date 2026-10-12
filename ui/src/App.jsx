@@ -12,6 +12,7 @@ import { UpdateChecker } from './UpdateChecker';
 import { getMorsePattern, getMnemonic } from './utils/morseProvider';
 import { sounds } from './utils/sounds';
 import { audioEngine } from './audio';
+import { APAK_RATE, normalizeAudioSettings } from './audioSettings.js';
 import './App.css';
 import { RELAY_URL } from './relayConfig';
 
@@ -47,14 +48,18 @@ function App() {
     return defaultValue;
   };
 
-  const [frequency, setFrequency] = useState(() => loadSetting('frequency', 700));
+  const [frequency, setFrequency] = useState(() => normalizeAudioSettings({ frequency: loadSetting('frequency', APAK_RATE / 23) }).frequency);
   const [volume, setVolume] = useState(() => loadSetting('volume', 50));
   const [lang, setLang] = useState(() => loadSetting('lang', 'RU'));
   const [theme, setTheme] = useState(() => loadSetting('theme', 'system')); // 'system' | 'light' | 'dark'
-  const [wpm, setWpm] = useState(() => loadSetting('wpm', 50)); // Default to 50 Signs Per Minute (CPM) for Reception
+  const [wpm, setWpm] = useState(() => normalizeAudioSettings({ speed: loadSetting('wpm', 50) }).speed); // Default to 50 Signs Per Minute (CPM) for Reception
   const [transWpm, setTransWpm] = useState(() => loadSetting('transWpm', 50)); // Independent Transmission WPM (reverted to 1200/wpm scale)
-  const [dashRatio, setDashRatio] = useState(() => loadSetting('dashRatio', 3.0));
-  const [pauseFactor, setPauseFactor] = useState(() => loadSetting('pauseFactor', 3.0));
+  const [dashRatio, setDashRatio] = useState(() => normalizeAudioSettings({ ratio: loadSetting('dashRatio', 3.0) }).ratio);
+  const [pauseFactor, setPauseFactor] = useState(() => normalizeAudioSettings({ pause: loadSetting('pauseFactor', 3.0) }).pause);
+  const [audioError, setAudioError] = useState(null);
+  useEffect(() => { audioEngine.onError = setAudioError; return () => { audioEngine.onError = null; }; }, []);
+  const [front, setFront] = useState(() => normalizeAudioSettings({ front: loadSetting('front', 6) }).front);
+  const [waveform, setWaveform] = useState(() => loadSetting('waveform', 'sine') === 'square' ? 'square' : 'sine');
   const [transmissionKey, setTransmissionKey] = useState(() => loadSetting('transmissionKey', 'Space'));
   const [customOverrides, setCustomOverrides] = useState(() => loadSetting('customOverrides', {}));
   const [isBindingKey, setIsBindingKey] = useState(false);
@@ -88,12 +93,12 @@ function App() {
     console.log('[App] Connecting to Morse Engine...');
     const socket = new WebSocket('ws://127.0.0.1:8080');
     ws.current = socket;
+    audioEngine.bindSocket(socket);
 
     socket.onopen = () => {
       console.log('[App] Connected to Morse Engine');
       // Sync current settings immediately on connection
-      socket.send('F' + frequency);
-      socket.send('V' + volume);
+      // The audio client synchronizes current settings after native READY.
       if (reconnectTimer.current) {
         clearTimeout(reconnectTimer.current);
         reconnectTimer.current = null;
@@ -258,9 +263,9 @@ function App() {
 
   // Persistence Sync Effect
   useEffect(() => {
-    const settings = { frequency, volume, lang, theme, wpm, transWpm, dashRatio, pauseFactor, transmissionKey, customOverrides };
+    const settings = { frequency, volume, lang, theme, wpm, transWpm, dashRatio, pauseFactor, front, waveform, transmissionKey, customOverrides };
     localStorage.setItem('paloma_morse_v1', JSON.stringify(settings));
-  }, [frequency, volume, lang, theme, wpm, transWpm, dashRatio, pauseFactor, transmissionKey, customOverrides]);
+  }, [frequency, volume, lang, theme, wpm, transWpm, dashRatio, pauseFactor, front, waveform, transmissionKey, customOverrides]);
 
   // Apply theme to <html data-theme>; 'system' follows the OS preference live.
   useEffect(() => {
@@ -277,19 +282,23 @@ function App() {
     }
   }, [theme]);
 
-  // Sync Web Audio engine settings (used for previews/exercises)
+  // Synchronize the central C++ engine through the control client.
   useEffect(() => {
     audioEngine.setFrequency(frequency);
     audioEngine.setVolume(volume);
     audioEngine.setCharWpm(wpm);
     audioEngine.setPauseFactor(pauseFactor);
     audioEngine.setDashRatio(dashRatio);
-  }, [frequency, volume, wpm, pauseFactor, dashRatio]);
+    audioEngine.setFront(front);
+    audioEngine.setWaveform(waveform);
+  }, [frequency, volume, wpm, pauseFactor, dashRatio, front, waveform]);
 
   const resetSettings = () => {
     if (confirm(lang === 'RU' ? 'СБРОСИТЬ ВСЕ НАСТРОЙКИ?' : 'RESET ALL SETTINGS?')) {
       localStorage.removeItem('paloma_morse_v1');
-      setFrequency(700);
+      setFrequency(APAK_RATE / 23);
+      setFront(6);
+      setWaveform('sine');
       setVolume(50);
       setLang('RU');
       setTheme('system');
@@ -343,7 +352,7 @@ function App() {
     setFrequency(val);
     clearTimeout(freqTimer.current);
     freqTimer.current = setTimeout(() => {
-      if (ws.current && ws.current.readyState === 1) ws.current.send('F' + val);
+      audioEngine.setFrequency(val);
     }, 50);
   };
 
@@ -351,7 +360,7 @@ function App() {
     setVolume(val);
     clearTimeout(volTimer.current);
     volTimer.current = setTimeout(() => {
-      if (ws.current && ws.current.readyState === 1) ws.current.send('V' + val);
+      audioEngine.setVolume(val);
     }, 50);
   };
 
@@ -433,8 +442,8 @@ function App() {
 
           <div className="header-controls">
             <div className="freq-control" title="Pitch (Tone Frequency)">
-              <span className="label">{frequency} HZ</span>
-              <input type="range" min="200" max="2000" step="25" value={frequency} onChange={(e) => updateFrequency(parseInt(e.target.value))} />
+              <span className="label">{Number(frequency.toFixed(2))} HZ</span>
+              <input type="range" min="8" max="38" step="1" value={46 - normalizeAudioSettings({ frequency }).period} onChange={(e) => updateFrequency(APAK_RATE / (46 - Number(e.target.value)))} />
             </div>
 
             <div className="freq-control" title="Output Volume">
@@ -492,6 +501,23 @@ function App() {
                   </div>
                 </div>
 
+                <div className="setting-row audio-setting">
+                  <label>{lang === 'RU' ? 'ФРОНТ СИГНАЛА' : 'SIGNAL EDGE'}</label>
+                  <div className="number-stepper">
+                    <button aria-label={lang === 'RU' ? 'Уменьшить фронт' : 'Decrease edge'} onClick={() => setFront(Math.max(0, front - 1))}>-</button>
+                    <span>{front}</span>
+                    <button aria-label={lang === 'RU' ? 'Увеличить фронт' : 'Increase edge'} onClick={() => setFront(Math.min(12, front + 1))}>+</button>
+                  </div>
+                </div>
+
+                <div className="setting-row audio-setting">
+                  <label>{lang === 'RU' ? 'ФОРМА СИГНАЛА' : 'WAVEFORM'}</label>
+                  <div className="lang-toggle">
+                    <button className={waveform === 'sine' ? 'active' : ''} onClick={() => setWaveform('sine')}>{lang === 'RU' ? 'Синус' : 'Sine'}</button>
+                    <button className={waveform === 'square' ? 'active' : ''} onClick={() => setWaveform('square')}>{lang === 'RU' ? 'Меандр' : 'Square'}</button>
+                  </div>
+                </div>
+
                 <div className="setting-row">
                   <label>{lang === 'RU' ? 'КЛАВИША ПЕРЕДАЧИ' : 'TRANSMISSION KEY'}</label>
                   <button
@@ -524,6 +550,8 @@ function App() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {audioError && <div role="alert" className="error-banner"><span>{audioError}</span></div>}
 
         {/* Tab Selection */}
         <div className="tab-selector">
@@ -597,6 +625,8 @@ function App() {
               setDashRatio={setDashRatio}
               pauseFactor={pauseFactor}
               setPauseFactor={setPauseFactor}
+              front={front}
+              waveform={waveform}
               customOverrides={customOverrides}
               roomId={roomId}
               token={token}

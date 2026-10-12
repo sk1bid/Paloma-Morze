@@ -5,38 +5,75 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test-native:
-    name: Native C++ Tests
-    runs-on: ubuntu-latest
+  validate:
+    name: Validate (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Compile and run test_parser
-        run: |
-          g++ ui/native/test_parser.cpp -I ui/native -o test_parser
-          ./test_parser
-
-  test-frontend:
-    name: UI & Bridge Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 22
+          cache: npm
           cache-dependency-path: ui/package-lock.json
 
-      - name: Install dependencies
+      - name: Install Linux audio headers
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+
+      - name: Compile and test native engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          flags=(-std=c++17 -O2 -lpthread -lm)
+          case "$RUNNER_OS" in
+            Linux) flags+=(-lasound -ldl); engine=ui/native/morze_app ;;
+            macOS) flags+=(-framework CoreAudio -framework AudioUnit -framework CoreFoundation); engine=ui/native/morze_app ;;
+            Windows) flags+=(-static); engine=ui/native/morze_app.exe ;;
+          esac
+          g++ ui/native/test_parser.cpp -I ui/native -o native_audio_tests.exe "${flags[@]}"
+          ./native_audio_tests.exe
+          g++ ui/native/morze_engine_v2.cpp -I ui/native -o "$engine" "${flags[@]}"
+
+      - name: Install locked dependencies
         working-directory: ui
         run: npm ci
 
-      - name: Run tests
+      - name: Unit tests
         working-directory: ui
-        run: npm test
+        run: npm test -- --runInBand
+
+      - name: Real native bridge integration
+        run: node tools/test-native-audio.mjs
+
+      - name: Check version consistency
+        shell: bash
+        run: |
+          node - <<'JS'
+          const fs = require('fs');
+          const version = fs.readFileSync('VERSION', 'utf8').trim();
+          const pkg = JSON.parse(fs.readFileSync('ui/package.json'));
+          const lock = JSON.parse(fs.readFileSync('ui/package-lock.json'));
+          if (pkg.version !== version || lock.version !== version || lock.packages[''].version !== version)
+            throw new Error('VERSION, package.json and package-lock.json must match');
+          if (process.env.GITHUB_REF_TYPE === 'tag' && process.env.GITHUB_REF_NAME !== `v${version}`)
+            throw new Error('Release tag does not match VERSION');
+          JS
+
+      - name: Build renderer
+        working-directory: ui
+        run: npm run build

@@ -556,6 +556,7 @@ header {
 }
 
 .tab-content {
+  min-height: 0;
   flex-grow: 1;
   position: relative;
   display: flex;
@@ -625,6 +626,8 @@ header {
 }
 
 .settings-content {
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -705,12 +708,16 @@ header {
 }
 
 .reception-container {
+  min-height: 0;
+  min-width: 0;
   display: flex;
   gap: 24px;
   height: 100%;
 }
 
 .reception-sidebar {
+  min-height: 0;
+  overflow: hidden;
   width: 170px;
   flex-shrink: 0;
   background: rgba(var(--sink-rgb), 0.2);
@@ -892,6 +899,8 @@ header {
 }
 
 .reception-main {
+  min-width: 0;
+  min-height: 0;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
@@ -1393,6 +1402,8 @@ header {
 
 /* Keyboard Layout for Exercise 3 */
 .keyboard-container {
+  min-height: 0;
+  overflow: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1401,11 +1412,12 @@ header {
   border-radius: 20px;
   border: 1px solid var(--glass-border);
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   flex-grow: 1;
 }
 
 .keyboard-row {
+  flex-shrink: 0;
   display: flex;
   gap: 6px;
   justify-content: center;
@@ -3194,3 +3206,42 @@ header {
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+
+/* Keep reception controls independent from the keyboard and the start button. */
+.reception-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.reception-controls > * {
+  flex-shrink: 0;
+}
+
+.reception-controls .main-select {
+  height: 38px;
+  margin-bottom: 6px;
+  padding: 6px 4px;
+}
+
+.reception-sidebar > .start-btn {
+  flex-shrink: 0;
+}
+
+.audio-setting {
+  gap: 12px;
+}
+
+.audio-setting .number-stepper {
+  min-width: 110px;
+}
+
+.audio-setting .lang-toggle {
+  flex-shrink: 0;
+}
+
+.keyboard-row:first-child { margin-top: auto; }
+.keyboard-row:last-child { margin-bottom: auto; }

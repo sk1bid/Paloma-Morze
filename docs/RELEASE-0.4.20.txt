@@ -1,0 +1,22 @@
+Paloma Morse 0.4.20
+
+Changes:
+- One native C++ sound engine for reception exercises, USB/keyboard keying,
+  received CW and connection notifications.
+- Clean sound only in the application; tone envelopes and playback timing use
+  the recovered APAK 2.12 model. Legacy captured PCM remains a test reference.
+- Sample-clock playback, cancellation and key ownership; no browser audio path.
+- Compact reception sidebar; signal edge and waveform are in Settings.
+- Native PCM regression fixtures, bridge integration and concurrency checks.
+
+Release gates:
+- CI runs native tests, renderer tests, native bridge smoke, version consistency
+  and UI build on Linux, Windows and macOS.
+- Tag builds repeat this validation before packaging.
+- Release publishing requires all platform packages and verifies their updater
+  metadata versions, sizes and SHA-512 hashes.
+- Package contents exclude native source and test binaries.
+
+Version authority: VERSION. scripts/update_version.sh updates both package.json
+and package-lock.json. Commit all reviewed changes, wait for main CI, then create
+and push only the intended annotated release tag. Never use a blanket --tags push.

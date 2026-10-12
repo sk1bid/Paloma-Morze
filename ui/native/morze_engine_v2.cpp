@@ -22,65 +22,29 @@
 #define SLEEP(ms) usleep((ms) * 1000)
 #endif
 
-// --- КРОСС-ПЛАТФОРМЕННЫЙ ЗВУКОВОЙ ДВИЖОК ---
-// Репликация 1:1 логики из macOS AVFoundation версии
+#include "morse_audio.hpp"
+#include <thread>
+#include <iostream>
+#include <mutex>
+#include <atomic>
+#include <fstream>
+#include <cstdarg>
 
-struct MorseState {
-  double phase;
-  double frequency;
-  float currentVolume;
-  float targetVolume;
-  float maxVolume;
-  double sampleRate;
-  bool isMuted; // New: Mute hardware sidetone while keeping serial data throughput
-  bool keyHeld; // Physical key state, so mute/unmute applies even mid-press
-};
-
-void key_press(MorseState& state) {
-  state.keyHeld = true;
-  if (!state.isMuted) state.targetVolume = state.maxVolume;
+using MorseState = morse::Engine;
+static std::mutex outputMutex;
+static void emit_audio(const std::string& line) {
+  std::lock_guard<std::mutex> lock(outputMutex);
+  std::cout << line << std::endl;
 }
-
-void key_release(MorseState& state) {
-  state.keyHeld = false;
-  state.targetVolume = 0.0f;
+static int log_printf(const char* format, ...) {
+  char buffer[2048];va_list args;va_start(args,format);int n=vsnprintf(buffer,sizeof(buffer),format,args);va_end(args);
+  std::lock_guard<std::mutex> lock(outputMutex);fputs(buffer,stdout);fflush(stdout);return n;
 }
-
-void data_callback(ma_device *pDevice, void *pOutput, const void *pInput,
-                   ma_uint32 frameCount) {
-  MorseState *pState = (MorseState *)pDevice->pUserData;
-  float *out = (float *)pOutput;
-
-  float target = pState->targetVolume;
-  float current = pState->currentVolume;
-  double freq = pState->frequency;
-  double phase = pState->phase;
-  double sr = pState->sampleRate;
-
-  for (ma_uint32 i = 0; i < frameCount; ++i) {
-    if (current < target) {
-      current += 0.001f;
-      if (current > target)
-        current = target;
-    } else if (current > target) {
-      current -= 0.001f;
-      if (current < target)
-        current = target;
-    }
-
-    // Чистая синусоида
-    out[i] = (float)sin(phase * 2.0 * M_PI) * current;
-
-    // Накопление фазы
-    phase += freq / sr;
-    if (phase >= 1.0)
-      phase -= 1.0;
-  }
-
-  pState->currentVolume = current;
-  pState->phase = phase;
-
-  (void)pInput;
+#define printf log_printf
+void key_press(MorseState& state) { state.hardware = true; }
+void key_release(MorseState& state) { state.hardware = false; }
+void data_callback(ma_device *device, void *output, const void *, ma_uint32 frames) {
+  static_cast<MorseState*>(device->pUserData)->render(static_cast<float*>(output), frames);
 }
 
 // Поиск всех портов вместо одного последнего (POSIX версия)
@@ -150,35 +114,54 @@ std::vector<std::string> findAvailablePorts() {
 long long get_time_ms() { return GetTickCount(); }
 #endif
 
-void process_command(const char* cmd, MorseState& state) {
-  if (cmd[0] == 'F') {
-    int f = atoi(cmd + 1);
-    if (f >= 200 && f <= 2000)
-      state.frequency = (double)f;
-  } else if (cmd[0] == 'V') {
-    int v = atoi(cmd + 1);
-    if (v >= 0 && v <= 100) {
-      state.maxVolume = v / 100.0f;
-      if (state.targetVolume > 0.0f)
-        state.targetVolume = state.maxVolume;
-    }
-  } else if (cmd[0] == 'M') {
-    // M1 = Mute HW sidetone, M0 = Unmute HW sidetone (applies immediately, even mid-press)
-    state.isMuted = (cmd[1] == '1');
-    state.targetVolume = (state.keyHeld && !state.isMuted) ? state.maxVolume : 0.0f;
+bool process_command(const std::string& line, MorseState& state) {
+  uint32_t requestId=0;
+  try {
+    std::istringstream in(line);std::string verb;in>>verb;
+    if(verb=="P") {
+      morse::Settings settings;int square,quality;std::string patterns;
+      if(!(in>>requestId>>settings.speed>>settings.period>>settings.ratio>>settings.pause>>settings.front>>square>>quality>>settings.spacing>>patterns))
+        throw std::runtime_error("invalid-play-command");
+      settings.square=square!=0;settings.original=quality!=0;
+      std::string extra;if(in>>extra)throw std::runtime_error("invalid-play-command");
+      if(!state.submit(morse::makePlan(requestId,settings,patterns,state.rate)))throw std::runtime_error("audio-queue-full");
+    } else if(verb=="STOP") {in>>requestId;state.stop(requestId);}
+    else if(verb=="RESET") {state.stop();state.local=false;state.remote=false;state.muted=false;state.clearNotice();}
+    else if(verb=="K") {
+      std::string source;int held;if(!(in>>source>>held)||(held!=0&&held!=1))throw std::runtime_error("invalid-key-command");
+      if(source=="remote")state.remote=held;else if(source=="local")state.local=held;else throw std::runtime_error("invalid-key-source");
+    } else if(verb=="S") {
+      double frequency,volume;int front,waveform,quality;
+      if(!(in>>frequency>>volume>>front>>waveform>>quality)||!std::isfinite(frequency)||!std::isfinite(volume)||frequency<200||frequency>2000||volume<0||volume>100||front<0||front>12)
+        throw std::runtime_error("invalid-settings");
+      state.period=std::max(8,std::min(38,int(std::round(morse::ReferenceRate/frequency))));
+      state.volume=float(volume/100);state.front=front;state.square=waveform!=0;state.original=quality!=0;
+    } else if(verb=="N") {int connected;if(in>>connected)state.notify(connected!=0);}
+    else if(line.size()>1) {
+      double n=std::stod(line.substr(1));if(!std::isfinite(n))throw std::runtime_error("invalid-number");
+      if(line[0]=='F'&&n>=200&&n<=2000)state.period=std::max(8,std::min(38,int(std::round(morse::ReferenceRate/n))));
+      else if(line[0]=='V'&&n>=0&&n<=100)state.volume=float(n/100);
+      else if(line[0]=='A'&&n>=0&&n<=12)state.front=int(n);
+      else if(line[0]=='W')state.square=n!=0;
+      else if(line[0]=='M')state.muted=n!=0;
+      else throw std::runtime_error("invalid-command");
+    } else throw std::runtime_error("invalid-command");
+    return true;
+  } catch(const std::exception& e) {
+    emit_audio("AUDIO ERROR "+std::to_string(requestId)+" "+e.what());return false;
+  }
+}
+void report_events(MorseState& state) {
+  morse::Event e;
+  while(state.poll(e)) {
+    const char* name=e.type==morse::EventType::Start?"START":e.type==morse::EventType::Char?"CHAR":e.type==morse::EventType::Pulse?"PULSE":"DONE";
+    emit_audio(std::string("AUDIO ")+name+" "+std::to_string(e.id)+" "+std::to_string(e.value));
   }
 }
 
 #ifndef TEST_RUNNER
 int main(int argc, char** argv) {
-  MorseState state;
-  state.phase = 0.0;
-  state.frequency = 700.0;
-  state.currentVolume = 0.0f;
-  state.targetVolume = 0.0f;
-  state.maxVolume = 0.5f;
-  state.isMuted = false;
-  state.keyHeld = false;
+  MorseState state(48000);
   std::string testMode = "";
 
 
@@ -194,28 +177,28 @@ int main(int argc, char** argv) {
     } else if (arg == "--freq" || arg == "-f") {
       if (i + 1 < argc) {
         int f = atoi(argv[++i]);
-        if (f >= 200 && f <= 2000) state.frequency = (double)f;
+        if (f >= 200 && f <= 2000) state.period = std::max(8,std::min(38,int(std::round(11025.0/f))));
       }
     } else if (arg == "--vol" || arg == "-v") {
       if (i + 1 < argc) {
         int v = atoi(argv[++i]);
-        if (v >= 0 && v <= 100) state.maxVolume = v / 100.0f;
+        if (v >= 0 && v <= 100) state.volume = v / 100.0f;
       }
     } else if (arg == "--test-mode") {
       if (i + 1 < argc) testMode = argv[++i];
     }
   }
-  state.sampleRate = 44100.0;
+
 
   ma_device_config config = ma_device_config_init(ma_device_type_playback);
   config.playback.format = ma_format_f32;
   config.playback.channels = 1;
-  config.sampleRate = (ma_uint32)state.sampleRate;
+  config.sampleRate = (ma_uint32)state.rate;
+  config.periodSizeInFrames = 256;
   config.dataCallback = data_callback;
   config.pUserData = &state;
 
   ma_device device;
-  bool audio_ok = false;
   if (testMode.empty()) {
     if (ma_device_init(NULL, &config, &device) != MA_SUCCESS) {
       printf("[Error] Failed to initialize playback device.\n");
@@ -226,10 +209,9 @@ int main(int argc, char** argv) {
       ma_device_uninit(&device);
       return -1;
     }
-    audio_ok = true;
   }
 
-  printf("[Engine] Cross-platform engine started. Freq: %.0fHz, Vol: %.0f%%\n", state.frequency, state.maxVolume * 100);
+  printf("[Engine] Cross-platform engine started. Freq: %.0fHz, Vol: %.0f%%\n", 11025.0/state.period.load(), state.volume.load() * 100);
   if (!testMode.empty()) printf("[Engine] Running in TEST MODE: %s\n", testMode.c_str());
   fflush(stdout);
 
@@ -241,16 +223,26 @@ int main(int argc, char** argv) {
   std::string connectedPort = "";
   time_t lastHealthCheck = 0;
   char buf[1];
-  char stdin_buf[16];
-  int stdin_pos = 0;
+  std::atomic<bool> running{true};
+  emit_audio("AUDIO READY 1 "+std::to_string(state.rate));
+  // Commands remain responsive even while a USB handshake is waiting.
+  std::thread reader([&] {
+    std::string line;
+    while(std::getline(std::cin,line)) {
+      if(line.size()<=30000)process_command(line,state);
+      else emit_audio("AUDIO ERROR 0 command-too-large");
+    }
+    state.emergencyStop=true;running=false;
+  });
+  std::thread reporter([&] {
+    std::vector<float> silent(256);
+    while(running) {
+      if(!testMode.empty())state.render(silent.data(),silent.size());
+      report_events(state);SLEEP(4);
+    }
+  });
 
-#ifndef _WIN32
-  // Non-blocking stdin
-  int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-  fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
-#endif
-
-  while (true) {
+  while (running) {
     if (!testMode.empty()) {
       if (testMode == "auth_ok" && connectedPort.empty()) {
         connectedPort = "MOCK_PORT";
@@ -509,38 +501,11 @@ int main(int argc, char** argv) {
     }
 #endif
 
-    // STDIN parsing (Cross-platform friendly)
-#ifndef _WIN32
-    char c;
-    if (read(STDIN_FILENO, &c, 1) > 0) {
-      if (c == '\n') {
-        stdin_buf[stdin_pos] = '\0';
-        process_command(stdin_buf, state);
-        stdin_pos = 0;
-      } else if (stdin_pos < 15) {
-        stdin_buf[stdin_pos++] = c;
-      }
-    }
-#else
-    DWORD bytesAvail = 0;
-    if (PeekNamedPipe(GetStdHandle(STD_INPUT_HANDLE), NULL, 0, NULL, &bytesAvail, NULL) && bytesAvail > 0) {
-      char cPos;
-      DWORD bytesRead;
-      if (ReadFile(GetStdHandle(STD_INPUT_HANDLE), &cPos, 1, &bytesRead, NULL) && bytesRead > 0) {
-        if (cPos == '\n') {
-          stdin_buf[stdin_pos] = '\0';
-          process_command(stdin_buf, state);
-          stdin_pos = 0;
-        } else if (stdin_pos < 15) {
-          stdin_buf[stdin_pos++] = cPos;
-        }
-      }
-    }
-#endif
     SLEEP(1);
   }
 
-  ma_device_uninit(&device);
+  reader.join();reporter.join();
+  if(testMode.empty())ma_device_uninit(&device);
   return 0;
 }
 #endif

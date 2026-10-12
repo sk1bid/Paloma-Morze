@@ -1,0 +1,79 @@
+Central native audio — Paloma Morse 0.4.19, 2026-10-12
+
+Production path:
+  React -> audio.js control client -> existing local WebSocket -> bridge.cjs
+  -> line commands on child stdin -> C++ morse_audio.hpp -> one miniaudio device.
+No AudioContext, OscillatorNode or browser fallback remains in ui/src.
+USB sidetone, keyboard, remote CW, lessons, radiograms and UI notification tones
+all use the same native output and master volume, frequency grid and edge setting.
+
+C++ is the authoritative production source for tone and timing formulas.
+The previous JS renderers are frozen under ui/tests/reference for regression
+comparison. They are not imported by the application. The original live APAK
+fixtures remain under ui/tests/fixtures/apak-2.12 and pass against C++ at 11025 Hz.
+
+Audio:
+- Single 48000 Hz mono float miniaudio stream (backend may resample to device rate).
+- Clean sine is generated at stream rate; its envelope stays inside the element.
+- Original mode uses exact APAK PCM8 element buffers. The single output stream
+  linearly resamples those buffers; device-rate samples are not claimed identical
+  to the old Windows driver. Golden byte comparisons apply at the reference rate.
+- Native sample positions control duration, silence, character and pulse events.
+- All playback settings are snapshotted in the submitted plan; master volume can
+  change during playback. Notifications yield to CW, never mix over training.
+- Any live key (USB/local/remote) preempts a lesson, emits cancellation, and uses
+  one shared carrier. Releasing local does not release remote or physical key.
+  Existing hardware mute during reception of a correspondent is preserved.
+
+Threads/ownership:
+- miniaudio callback: sample generation and plan clock. No mutex, file IO, stdout,
+  dynamic allocation or destruction of plans in this callback.
+- Blocking stdin thread: validates commands, prepares plans and publishes them
+  through a bounded SPSC queue. This stays responsive during USB discovery.
+- Existing main thread: USB scan/handshake/read; physical key state uses atomics.
+- Reporter thread: drains audio events every 4 ms and writes framed stdout lines;
+  completed plans are reclaimed here, outside the audio callback.
+- Scalar live parameters are atomic; queued plans are immutable and bounded.
+
+Protocol v1 (internal stdout/stdin, bridge validates renderer inputs):
+  AUDIO READY 1 48000
+  S frequencyHz volumePercent front squareFlag originalFlag
+  P id speed period ratioTenths pauseTenths front square original spacing patterns
+  K local|remote 0|1
+  STOP id (0 = any current sequence)
+  RESET (stop sequence, clear browser key states and notification)
+  N 1|0 (connect/disconnect notification)
+  F/V/A/W/M scalar commands retained for legacy hardware integration.
+Spacing: 0=text,1=lesson1,2=repeat. Patterns contain . and -, comma between
+letters of one Q-code token, | between UI tokens, / token for a group boundary.
+Events: AUDIO START/CHAR/PULSE/DONE id value, AUDIO ERROR id reason.
+DONE value 1 means cancelled; PULSE 0=off,1=dot,2=dash.
+CHAR indexes the transmitted token list, including explicit group separators.
+
+Bridge:
+Loopback-only 127.0.0.1:8080; optional PALOMA_AUDIO_PORT for isolated smoke tests.
+Native process starts only after the bridge owns its port, avoiding a second
+output device when another instance is already running. Renderer JSON cannot
+inject new stdin lines. stdout is buffered until complete lines arrive. Per-client
+request IDs are remapped to native IDs. Disconnect resets that controller's keys
+and stops its sequences. Process failure completes pending promises with errors.
+Missing/stale local native executable is rebuilt; production requires CI binaries.
+
+Tests:
+- 49 Jest tests: JS reference goldens; transport, handshake, partial lines, invalid
+  commands, cancellation, connection loss, key ownership and no Web Audio fallback.
+- C++ tests: 4 real APAK fixtures byte-exact; sample clocks 44.1/48/96 kHz;
+  spacing modes, parser bounds, mute/unmute, key preemption, cancellation and
+  concurrent producer/audio/reporter stress. ASan/UBSan run passed.
+- tools/test-native-audio.mjs: real bridge and native process on port 18080,
+  headless callback, completion/progress, long commands and remote preemption.
+  Run after building ui/native/morze_app. It does not open the user's sound device.
+- CI and release builds explicitly select C++17.
+
+This migration was compiled/run on macOS. Windows and Linux source paths are
+retained and CI build commands updated; those OS runtimes were not tested here.
+
+Clean-only user interface: the clean/original selector and persisted preference
+have been removed. The production control client always sends quality=clean,
+including after reconnect. Legacy PCM remains available internally for reference
+regression tests, not as a selectable application setting.

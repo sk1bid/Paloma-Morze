@@ -3,3 +3,6 @@
 ui/native/miniaudio.h linguist-vendored
 ui/native/test_parser linguist-vendored
 apak/** linguist-vendored
+
+# Preserve captured PCM byte-for-byte on Windows checkout.
+ui/tests/fixtures/**/*.pcm binary
