@@ -1,0 +1,37 @@
+TASK FOR CODEX — SHARED NATIVE INTEGRATION
+Branch: refactor/shared-audio-core
+Working directory: /Users/sk1bid/Documents/Paloma-Morse-Worktrees/shared-core
+
+Claude owns presentation. Codex owns the shared audio implementation, platform
+transports, packaging boundaries, model migration and tests. Do not implement
+competing SwiftUI visuals in this branch.
+
+First integration milestone
+1. Confirm the frozen protocol v1 against ui/native/morze_engine_v2.cpp.
+2. Supply Swift AudioService using Foundation Process/Pipe with a bundled native
+   helper. No local WebSocket service or Node.js is needed for the Mac client.
+3. Preserve the same C++ audio clock, clean signal and USB behavior. Read stdout
+   incrementally, handle split lines, process death, cancellation and stale IDs.
+4. Supply common catalog loader/state mapping and tests, without changing lessons.
+5. Bundle/sign the helper correctly; it belongs to the application's lifecycle.
+6. Prepare the equivalent Qt adapter contract using QProcess for later work.
+
+Core relocation is a separate atomic change
+Current authoritative source: ui/native/morse_audio.hpp, morze_engine_v2.cpp,
+miniaudio.h. Target: core/audio/ with an explicit build target.
+Move source once; preserve legacy include/build wrappers if needed. Update every
+CI/build reference and keep the runtime output locations expected by Electron.
+Run all platform CI, native fixtures, sanitizer/concurrency checks and bridge
+smoke tests. Do not leave a second copy of engine logic under apps/.
+
+Compatibility
+Keep protocol version 1 until an explicitly versioned change is necessary.
+Preserve all current published Windows/Linux builds while the Mac client evolves.
+Do not reroute automatic updates from Electron to an incomplete native client.
+Plan bundle identity, settings migration and native update delivery separately.
+
+Acceptance
+Swift starts/stops the real engine; preview data is not used in production.
+Playback callbacks originate from the native sample clock. USB key input is
+observed without sending a duplicate synthesized key command. Native failure is
+visible and cannot fall back to Web Audio. Existing desktop tests stay green.

@@ -1,0 +1,19 @@
+PALOMA NATIVE DESIGN DIRECTION
+
+Shared product language: a calm instrument for focused Morse practice.
+Clear navigation: Reception, Transmission, Radio, History.
+One primary start/stop control, a readable active sign, visible progress and a
+compact inspector for parameters. Avoid the old wall of steppers and oversized
+empty panels. Preserve all functional states; simplify presentation, not behavior.
+
+macOS: platform typography, SF Symbols, native sidebar/toolbar/inspector.
+Actual SwiftUI Liquid Glass for control/navigation layers on macOS 26+.
+Content remains legible; effects should support focus. Respect accessibility,
+keyboard navigation, reduced transparency/motion, and light/dark appearances.
+
+Qt: share hierarchy, terminology and interaction structure with the accepted Mac
+client; adapt decoration and controls to Windows/Linux. No WebEngine. A Qt
+Fluent-like style is not native WinUI, and no Apple Liquid Glass is promised.
+
+Place review screenshots under design/macos/ or design/desktop-qt/ with window
+size, appearance and state noted. Do not add generated build output or user data.

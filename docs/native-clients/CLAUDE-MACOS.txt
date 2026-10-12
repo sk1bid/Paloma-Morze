@@ -1,0 +1,85 @@
+TASK FOR CLAUDE CODE — NATIVE MACOS VISUAL CLIENT
+
+Branch: feature/macos-swiftui
+Working directory: /Users/sk1bid/Documents/Paloma-Morse-Worktrees/macos
+Repository baseline: v0.4.20 plus the shared native UI scaffold.
+Owner: Claude — visual design and SwiftUI presentation.
+Codex owns C++ audio, USB, protocol adapter, core extraction and CI integration.
+
+Read first
+CLAUDE.md
+docs/native-clients/ARCHITECTURE.txt
+shared/contracts/UI-SERVICE.txt
+shared/contracts/audio-protocol-v1.txt
+shared/catalog/morse.v1.json
+design/NATIVE-DESIGN.txt
+For behavioral reference: ui/src/Reception.jsx, Transmission.jsx,
+RadioNetwork.jsx, constants.js. These are reference files, not the target UI.
+
+User intent
+Build a genuinely native Mac interface in Swift + SwiftUI for macOS 26+.
+Use real system Liquid Glass. The current Electron design is not satisfactory;
+do not reproduce its dense column of steppers, oversized gray panels and huge
+keyboard centered in empty space. The user explicitly assigned visual work to
+Claude. Do not implement the new visual UI in web technologies.
+
+Deliverable for the first design milestone
+A buildable native application shell and reusable SwiftUI feature views:
+1. NavigationSplitView sidebar: Reception, Transmission, Radio, History.
+2. Reception: lesson/exercise selection, signs, mnemonic context, progress,
+   answer/feedback states, generated radiogram and results presentation.
+3. Transmission: visible key state, decoded text, rhythm ribbon, clear/pause
+   controls and an informative disconnected-key state.
+4. Radio: clearly separated logged-out, room-list, in-room and connection-lost
+   presentation states. Model them in previews; do not invent live participants
+   or contact the production relay from previews.
+5. Settings/inspector: speed, dash ratio, pause, tone, volume and signal edge.
+   There is only clean sound; do not restore a Clean/APAK mode selector.
+6. Light/dark appearances, focus/keyboard states, loading/error/empty states.
+
+Use stable service boundaries
+Build views against the AudioService and training-state contract. Do not place
+PCM generation, timing formulas, USB enumeration or socket parsing inside views.
+A preview-only implementation may feed deterministic data to SwiftUI previews.
+The runnable app must label preview/demo mode if it has no real adapter; Start
+must not claim playback or show a connected device without actual engine events.
+Stub adapters should be isolated and easy for Codex to replace. Visual progress
+reflects events from the service; it must not become the audio scheduling clock.
+
+Design direction
+A quiet, precise training instrument, native to Mac. Clear type hierarchy, useful
+whitespace, compact controls, large readable active sign. Use Liquid Glass in
+navigation and transport controls; keep the main content surface readable.
+Use SF Symbols and native controls where they fit. Respect Reduce Transparency
+and Reduce Motion; do not draw fake glass everywhere or use continuous decorative
+animations. Keep Start/Stop easy to locate at every supported window size.
+
+Behavioral coverage
+Document how each of the four exercises is represented, including cancellation,
+waiting for an answer, error repetition, paper-based control work and completion.
+Use shared catalog entries and preserve the special existing zero mapping.
+Do not silently remove Cyrillic/Latin support, Q-code views or custom-selection
+states merely to make the layout simpler. Functional wiring can be delivered by
+Codex; the UI needs explicit states and actions for it.
+
+Scope you may change
+apps/macos/**
+Design evidence and platform-specific additions under design/macos/**.
+Your handoff file under docs/native-clients/handoffs/macos.txt.
+Do not edit the shared engine, server, shipping Electron client, shared catalog,
+root version, release tags, certificate handling or release workflows. List a
+required shared change in the handoff for Codex instead of silently duplicating it.
+
+Validation and acceptance
+- App compiles with an available macOS 26+ SDK and a documented command.
+- Use current public SwiftUI APIs; mark platform availability explicitly.
+- No Electron/Chromium/WebView/Node dependency or bundled web runtime.
+- Screenshots of reception, transmission and settings in both appearances.
+- Check at 1000x700 and 1440x900 logical points; no clipped Start/Stop or controls.
+- Controls have meaningful accessibility labels and a sensible keyboard path.
+- Pure preview work is identified as such; list exactly what is live vs preview.
+- No release, main merge or push unless the user separately requests it.
+
+Final handoff
+List files, build command/result, screenshots, screen/state coverage, unresolved
+questions and adapter integration points. Keep changes in this worktree/branch.

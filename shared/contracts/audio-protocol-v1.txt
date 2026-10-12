@@ -1,0 +1,56 @@
+PALOMA AUDIO PROCESS PROTOCOL v1 — reference v0.4.20
+Authority: ui/native/morze_engine_v2.cpp and ui/native/morse_audio.hpp.
+This document freezes the existing contract; it does not change the engine.
+UTF-8/ASCII newline-delimited commands on stdin; events/logs on stdout.
+A client must buffer incomplete lines and ignore unrecognized log lines.
+
+Ready
+  AUDIO READY 1 48000
+Wait for this before playback. The last field is output sample rate.
+
+Live settings
+  S frequencyHz volumePercent front squareFlag originalFlag
+  Example: S 612.5 50 6 0 0
+Clients always send originalFlag=0 (clean). Square=0 sine, 1 square.
+Volume 0..100; front 0..12. UI tone grid: 11025/period, period 8..38.
+
+Sequence
+  P id speed period ratioTenths pauseTenths front square original spacing patterns
+  Example: P 1 50 18 30 30 6 0 0 0 .|.-..|/|...-
+Positive unique ID per live request; do not reuse before completion/cancellation.
+Speed: 30..150, step 5. Ratio: 20..45 (UI 2.0..4.5).
+Pause: 10..60 (UI x1.0..x6.0). Spacing: 0 text, 1 lesson-one, 2 error repeat.
+Patterns: . and -, | separates UI tokens, / is a group-space token,
+comma separates letters inside one multi-letter token (e.g. Q-code).
+The native engine defines all durations; UI must not calculate/sleep between tones.
+
+Live keys
+  K local 1 / K local 0       keyboard down/up
+  K remote 1 / K remote 0     incoming correspondent down/up
+  STOP id                     cancel matching sequence; 0 cancels current sequence
+  RESET                       stop sequence, clear browser/client keys and notice
+  N 1 / N 0                   connect/disconnect notification
+  M1 / M0                     legacy hardware sidetone mute/unmute
+A physical USB key is handled directly by C++. Do not echo its input back as K.
+
+Events
+  AUDIO START id totalFrames
+  AUDIO CHAR id tokenIndex
+  AUDIO PULSE id value         0 off, 1 dot, 2 dash
+  AUDIO DONE id cancelled      0 finished, 1 cancelled
+  AUDIO ERROR id reason
+CHAR uses the token list submitted by the client, including / group separators.
+Callbacks for cancelled/obsolete IDs must not change the current session.
+Live CW preempts an exercise; completion/cancellation must update UI state.
+
+Hardware status currently uses legacy text lines
+  [Engine] Connected to ... (Auth OK!)
+  Disconnected / Reconnecting / Port lost variants
+  ERROR:EACCES ...
+  1 / 0                      physical key press/release
+Keep parsing in the adapter, not in SwiftUI/QML views.
+
+Transport implementation
+macOS: Foundation Process + Pipe; helper bundled in the app.
+Qt: QProcess; helper bundled with the platform package.
+Released Electron continues using its existing bridge. No frontend generates PCM.

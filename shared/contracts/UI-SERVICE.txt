@@ -1,0 +1,39 @@
+NATIVE UI SERVICE BOUNDARY — design contract, not an implemented library
+
+AudioSettings
+  speed, toneHz, volumePercent, dashRatio, pauseFactor, front, waveform.
+  Clean output only. Persist user settings outside the view hierarchy.
+
+AudioService responsibilities
+  startEngine / stopEngine / updateSettings
+  play(sequence of {displayToken, pattern}, spacingMode) -> request ID
+  cancel(request ID), stopAll
+  setLocalKey(pressed), setRemoteKey(pressed)
+  observe engine readiness, hardware connection/press, current token, pulse,
+  completion/cancellation and error.
+Its concrete Swift/Qt APIs may follow platform conventions; these semantics must
+stay the same. No view owns a timer used to schedule audible Morse elements.
+
+Training presentation state
+  mode (reception/transmission/radio/history)
+  lesson, exercise, selected character pool, group count
+  status (idle/playing/waitingForAnswer/repeatingError/completed/error)
+  current token, pulse (none/dot/dash), completed/total
+  user answer, errors, results/radiogram, pending cancellation
+  engine state and hardware state are separate from training state.
+
+View actions
+  select lesson/exercise/pool; start/stop; preview a sign; answer; repeat;
+  change parameters for the next playback; clear transmission; open settings.
+Lesson/exercise generation and grading belong in model/services, not view bodies.
+
+Preview boundary
+Preview-only data may exercise every state without launching audio or contacting
+the relay. Never silently connect preview screenshots to the production server.
+A running design shell must distinguish previews from real service connection.
+
+Network service is separate from the audio service
+login/logout, list/create/join/leave room, session and participant events,
+send/receive key state. The relay remains Socket.IO; a plain WebSocket client is
+not automatically protocol-compatible. Credential handling and integration are
+Codex tasks. Claude supplies the UI states and actions only.

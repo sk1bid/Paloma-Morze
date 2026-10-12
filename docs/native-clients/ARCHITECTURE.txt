@@ -1,0 +1,75 @@
+PALOMA MORSE — STRUCTURE AND BRANCH PLAN
+Baseline: v0.4.20 / abda10116b24cdd76fd8aacbcc12004dade9fead
+
+Decisions
+macOS: Swift + SwiftUI, macOS 26+, system Liquid Glass.
+Windows/Linux future replacement: C++ + Qt 6 / Qt Quick / QML, without WebEngine.
+Current Windows/Linux Electron app remains the shipping client until replacement
+passes the agreed functionality and platform checks. No automatic release switch.
+All clients share one C++ audio implementation and versioned data/protocol.
+Claude owns presentation. Codex owns native integration, shared engine and CI.
+
+Repository layout (one repository, multiple applications)
+apps/macos/                 new SwiftUI application, views and local tests
+apps/desktop-qt/            future Windows/Linux Qt application and local tests
+core/audio/                 reserved shared C++ destination; see transition below
+shared/catalog/             versioned Morse alphabet, lessons and mnemonics
+shared/contracts/           engine protocol and client-service interface
+design/                    common product/design decisions and review evidence
+docs/native-clients/       implementation briefs, ownership and handoff
+ui/                        current shipping Electron client — stays at this path
+ui/native/                 CURRENT authoritative engine implementation
+ui/tests/fixtures/         captured APAK regression data — preserve raw bytes
+server/                    current relay/auth backend
+.github/workflows/         current working CI and release pipelines
+
+apps/macos suggested structure
+  PalomaMorse.xcodeproj OR Package.swift (choose one primary build entry point)
+  Sources/App/              lifecycle, scene, commands
+  Sources/Features/         Reception, Transmission, Radio, History
+  Sources/DesignSystem/     spacing, typography, reusable presentation components
+  Sources/Adapters/         AudioService implementation boundary (Codex integration)
+  Resources/                app assets and bundled copies of shared data
+  Tests/                    view-model and transport tests, preview fixtures
+  README.md                 exact build, run and screenshot instructions
+
+apps/desktop-qt suggested structure
+  CMakeLists.txt
+  src/                      app bootstrap and adapter boundary
+  qml/Features/             reception, transmission, radio
+  qml/DesignSystem/         shared Qt visual components
+  resources/
+  tests/
+
+No source relocation in this preparation commit
+core/audio is intentionally a reservation, not a second engine copy.
+A separate core integration branch will move source once, update legacy wrappers
+and CI, and keep the packaged executable path expected by Electron. Until then,
+new builds refer to the authoritative sources in ui/native. Keep source, build
+output and runtime bundle locations distinct.
+Do not move ui to apps/electron now: that would unnecessarily break tested paths.
+Shared catalog is a versioned snapshot for new UIs; legacy runtime is unchanged.
+Its updater must be deliberate; do not maintain independently edited alphabets.
+
+Branches
+chore/native-ui-layout      common scaffold and handoff documents
+feature/macos-swiftui       Claude: native macOS presentation
+feature/desktop-qt          reserved: Qt presentation
+refactor/shared-audio-core  Codex: core extraction, transports, packaging, tests
+All three worker branches start at the same scaffold commit. They are peers.
+Do not merge unfinished platform work into another platform branch.
+
+Workflow
+1. Claude implements the macOS UI against the service contract, using preview
+   fixtures for design work, and records a handoff with screenshots and build.
+2. Codex implements the real Process/Pipe adapter, catalog loading and integration
+   tests on the core branch; shared changes are reviewed and integrated first.
+3. Update worker branches using the chosen normal merge/rebase workflow once the
+   integration commit is available; do not reset another agent's worktree.
+4. Integrate the macOS client by PR after design acceptance and functional checks.
+5. Start Qt implementation only when assigned. Keep old installers shipping.
+6. Native release routing, bundle ID/update migration and signing are separate
+   reviewed changes. Creating a UI branch does not authorize a new release.
+
+Separate worktrees are deliberate: branch switching in one shared directory
+would otherwise replace files while the other agent is editing them.

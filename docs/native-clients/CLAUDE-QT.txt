@@ -1,0 +1,23 @@
+RESERVED TASK — WINDOWS/LINUX QT VISUAL CLIENT
+Branch: feature/desktop-qt
+Working directory: /Users/sk1bid/Documents/Paloma-Morse-Worktrees/desktop-qt
+Status: prepared for future assignment; macOS is the first visual milestone.
+
+When explicitly assigned, implement a Qt 6 / Qt Quick / QML presentation layer
+with C++ app glue under apps/desktop-qt/. Use Qt Quick Controls, not Qt WebEngine,
+Electron or an embedded browser. Keep the same product navigation and training
+states as the accepted Mac design; adapt controls to Windows/Linux conventions.
+FluentWinUI3 is an optional Windows-like Qt style, not actual WinUI controls.
+Do not claim native Apple Liquid Glass on Windows/Linux or imitate it at the
+expense of readability. Test Windows high-DPI and Linux X11/Wayland separately.
+
+Read CLAUDE.md, ARCHITECTURE.txt, UI-SERVICE.txt and NATIVE-DESIGN.txt.
+Views consume the same catalog and audio service events. The C++ engine is shared,
+not copied into another independently maintained sound implementation.
+Codex supplies QProcess/pipe integration and shared core/CMake changes.
+
+Deliver a buildable Qt shell, feature views, light/dark preview states, keyboard
+and accessibility support, and screenshots. Keep preview data explicitly scoped.
+Shipping Windows/Linux Electron remains in place until migration is accepted.
+Do not change main releases, server, signing, shared protocol or the Mac target.
+Write a handoff in docs/native-clients/handoffs/desktop-qt.txt when implemented.
