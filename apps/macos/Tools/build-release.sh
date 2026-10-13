@@ -13,13 +13,27 @@ if [[ "$distribution" == 1 ]]; then
   : "${PALOMA_UPDATE_FEED_URL:?Missing HTTPS native appcast URL}"
   : "${PALOMA_RELAY_URL:?Missing HTTPS relay URL}"
 fi
-mkdir -p "$out"
+mkdir -p "$out" "$work"
+set +e
 xcodebuild -project apps/macos/PalomaMorse/PalomaMorse.xcodeproj -scheme PalomaMorse \
  -configuration Release -destination 'generic/platform=macOS' -derivedDataPath "$work" \
  -onlyUsePackageVersionsFromResolvedFile -disableAutomaticPackageResolution \
  CODE_SIGNING_ALLOWED=NO ARCHS='arm64 x86_64' \
  PALOMA_UPDATE_PUBLIC_KEY="${PALOMA_UPDATE_PUBLIC_KEY:-}" \
- PALOMA_UPDATE_FEED_URL="${PALOMA_UPDATE_FEED_URL:-}" PALOMA_RELAY_URL="${PALOMA_RELAY_URL:-http://127.0.0.1:3001}" build
+ PALOMA_UPDATE_FEED_URL="${PALOMA_UPDATE_FEED_URL:-}" PALOMA_RELAY_URL="${PALOMA_RELAY_URL:-http://127.0.0.1:3001}" build 2>&1 | tee "$work/xcodebuild-release.log"
+build_status=${PIPESTATUS[0]}
+set -e
+if [[ "$build_status" -ne 0 ]]; then
+  python3 - "$work/xcodebuild-release.log" <<'PYLOG'
+import re,sys
+from pathlib import Path
+lines=Path(sys.argv[1]).read_text(errors='replace').splitlines()
+errors=[s for s in lines if 'com.apple.linkd' not in s and re.search(r'error:|BUILD FAILED|failed with',s)]
+for line in errors[-30:]:
+    print('::error::'+line[:1800].replace('%','%25').replace('\r','%0D'))
+PYLOG
+  exit "$build_status"
+fi
 app="$work/Build/Products/Release/PalomaMorse.app"
 bash apps/macos/Tools/sign-app.sh "$app" "$identity"
 verify=(); [[ "$distribution" == 1 ]] && verify=(--distribution)

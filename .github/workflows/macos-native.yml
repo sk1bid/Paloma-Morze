@@ -48,6 +48,7 @@ jobs:
           path: |
             ${{ runner.temp }}/native-tests/Tests.xcresult
             ${{ runner.temp }}/native-tests/*.log
+            ${{ runner.temp }}/native-preview/*.log
           if-no-files-found: warn
           retention-days: 7
       - name: Native preview packages (not an update channel)
