@@ -186,6 +186,7 @@
             outputPaths = (
                 "$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/morze_engine",
                 "$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/morze_engine.cstemp",
+                "$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/morze_engine.lipo",
             );
             runOnlyForDeploymentPostprocessing = 0;
             shellPath = /bin/bash;

@@ -11,7 +11,8 @@ for arch in ${ARCHS:-$(uname -m)}; do arch_flags+=(-arch "$arch"); done
   "$repo/ui/native/morze_engine_v2.cpp" \
   -framework CoreAudio -framework AudioUnit -framework CoreFoundation -o "$output"
 # Xcode 26 codesign creates a sibling .cstemp while replacing the signature.
-# Both paths are declared outputs of this sandboxed build phase in the project.
+# lipo also creates a .lipo sibling when combining universal slices.
+# All three paths are declared outputs of this sandboxed build phase.
 if [[ "${CODE_SIGNING_ALLOWED:-YES}" != "NO" ]]; then
   /usr/bin/codesign --force --sign "${EXPANDED_CODE_SIGN_IDENTITY:--}" --entitlements "$SRCROOT/Config/Helper.entitlements" "$output"
 fi
