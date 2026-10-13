@@ -37,9 +37,9 @@ jobs:
         env:
           NATIVE_BUILD_DIR: ${{ runner.temp }}/native-preview
           NATIVE_OUTPUT_DIR: ${{ runner.temp }}/native-artifacts
-        run: bash apps/macos/Tools/build-release.sh
+        run: bash apps/macos/Tools/ci-diagnostics.sh "$RUNNER_TEMP/native-preview/package.log" /bin/bash apps/macos/Tools/build-release.sh
       - name: Signed update round-trip and corruption rejection
-        run: bash apps/macos/Tools/test-update.sh
+        run: bash apps/macos/Tools/ci-diagnostics.sh "$RUNNER_TEMP/native-preview/update.log" /bin/bash apps/macos/Tools/test-update.sh
       - name: Retain test diagnostics
         if: always()
         uses: actions/upload-artifact@v4

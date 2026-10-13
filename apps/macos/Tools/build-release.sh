@@ -36,8 +36,9 @@ PYLOG
 fi
 app="$work/Build/Products/Release/PalomaMorse.app"
 bash apps/macos/Tools/sign-app.sh "$app" "$identity"
-verify=(); [[ "$distribution" == 1 ]] && verify=(--distribution)
-python3 apps/macos/Tools/verify-app.py "$app" --version "$version" "${verify[@]}"
+verify=(python3 apps/macos/Tools/verify-app.py "$app" --version "$version")
+[[ "$distribution" == 1 ]] && verify+=(--distribution)
+"${verify[@]}"
 name="Paloma-Morse-Native-$version-universal"
 ditto -c -k --sequesterRsrc --keepParent "$app" "$out/$name.zip"
 dmg_stage=$(mktemp -d)
