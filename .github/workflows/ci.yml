@@ -15,6 +15,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  native-macos:
+    uses: ./.github/workflows/macos-native.yml
+
   validate:
     name: Validate (${{ matrix.os }})
     runs-on: ${{ matrix.os }}

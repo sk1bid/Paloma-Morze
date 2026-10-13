@@ -1,0 +1,106 @@
+PALOMA — NATIVE MACOS CI/CD
+
+Scope
+Windows/Linux keep their current Electron code, installers and updater metadata.
+The old macOS Electron package remains a compatibility artifact during migration.
+New macOS is SwiftUI + the one bundled C++ helper, minimum macOS26, universal
+arm64/x86_64. Native identity: com.paloma.morse.native. First installation is manual;
+Squirrel.Mac is not used to replace the Electron app with the native client.
+
+CI
+.github/workflows/ci.yml calls macos-native.yml in addition to the unchanged
+legacy matrix. The native job uses macos-26 and an explicit Xcode26.6 path.
+The project format is Xcode26-compatible (77); no dependency on Xcode27 defaults.
+Sparkle2.10.0 is an exact SPM dependency with a checked-in Package.resolved.
+The original local validation was on Xcode27; Xcode26.6 must pass on GitHub.
+
+Native CI runs:
+- version consistency and release metadata regression tests;
+- Swift model/adapter tests, including mandatory real local Socket.IO fixtures;
+- bundled helper play/cancel/restart in explicit headless mode;
+- native parser, clocks, concurrency and captured APAK PCM fixtures;
+- universal Release packaging, signature/entitlements/architecture/version checks;
+- actual sandboxed Sparkle fixture installation v1->v2, relaunch and preference
+  retention, plus corrupted archive signature rejection.
+Node and Socket.IO are development-only and are never bundled into the app.
+CI fixtures use a locked dependency in apps/macos/Tools/relay-fixture.
+A physical key and audible output remain separate hardware acceptance checks.
+Preview ZIP/DMG are Actions artifacts, never mac-only prereleases in the shared
+GitHub release channel (installed Electron clients allow prereleases).
+
+Local commands (from repository root)
+  bash apps/macos/Tools/ci-test.sh
+  python3 -m unittest discover -s apps/macos/Tools/tests -v
+  bash apps/macos/Tools/build-release.sh
+  NATIVE_APP_BUNDLE=/path/to/PalomaMorse.app bash apps/macos/Tools/test-update.sh
+Set NATIVE_TEST_DIR to a fresh directory for another local test run; .xcresult is
+never silently overwritten. build-native.sh remains a development convenience;
+public packages must use build-release.sh and the distribution checks.
+
+Versioning
+VERSION is the sole product version. scripts/update_version.sh also updates
+Config/NativeVersion.xcconfig: marketing and bundle versions advance with each
+stable x.y.z release. Do not bump Xcode values separately. Published tags, packages
+and feed items are immutable. Update testing does not require a public test tag.
+
+Owner configuration in GitHub
+Existing secrets (reused only on a disposable hosted release runner):
+  MAC_CERT_P12_BASE64       existing persistent self-signed certificate/private key
+  MAC_CERT_PASSWORD         its password
+New secret:
+  SPARKLE_PRIVATE_ED_KEY    base64 Ed25519 private seed, distinct from code signing
+New repository variables (not secrets):
+  SPARKLE_PUBLIC_ED_KEY     corresponding base64 public key
+  NATIVE_RELAY_URL          HTTPS origin of the real relay, not localhost
+Never paste private keys in chat, commit them or upload them as CI artifacts.
+To make a fresh owner-controlled update key ONCE, outside the repository:
+  bash apps/macos/Tools/create-update-key.sh /path/to/private/paloma-update-key
+Put sparkle-private.key content into the secret and sparkle-public.key content
+into the variable through GitHub Settings > Secrets and variables > Actions.
+Keep a protected backup. This tool refuses to overwrite an existing key.
+No permanent update key was generated or uploaded during local implementation;
+all automatic tests use disposable keys and isolated fixture preferences.
+
+The feed URL is derived from the repository, not an arbitrary runtime redirect:
+  https://raw.githubusercontent.com/OWNER/REPO/native-updates/appcast.xml
+The dedicated native-updates branch contains the public feed, not source code or
+credentials. It is created/advanced only after a published release is verified.
+No GitHub Pages setup or home server is required for downloads or appcast hosting.
+A home-domain HTTPS endpoint is needed only for the relay/auth service.
+
+Release flow
+1. Commit reviewed native sources and CI changes; required CI checks must pass.
+2. Advance VERSION, sync version files, commit; create a NEW stable vX.Y.Z tag.
+3. Release workflow refuses an already published tag. It validates, builds all
+   legacy packages plus native macOS and verifies their metadata.
+4. Native release requires all configuration above; missing key/HTTPS origin or
+   an ad-hoc identity fails the job. It cannot publish an accidental localhost app.
+5. Nested Sparkle components, helper and .app are signed individually using the
+   persistent identity. Never use --deep when signing; --deep is verification only.
+   App Sandbox stays enabled, get-task-allow is absent from distribution packages.
+   Ed25519 signature is verified against the public key embedded in the app.
+6. Upload the complete set as a DRAFT GitHub release. Verify installation from the
+   DMG/ZIP; then an owner publishes the draft. Legacy latest*.yml remain Electron.
+7. native-update-feed.yml handles release.published (or manual retry for its tag).
+   It verifies that the release is stable/public, checks hashes, metadata, archive
+   URL and Ed25519 signature, then atomically advances native-updates/appcast.xml.
+   It retains older feed entries, rejects downgrades and replacement of a version.
+   No feed is advanced for a failed, draft, prerelease or incomplete release.
+
+Self-signed scope
+There is no Apple Developer subscription, so notarization is not attempted and
+normal Gatekeeper acceptance is not promised. This is independent of update-archive
+signature validation. Hardened Runtime/notarization is a later Developer ID mode;
+no broad library-validation exception was added to bypass signing restrictions.
+Only the temporary CI keychain is removed; private update-key files are also
+removed after signing. No user machine trust store is changed by native tools.
+The inherited legacy certificate importer may install trust on the disposable
+hosted CI runner as it already did for legacy releases; do not reuse that flow on
+a persistent/self-hosted machine without revising its certificate cleanup.
+
+Readiness still separate from CI
+The production relay HTTPS endpoint is not yet supplied. Editor/import/key-capture
+UI and EN localization remain product work. CI setup does not certify physical
+USB, production DB behavior, or equivalence of hardware sound by listening.
+Until owner variables/secrets and GitHub CI are configured, local successful runs
+are evidence of the implementation, not evidence of an executed remote pipeline.

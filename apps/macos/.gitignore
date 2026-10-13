@@ -1,0 +1,8 @@
+# Xcode per-user state and local build output
+xcuserdata/
+*.xcuserstate
+DerivedData/
+.DS_Store
+
+artifacts/
+__pycache__/

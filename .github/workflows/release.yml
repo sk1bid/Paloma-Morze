@@ -13,12 +13,36 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  release-policy:
+    name: Refuse replacing an already published release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node - <<'JS'
+          (async () => {
+            const tag = process.env.RELEASE_TAG;
+            if (!/^v\d+\.\d+\.\d+$/.test(tag)) throw new Error('Only stable release tags are allowed');
+            const response = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/releases/tags/${tag}`, {
+              headers: {Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: 'application/vnd.github+json'}
+            });
+            if (response.status === 404) return;
+            if (!response.ok) throw new Error(`GitHub release lookup failed: ${response.status}`);
+            if (!(await response.json()).draft) throw new Error('Published releases are immutable; create a new version');
+          })().catch(e => { console.error(e.message); process.exitCode = 1; });
+          JS
+
   validate:
     name: Release validation
     uses: ./.github/workflows/ci.yml
 
   build-linux:
-    needs: validate
+    needs: [validate, release-policy]
     timeout-minutes: 30
     name: Build Linux
     runs-on: ubuntu-latest
@@ -61,7 +85,7 @@ jobs:
           if-no-files-found: error
 
   build-windows:
-    needs: validate
+    needs: [validate, release-policy]
     timeout-minutes: 30
     name: Build Windows
     runs-on: windows-latest
@@ -102,7 +126,7 @@ jobs:
           if-no-files-found: error
 
   build-mac:
-    needs: validate
+    needs: [validate, release-policy]
     timeout-minutes: 30
     name: Build macOS
     runs-on: ${{ vars.MAC_RUNNER || 'macos-latest' }}
@@ -153,12 +177,81 @@ jobs:
             ui/native/morze_app_macos
           if-no-files-found: error
 
+  build-native-mac:
+    needs: [validate, release-policy]
+    name: Build native macOS
+    runs-on: macos-26
+    timeout-minutes: 35
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require stable tag matching VERSION
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python3 apps/macos/Tools/check-versions.py
+          test "$RELEASE_TAG" = "v$(tr -d '[:space:]' < VERSION)"
+      - name: Validate native distribution configuration
+        env:
+          PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_ED_KEY }}
+          RELAY_URL: ${{ vars.NATIVE_RELAY_URL }}
+          PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_ED_KEY }}
+        run: |
+          python3 - <<'PY'
+          import os,base64,urllib.parse
+          assert len(base64.b64decode(os.environ['PUBLIC_KEY'],validate=True))==32, 'Missing public signing key'
+          assert os.environ['PRIVATE_KEY'], 'Missing private update signing key'
+          u=urllib.parse.urlparse(os.environ['RELAY_URL'])
+          assert u.scheme=='https' and u.hostname not in [None,'localhost','127.0.0.1','::1'] and not u.username and not u.password, 'Configure NATIVE_RELAY_URL with HTTPS production origin'
+          PY
+      - name: Import persistent signing certificate (ephemeral hosted runner)
+        env:
+          MAC_CERT_P12_BASE64: ${{ secrets.MAC_CERT_P12_BASE64 }}
+          MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+        run: bash scripts/import_mac_cert.sh
+      - name: Fetch pinned Sparkle tools
+        run: bash apps/macos/Tools/fetch-sparkle-tools.sh "$RUNNER_TEMP/sparkle"
+      - name: Package and sign native distribution
+        env:
+          NATIVE_DISTRIBUTION: '1'
+          NATIVE_BUILD_DIR: ${{ runner.temp }}/native-release
+          NATIVE_OUTPUT_DIR: ${{ runner.temp }}/native-artifacts
+          PALOMA_UPDATE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_ED_KEY }}
+          PALOMA_UPDATE_FEED_URL: https://raw.githubusercontent.com/${{ github.repository }}/native-updates/appcast.xml
+          PALOMA_RELAY_URL: ${{ vars.NATIVE_RELAY_URL }}
+          PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_ED_KEY }}
+          NATIVE_DOWNLOAD_BASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          key=$(mktemp "$RUNNER_TEMP/sparkle-key.XXXXXX")
+          trap 'rm -f "$key"' EXIT
+          chmod 600 "$key"
+          printf '%s' "$PRIVATE_KEY" > "$key"
+          unset PRIVATE_KEY
+          export SPARKLE_PRIVATE_KEY_FILE="$key" SPARKLE_TOOLS_DIR="$RUNNER_TEMP/sparkle"
+          bash apps/macos/Tools/build-release.sh
+      - name: Verify update installation with the release signing identity
+        env:
+          NATIVE_APP_BUNDLE: ${{ runner.temp }}/native-release/Build/Products/Release/PalomaMorse.app
+          SPARKLE_TOOLS_DIR: ${{ runner.temp }}/sparkle
+        run: bash apps/macos/Tools/test-update.sh
+      - name: Remove signing keychain
+        if: always()
+        run: |
+          if [ -n "${MAC_SIGN_KEYCHAIN:-}" ]; then security delete-keychain "$MAC_SIGN_KEYCHAIN" || true; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-native-mac
+          path: ${{ runner.temp }}/native-artifacts/*
+          if-no-files-found: error
+
   publish:
     permissions:
       contents: write
     timeout-minutes: 15
-    name: Verify & Publish Release
-    needs: [build-linux, build-windows, build-mac]
+    name: Verify & Prepare Release Draft
+    needs: [build-linux, build-windows, build-mac, build-native-mac]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -173,6 +266,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: downloaded-artifacts
+          pattern: artifacts-*
 
       - name: Assemble release directory structure
         run: |
@@ -181,6 +275,9 @@ jobs:
           # Copy release packages and updater metadata
           find downloaded-artifacts -type f \( -name "*.AppImage" -o -name "*.exe" -o -name "*.dmg" -o -name "*.zip" -o -name "*.yml" -o -name "*.blockmap" \) -exec cp {} ui/release/ \;
           
+          # Native macOS uses Sparkle; legacy latest-mac.yml still points to Electron.
+          cp downloaded-artifacts/artifacts-native-mac/* ui/release/
+
           # Copy native console engine binaries
           find downloaded-artifacts -type f \( -name "morze_app_linux" -o -name "morze_app_win.exe" -o -name "morze_app_macos" \) -exec cp {} ui/native/ \;
           
@@ -194,13 +291,14 @@ jobs:
         run: |
           npm ci --ignore-scripts
           node tests/verify_release.cjs
+          python3 ../apps/macos/Tools/release-metadata.py verify release "$(tr -d '[:space:]' < ../VERSION)"
 
-      - name: Publish to GitHub Releases
+      - name: Prepare verified GitHub draft (publish manually after installation check)
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
-          draft: false
+          draft: true
           prerelease: false
           generate_release_notes: true
           files: |
@@ -210,6 +308,9 @@ jobs:
             ui/release/*.exe
             ui/release/*.yml
             ui/release/*.blockmap
+            ui/release/native-manifest.json
+            ui/release/native-SHA256SUMS.txt
+            ui/release/appcast.xml
             ui/native/morze_app_linux
             ui/native/morze_app_macos
             ui/native/morze_app_win.exe

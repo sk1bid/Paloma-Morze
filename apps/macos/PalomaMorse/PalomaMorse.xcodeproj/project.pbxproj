@@ -1,0 +1,500 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		395BC7F4307CE74300F30977 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 395BC7D2307CE72300F30977 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 395BC7D9307CE72300F30977;
+			remoteInfo = PalomaMorse;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXBuildFile section */
+        C10000000000000000000001 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = C10000000000000000000002; };
+/* End PBXBuildFile section */
+/* Begin PBXFileReference section */
+        C10000000000000000000003 /* NativeVersion.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/NativeVersion.xcconfig; sourceTree = "<group>"; };
+		395BC7DA307CE72300F30977 /* PalomaMorse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PalomaMorse.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		395BC7EC307CE74300F30977 /* PalomaMorseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PalomaMorseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		395BC7DC307CE72300F30977 /* PalomaMorse */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PalomaMorse;
+			sourceTree = "<group>";
+		};
+		395BC7ED307CE74300F30977 /* PalomaMorseTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PalomaMorseTests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		395BC7D7307CE72300F30977 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+                C10000000000000000000001 /* Sparkle in Frameworks */,
+			);
+		};
+		395BC7E9307CE74300F30977 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		395BC7D1307CE72300F30977 = {
+			isa = PBXGroup;
+			children = (
+				395BC7DC307CE72300F30977 /* PalomaMorse */,
+				395BC7ED307CE74300F30977 /* PalomaMorseTests */,
+				395BC7DB307CE72300F30977 /* Products */,
+                C10000000000000000000003 /* NativeVersion.xcconfig */,
+			);
+			sourceTree = "<group>";
+		};
+		395BC7DB307CE72300F30977 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				395BC7DA307CE72300F30977 /* PalomaMorse.app */,
+				395BC7EC307CE74300F30977 /* PalomaMorseTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		395BC7D9307CE72300F30977 /* PalomaMorse */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 395BC7E5307CE72400F30977 /* Build configuration list for PBXNativeTarget "PalomaMorse" */;
+			buildPhases = (
+				395BC7D6307CE72300F30977 /* Sources */,
+				395BC7D7307CE72300F30977 /* Frameworks */,
+				395BC7D8307CE72300F30977 /* Resources */,
+                A01200000000000000000001 /* Bundle Audio Helper */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				395BC7DC307CE72300F30977 /* PalomaMorse */,
+			);
+			name = PalomaMorse;
+            packageProductDependencies = (C10000000000000000000002,);
+			productName = PalomaMorse;
+			productReference = 395BC7DA307CE72300F30977 /* PalomaMorse.app */;
+			productType = "com.apple.product-type.application";
+		};
+		395BC7EB307CE74300F30977 /* PalomaMorseTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 395BC7F0307CE74300F30977 /* Build configuration list for PBXNativeTarget "PalomaMorseTests" */;
+			buildPhases = (
+				395BC7E8307CE74300F30977 /* Sources */,
+				395BC7E9307CE74300F30977 /* Frameworks */,
+				395BC7EA307CE74300F30977 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				395BC7F5307CE74300F30977 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				395BC7ED307CE74300F30977 /* PalomaMorseTests */,
+			);
+			name = PalomaMorseTests;
+			productName = PalomaMorseTests;
+			productReference = 395BC7EC307CE74300F30977 /* PalomaMorseTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		395BC7D2307CE72300F30977 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2700;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					395BC7D9307CE72300F30977 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					395BC7EB307CE74300F30977 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = 395BC7D9307CE72300F30977;
+					};
+				};
+			};
+			buildConfigurationList = 395BC7D5307CE72300F30977 /* Build configuration list for PBXProject "PalomaMorse" */;
+			developmentRegion = ru;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				ru,
+				Base,
+			);
+			mainGroup = 395BC7D1307CE72300F30977;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+            packageReferences = (C10000000000000000000004,);
+			productRefGroup = 395BC7DB307CE72300F30977 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				395BC7D9307CE72300F30977 /* PalomaMorse */,
+				395BC7EB307CE74300F30977 /* PalomaMorseTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		395BC7D8307CE72300F30977 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		395BC7EA307CE74300F30977 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+        A01200000000000000000001 /* Bundle Audio Helper */ = {
+            isa = PBXShellScriptBuildPhase;
+            alwaysOutOfDate = 1;
+            buildActionMask = 2147483647;
+            files = ();
+            inputPaths = (
+                "$(SRCROOT)/../Tools/build-helper.sh",
+                "$(SRCROOT)/../../../ui/native/morze_engine_v2.cpp",
+                "$(SRCROOT)/../../../ui/native/morse_audio.hpp",
+                "$(SRCROOT)/../../../ui/native/miniaudio.h",
+                "$(SRCROOT)/Config/Helper.entitlements",
+            );
+            name = "Bundle Audio Helper";
+            outputPaths = ("$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/morze_engine",);
+            runOnlyForDeploymentPostprocessing = 0;
+            shellPath = /bin/bash;
+            shellScript = "bash \"$SRCROOT/../Tools/build-helper.sh\"";
+        };
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		395BC7D6307CE72300F30977 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		395BC7E8307CE74300F30977 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		395BC7F5307CE74300F30977 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 395BC7D9307CE72300F30977 /* PalomaMorse */;
+			targetProxy = 395BC7F4307CE74300F30977 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+        C10000000000000000000004 = {
+            isa = XCRemoteSwiftPackageReference;
+            repositoryURL = "https://github.com/sparkle-project/Sparkle";
+            requirement = {kind = exactVersion; version = 2.10.0;};
+        };
+/* End XCRemoteSwiftPackageReference section */
+/* Begin XCSwiftPackageProductDependency section */
+        C10000000000000000000002 = {isa = XCSwiftPackageProductDependency; package = C10000000000000000000004; productName = Sparkle;};
+/* End XCSwiftPackageProductDependency section */
+/* Begin XCBuildConfiguration section */
+		395BC7E3307CE72400F30977 /* Debug configuration for PBXProject "PalomaMorse" */ = {
+			isa = XCBuildConfiguration;
+            baseConfigurationReference = C10000000000000000000003;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		395BC7E4307CE72400F30977 /* Release configuration for PBXProject "PalomaMorse" */ = {
+			isa = XCBuildConfiguration;
+            baseConfigurationReference = C10000000000000000000003;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		395BC7E6307CE72400F30977 /* Debug configuration for PBXNativeTarget "PalomaMorse" */ = {
+			isa = XCBuildConfiguration;
+            baseConfigurationReference = C10000000000000000000003;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = YES;
+                CODE_SIGN_ENTITLEMENTS = Config/App.entitlements;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Paloma Morse";
+                INFOPLIST_FILE = Config/AppInfo.plist;
+                INFOPLIST_KEY_SUFeedURL = "$(PALOMA_UPDATE_FEED_URL)";
+                INFOPLIST_KEY_SUPublicEDKey = "$(PALOMA_UPDATE_PUBLIC_KEY)";
+                INFOPLIST_KEY_SUEnableInstallerLauncherService = YES;
+                INFOPLIST_KEY_SUShowReleaseNotes = NO;
+                INFOPLIST_KEY_PalomaRelayURL = "$(PALOMA_RELAY_URL)";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.paloma.morse.native";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		395BC7E7307CE72400F30977 /* Release configuration for PBXNativeTarget "PalomaMorse" */ = {
+			isa = XCBuildConfiguration;
+            baseConfigurationReference = C10000000000000000000003;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = YES;
+                CODE_SIGN_ENTITLEMENTS = Config/App.entitlements;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Paloma Morse";
+                INFOPLIST_FILE = Config/AppInfo.plist;
+                INFOPLIST_KEY_SUFeedURL = "$(PALOMA_UPDATE_FEED_URL)";
+                INFOPLIST_KEY_SUPublicEDKey = "$(PALOMA_UPDATE_PUBLIC_KEY)";
+                INFOPLIST_KEY_SUEnableInstallerLauncherService = YES;
+                INFOPLIST_KEY_SUShowReleaseNotes = NO;
+                INFOPLIST_KEY_PalomaRelayURL = "$(PALOMA_RELAY_URL)";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.paloma.morse.native";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		395BC7F1307CE74300F30977 /* Debug configuration for PBXNativeTarget "PalomaMorseTests" */ = {
+			isa = XCBuildConfiguration;
+            baseConfigurationReference = C10000000000000000000003;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.paloma.morse.native.tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PalomaMorse.app/Contents/MacOS/PalomaMorse";
+				XROS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Debug;
+		};
+		395BC7F2307CE74300F30977 /* Release configuration for PBXNativeTarget "PalomaMorseTests" */ = {
+			isa = XCBuildConfiguration;
+            baseConfigurationReference = C10000000000000000000003;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.paloma.morse.native.tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PalomaMorse.app/Contents/MacOS/PalomaMorse";
+				XROS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		395BC7D5307CE72300F30977 /* Build configuration list for PBXProject "PalomaMorse" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				395BC7E3307CE72400F30977 /* Debug configuration for PBXProject "PalomaMorse" */,
+				395BC7E4307CE72400F30977 /* Release configuration for PBXProject "PalomaMorse" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		395BC7E5307CE72400F30977 /* Build configuration list for PBXNativeTarget "PalomaMorse" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				395BC7E6307CE72400F30977 /* Debug configuration for PBXNativeTarget "PalomaMorse" */,
+				395BC7E7307CE72400F30977 /* Release configuration for PBXNativeTarget "PalomaMorse" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		395BC7F0307CE74300F30977 /* Build configuration list for PBXNativeTarget "PalomaMorseTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				395BC7F1307CE74300F30977 /* Debug configuration for PBXNativeTarget "PalomaMorseTests" */,
+				395BC7F2307CE74300F30977 /* Release configuration for PBXNativeTarget "PalomaMorseTests" */,
+			);
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 395BC7D2307CE72300F30977 /* Project object */;
+	validationLevel = 1;
+}

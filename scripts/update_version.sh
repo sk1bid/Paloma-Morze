@@ -14,5 +14,10 @@ for (const name of ['package.json', 'package-lock.json']) {
   if (name === 'package-lock.json') data.packages[''].version = version;
   fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');
 }
-console.log(`Synchronized package and lockfile to ${version}`);
+const native = path.join(root, 'apps/macos/PalomaMorse/Config/NativeVersion.xcconfig');
+if (fs.existsSync(native)) {
+  const build = version.split('-')[0];
+  fs.writeFileSync(native, `// Generated from /VERSION by scripts/update_version.sh; never bump separately.\nMARKETING_VERSION = ${version}\nCURRENT_PROJECT_VERSION = ${build}\n`);
+}
+console.log(`Synchronized package, lockfile and native versions to ${version}`);
 JS

@@ -1,0 +1,69 @@
+name: Publish native update feed
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing published stable release tag
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: native-update-feed
+  cancel-in-progress: false
+jobs:
+  update-feed:
+    if: github.event_name == 'workflow_dispatch' || github.event.release.prerelease == false
+    runs-on: macos-26
+    timeout-minutes: 15
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+      GH_TOKEN: ${{ github.token }}
+      PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_ED_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Verify published release and immutable download targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          gh release view "$RELEASE_TAG" --json isDraft,isPrerelease --jq 'if .isDraft or .isPrerelease then error("Not a published stable release") else . end'
+          mkdir -p "$RUNNER_TEMP/native-feed"
+          gh release download "$RELEASE_TAG" --dir "$RUNNER_TEMP/native-feed" --pattern 'Paloma-Morse-Native-*' --pattern 'native-manifest.json' --pattern 'appcast.xml'
+          python3 apps/macos/Tools/release-metadata.py verify "$RUNNER_TEMP/native-feed" "${RELEASE_TAG#v}"
+          python3 - <<'PY'
+          import os,json,xml.etree.ElementTree as ET,subprocess
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])/'native-feed'
+          m=json.loads((root/'native-manifest.json').read_text())
+          assert m['publicKey']==os.environ['PUBLIC_KEY'] and os.environ['PUBLIC_KEY']
+          e=ET.parse(root/'appcast.xml').find('./channel/item/enclosure')
+          name=f"Paloma-Morse-Native-{m['version']}-universal.zip"
+          expected=f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/releases/download/{os.environ['RELEASE_TAG']}/{name}"
+          assert e.attrib['url']==expected
+          sig=e.attrib['{http://www.andymatuschak.org/xml-namespaces/sparkle}edSignature']
+          subprocess.run(['swift','apps/macos/Tools/update-key.swift','verify',str(root/name),m['publicKey'],sig],check=True)
+          PY
+      - name: Advance feed only after archives are publicly available
+        shell: bash
+        run: |
+          set -euo pipefail
+          parent=""
+          if git ls-remote --exit-code origin refs/heads/native-updates >/dev/null 2>&1; then
+            git fetch origin refs/heads/native-updates
+            parent=$(git rev-parse FETCH_HEAD)
+            git show "$parent:appcast.xml" > "$RUNNER_TEMP/old-appcast.xml"
+          fi
+          python3 apps/macos/Tools/publish-feed.py "$RUNNER_TEMP/native-feed/appcast.xml" "$RUNNER_TEMP/old-appcast.xml" "$RUNNER_TEMP/appcast.xml"
+          export GIT_INDEX_FILE="$RUNNER_TEMP/native-feed-index"
+          git read-tree --empty
+          blob=$(git hash-object -w "$RUNNER_TEMP/appcast.xml")
+          git update-index --add --cacheinfo "100644,$blob,appcast.xml"
+          tree=$(git write-tree)
+          parents=(); [[ -n "$parent" ]] && parents=(-p "$parent")
+          commit=$(printf 'Publish native feed for %s\n' "$RELEASE_TAG" | git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit-tree "$tree" "${parents[@]}")
+          git push origin "$commit:refs/heads/native-updates"

@@ -3,9 +3,8 @@ Baseline: v0.4.20 / abda10116b24cdd76fd8aacbcc12004dade9fead
 
 Decisions
 macOS: Swift + SwiftUI, macOS 26+, system Liquid Glass.
-Windows/Linux future replacement: C++ + Qt 6 / Qt Quick / QML, without WebEngine.
-Current Windows/Linux Electron app remains the shipping client until replacement
-passes the agreed functionality and platform checks. No automatic release switch.
+Windows/Linux: keep the existing Electron client; no native rewrite is planned.
+The desktop-qt folder/branch is reserved historical scaffolding, not active work.
 All clients share one C++ audio implementation and versioned data/protocol.
 Claude owns presentation. Codex owns native integration, shared engine and CI.
 

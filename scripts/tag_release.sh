@@ -6,7 +6,7 @@ version="$(tr -d '[:space:]' < VERSION)"
 tag="v$version"
 bash "$SCRIPT_DIR/update_version.sh"
 # Never silently commit an incomplete feature or publish every historical tag.
-if ! git diff --quiet || ! git diff --cached --quiet; then
+if [ -n "$(git status --porcelain --untracked-files=normal)" ]; then
   echo 'Commit the reviewed changes and version files before tagging.' >&2
   exit 1
 fi

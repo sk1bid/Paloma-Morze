@@ -1,0 +1,56 @@
+name: Native macOS CI
+on:
+  push:
+    branches: ['integration/**']
+  workflow_call:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    name: Swift + C++ (macOS 26)
+    runs-on: macos-26
+    timeout-minutes: 35
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/macos/Tools/relay-fixture/package-lock.json
+      - name: Toolchain and locked versions
+        run: |
+          xcodebuild -version
+          python3 apps/macos/Tools/check-versions.py
+      - name: Release metadata regression tests
+        run: python3 -m unittest discover -s apps/macos/Tools/tests -v
+      - name: Swift, native helper, relay and PCM regression tests
+        env:
+          NATIVE_TEST_DIR: ${{ runner.temp }}/native-tests
+        run: bash apps/macos/Tools/ci-test.sh
+      - name: Build distributable preview without production secrets
+        env:
+          NATIVE_BUILD_DIR: ${{ runner.temp }}/native-preview
+          NATIVE_OUTPUT_DIR: ${{ runner.temp }}/native-artifacts
+        run: bash apps/macos/Tools/build-release.sh
+      - name: Signed update round-trip and corruption rejection
+        run: bash apps/macos/Tools/test-update.sh
+      - name: Retain test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-test-results
+          path: |
+            ${{ runner.temp }}/native-tests/Tests.xcresult
+            ${{ runner.temp }}/native-tests/*.log
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Native preview packages (not an update channel)
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-macos-preview
+          path: ${{ runner.temp }}/native-artifacts/*
+          if-no-files-found: error
+          retention-days: 7
