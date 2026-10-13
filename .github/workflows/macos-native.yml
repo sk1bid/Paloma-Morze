@@ -4,6 +4,9 @@ on:
     branches: ['integration/**']
   workflow_call:
   workflow_dispatch:
+concurrency:
+  group: native-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:

@@ -17,11 +17,27 @@ for port in 33071 33072; do
   done
   curl --silent --fail "http://127.0.0.1:$port/api/lobbies" >/dev/null
 done
+set +e
 TEST_RUNNER_PALOMA_RUN_NETWORK_TESTS=1 TEST_RUNNER_PALOMA_REQUIRE_NETWORK_TESTS=1 \
  xcodebuild -project apps/macos/PalomaMorse/PalomaMorse.xcodeproj -scheme PalomaMorse \
  -configuration Debug -destination 'platform=macOS,arch=arm64' -derivedDataPath "$work/dd" \
  -onlyUsePackageVersionsFromResolvedFile -disableAutomaticPackageResolution \
  CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \
- -resultBundlePath "$work/Tests.xcresult" test
+ -resultBundlePath "$work/Tests.xcresult" test 2>&1 | tee "$work/xcodebuild.log"
+build_status=${PIPESTATUS[0]}
+set -e
+if [[ "$build_status" -ne 0 ]]; then
+  # Surface useful public diagnostics in the GitHub check, not just exit code 65.
+  python3 - "$work/xcodebuild.log" <<'PYLOG'
+import re,sys
+from pathlib import Path
+lines=Path(sys.argv[1]).read_text(errors='replace').splitlines()
+errors=[s for s in lines if re.search(r'error:|recorded an issue|Expectation failed|Testing failed:',s)]
+for line in errors[-30:]:
+    message=line[:1800].replace('%','%25').replace('\r','%0D')
+    print('::error::'+message)
+PYLOG
+  exit "$build_status"
+fi
 clang++ -std=c++17 -O2 -pthread ui/native/test_parser.cpp -framework CoreAudio -framework AudioUnit -framework CoreFoundation -o "$work/native-tests"
 "$work/native-tests" ui/tests/fixtures/apak-2.12
