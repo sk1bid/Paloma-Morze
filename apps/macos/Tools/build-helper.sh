@@ -10,6 +10,8 @@ for arch in ${ARCHS:-$(uname -m)}; do arch_flags+=(-arch "$arch"); done
   -mmacosx-version-min="${MACOSX_DEPLOYMENT_TARGET:-26.0}" \
   "$repo/ui/native/morze_engine_v2.cpp" \
   -framework CoreAudio -framework AudioUnit -framework CoreFoundation -o "$output"
+# Xcode 26 codesign creates a sibling .cstemp while replacing the signature.
+# Both paths are declared outputs of this sandboxed build phase in the project.
 if [[ "${CODE_SIGNING_ALLOWED:-YES}" != "NO" ]]; then
   /usr/bin/codesign --force --sign "${EXPANDED_CODE_SIGN_IDENTITY:--}" --entitlements "$SRCROOT/Config/Helper.entitlements" "$output"
 fi

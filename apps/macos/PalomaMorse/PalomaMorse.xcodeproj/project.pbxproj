@@ -183,7 +183,10 @@
                 "$(SRCROOT)/Config/Helper.entitlements",
             );
             name = "Bundle Audio Helper";
-            outputPaths = ("$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/morze_engine",);
+            outputPaths = (
+                "$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/morze_engine",
+                "$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)/Helpers/morze_engine.cstemp",
+            );
             runOnlyForDeploymentPostprocessing = 0;
             shellPath = /bin/bash;
             shellScript = "bash \"$SRCROOT/../Tools/build-helper.sh\"";
