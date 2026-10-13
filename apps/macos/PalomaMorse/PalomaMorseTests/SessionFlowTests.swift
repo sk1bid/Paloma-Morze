@@ -144,19 +144,46 @@ struct TransmissionFlowTests {
     @Test func keyboardKeyingSendsLocalKeyAndDecodes() async throws {
         let engine = ScriptedAudioService()
         let audio = AudioCoordinator(service: engine)
+        var inputTime = Date(timeIntervalSinceReferenceDate: 0)
         let session = TransmissionSession(
-            catalog: try loadCatalog(), audio: audio, settings: SettingsStore(defaults: nil), history: HistoryStore(defaults: nil))
+            catalog: try loadCatalog(), audio: audio, settings: SettingsStore(defaults: nil),
+            history: HistoryStore(defaults: nil), now: { inputTime })
         engine.startEngine()
         await settle()
 
+        // Wall-clock sleep is not a key duration: CI may resume a task hundreds
+        // of milliseconds late. Inject measured input time without changing DSP.
         session.keyDown(from: .keyboard)
-        try await Task.sleep(for: .milliseconds(30))
+        inputTime.addTimeInterval(0.03)
         session.keyUp(from: .keyboard)
         #expect(engine.localKey == [true, false])
         #expect(session.buffer == ".")
 
-        try await Task.sleep(for: .milliseconds(400))
-        #expect(session.decodedText.hasPrefix("Е"))
+        inputTime.addTimeInterval(0.3)
+        // Keep the real gap-monitor task exercised, but wait for its outcome.
+        let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+        while session.decodedText.isEmpty && ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(session.decodedText == "Е")
+        session.clear()
+    }
+
+    @Test(arguments: [0.03, 0.159, 0.16, 0.24])
+    func measuredInputRespectsDotDashBoundary(duration: TimeInterval) async throws {
+        let engine = ScriptedAudioService(), audio = AudioCoordinator(service: engine)
+        var inputTime = Date(timeIntervalSinceReferenceDate: 0)
+        let session = TransmissionSession(
+            catalog: try loadCatalog(), audio: audio, settings: SettingsStore(defaults: nil),
+            history: HistoryStore(defaults: nil), now: { inputTime })
+        engine.startEngine()
+        await settle()
+        session.keyDown(from: .keyboard)
+        inputTime.addTimeInterval(duration)
+        session.keyUp(from: .keyboard)
+        #expect(session.buffer == (duration < 0.16 ? "." : "-"))
+        #expect(engine.localKey == [true, false])
+        session.clear()
     }
 
     @Test func hardwareKeyIsNotEchoedToTheEngine() async throws {

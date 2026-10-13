@@ -85,6 +85,8 @@ final class TransmissionSession {
     @ObservationIgnored private let audio: AudioCoordinator
     @ObservationIgnored private let settings: SettingsStore
     @ObservationIgnored private let history: HistoryStore
+    /// Input measurement clock only; audible timing remains in the C++ helper.
+    @ObservationIgnored private let now: () -> Date
 
     var mode: TransmissionMode = .free {
         didSet {
@@ -113,11 +115,12 @@ final class TransmissionSession {
     @ObservationIgnored private var gapTask: Task<Void, Never>?
     @ObservationIgnored private var hardwareObserver: UUID?
 
-    init(catalog: MorseCatalog, audio: AudioCoordinator, settings: SettingsStore, history: HistoryStore) {
+    init(catalog: MorseCatalog, audio: AudioCoordinator, settings: SettingsStore, history: HistoryStore, now: @escaping () -> Date = { .now }) {
         self.catalog = catalog
         self.audio = audio
         self.settings = settings
         self.history = history
+        self.now = now
         hardwareObserver = audio.observeHardwareKey { [weak self] pressed in
             guard let self else { return }
             pressed ? keyDown(from: .hardware) : keyUp(from: .hardware)
@@ -140,14 +143,14 @@ final class TransmissionSession {
         if source != .hardware { audio.setLocalKey(true) }
         lastSource = source
         gapTask?.cancel()
-        rhythm.press()
+        rhythm.press(at: now())
         onKeyStateChange?(true)
     }
 
     func keyUp(from source: KeySource) {
         guard rhythm.isDown else { return }
         if source != .hardware { audio.setLocalKey(false) }
-        guard let kind = rhythm.release() else { return }
+        guard let kind = rhythm.release(at: now()) else { return }
         onKeyStateChange?(false)
         buffer += kind == .dot ? "." : "-"
         previewCharacter = catalog.decode(buffer, alphabet: alphabet, overrides: settings.customOverrides)
@@ -194,13 +197,13 @@ final class TransmissionSession {
         buffer = ""
         previewCharacter = ""
         elapsedSeconds = 0
-        radiogram = RadiogramRun(sequence: sequence, startedAt: .now)
+        radiogram = RadiogramRun(sequence: sequence, startedAt: now())
         reportTimer?.cancel()
         reportTimer = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(1))
                 guard !Task.isCancelled, let self, let run = radiogram else { return }
-                elapsedSeconds = Int(Date.now.timeIntervalSince(run.startedAt).rounded())
+                elapsedSeconds = Int(now().timeIntervalSince(run.startedAt).rounded())
             }
         }
     }
@@ -223,7 +226,7 @@ final class TransmissionSession {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(50))
                 guard let self, !Task.isCancelled, !rhythm.isDown, let released = rhythm.lastRelease else { return }
-                let gap = Date.now.timeIntervalSince(released)
+                let gap = now().timeIntervalSince(released)
                 if !buffer.isEmpty, gap > KeyTiming.characterGap {
                     commitPendingCharacter()
                 }

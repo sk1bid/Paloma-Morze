@@ -32,7 +32,7 @@ if [[ "$build_status" -ne 0 ]]; then
 import re,sys
 from pathlib import Path
 lines=Path(sys.argv[1]).read_text(errors='replace').splitlines()
-errors=[s for s in lines if re.search(r'error:|recorded an issue|Expectation failed|Testing failed:',s)]
+errors=[s for s in lines if 'com.apple.linkd' not in s and re.search(r'error:|recorded an issue|Expectation failed|Testing failed:',s)]
 for line in errors[-30:]:
     message=line[:1800].replace('%','%25').replace('\r','%0D')
     print('::error::'+message)
