@@ -19,7 +19,7 @@ for port in 33071 33072; do
 done
 set +e
 TEST_RUNNER_PALOMA_RUN_NETWORK_TESTS=1 TEST_RUNNER_PALOMA_REQUIRE_NETWORK_TESTS=1 \
- xcodebuild -project apps/macos/PalomaMorse/PalomaMorse.xcodeproj -scheme PalomaMorse \
+ xcodebuild -jobs "${PALOMA_BUILD_JOBS:-4}" -project apps/macos/PalomaMorse/PalomaMorse.xcodeproj -scheme PalomaMorse \
  -configuration Debug -destination 'platform=macOS,arch=arm64' -derivedDataPath "$work/dd" \
  -onlyUsePackageVersionsFromResolvedFile -disableAutomaticPackageResolution \
  CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \

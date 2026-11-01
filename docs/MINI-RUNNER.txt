@@ -1,0 +1,41 @@
+PALOMA MAC MINI ARM64 RUNNER
+
+Native macOS CI uses [self-hosted, macOS, ARM64, paloma-mac-mini] only for
+sk1bid's push/manual runs of integration/macos-native in sk1bid/Paloma-Morze.
+Pull requests, other actors, branches and repositories keep the hosted macos-26
+path. The hosted path retains Xcode26.6; the Mini uses /Applications/Xcode.app.
+The job uses two Xcode build jobs, a 2 GiB Node heap and read-only contents access.
+Checkout does not retain its GitHub token. Native workflow Actions are pinned.
+Tests execute as arm64. Preview packaging remains universal arm64/x86_64 so that
+existing architecture validation and update-fixture tests remain meaningful.
+No signing secrets are inherited, no release is published by this workflow.
+The release/update-feed workflows are unchanged and remain hosted.
+
+Before registering a runner on the public repository, restrict pull request
+creation to collaborators in Settings > General > Features. Keep untrusted PR
+workflows off the home runner. Local admission hooks are defense in depth, not
+an isolation or authorization boundary.
+
+The owner chose their existing macOS account. Jobs therefore have that account's
+file/key/network access. The resource guard and low scheduling priority are not
+a security sandbox or a hard RAM limit for the complete process tree.
+
+Mini files (outside this repository): ~/runner-control and ~/actions-runner.
+Supervisor: ru.sk1bid.github.paloma-mini, a GUI-session LaunchAgent using the
+vendor bin/runsvc.sh. It starts after login, not before login after a reboot.
+One runner executes one job at a time. New jobs yield while Minecraft is running,
+Terraria has players (or its state is unknown), or the memory/disk guard blocks.
+A final job-start check fails the job if admission changed while it was assigned;
+it does not silently queue an already-assigned job forever. Retry after play.
+An existing job is never deliberately interrupted to free game resources.
+Minecraft start is refused while the CI job marker is live. No apps are killed.
+
+Manual pause: touch ~/runner-control/state/pause
+Resume: rm ~/runner-control/state/pause
+Status: /opt/homebrew/bin/python3 ~/runner-control/admission.py status
+Supervisor log: ~/runner-control/logs/service.log
+Registration: bash ~/runner-control/register.sh (temporary token entered locally)
+
+Native smoke validation was performed directly on the Mini with Xcode27.2.
+A successful GitHub-dispatched job remains a separate acceptance check after
+registration; local tests alone do not prove Actions connectivity or upload.

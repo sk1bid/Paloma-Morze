@@ -12,13 +12,31 @@ permissions:
 jobs:
   native:
     name: Swift + C++ (macOS 26)
-    runs-on: macos-26
+    # Only the owner's selected branch uses the home runner. PRs stay hosted.
+    runs-on: ${{ github.repository == 'sk1bid/Paloma-Morze' && github.actor == 'sk1bid' && github.ref == 'refs/heads/integration/macos-native' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && fromJSON('["self-hosted","macOS","ARM64","paloma-mac-mini"]') || 'macos-26' }}
     timeout-minutes: 35
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      PALOMA_BUILD_JOBS: '2'
+      NODE_OPTIONS: --max-old-space-size=2048
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Select Xcode and verify home runner
+        env:
+          RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: |
+          set -euo pipefail
+          if [[ "$RUNNER_ENVIRONMENT" == self-hosted ]]; then
+            [[ "$(uname -m)" == arm64 ]]
+            [[ "$(id -u)" != 0 ]]
+            developer=/Applications/Xcode.app/Contents/Developer
+          else
+            developer=/Applications/Xcode_26.6.app/Contents/Developer
+          fi
+          [[ -d "$developer" ]]
+          echo "DEVELOPER_DIR=$developer" >> "$GITHUB_ENV"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -42,7 +60,7 @@ jobs:
         run: bash apps/macos/Tools/ci-diagnostics.sh "$RUNNER_TEMP/native-preview/update.log" /bin/bash apps/macos/Tools/test-update.sh
       - name: Retain test diagnostics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-test-results
           path: |
@@ -52,7 +70,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
       - name: Native preview packages (not an update channel)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-macos-preview
           path: ${{ runner.temp }}/native-artifacts/*

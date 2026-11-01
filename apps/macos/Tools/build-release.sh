@@ -15,7 +15,7 @@ if [[ "$distribution" == 1 ]]; then
 fi
 mkdir -p "$out" "$work"
 set +e
-xcodebuild -project apps/macos/PalomaMorse/PalomaMorse.xcodeproj -scheme PalomaMorse \
+xcodebuild -jobs "${PALOMA_BUILD_JOBS:-4}" -project apps/macos/PalomaMorse/PalomaMorse.xcodeproj -scheme PalomaMorse \
  -configuration Release -destination 'generic/platform=macOS' -derivedDataPath "$work" \
  -onlyUsePackageVersionsFromResolvedFile -disableAutomaticPackageResolution \
  CODE_SIGNING_ALLOWED=NO ARCHS='arm64 x86_64' \
