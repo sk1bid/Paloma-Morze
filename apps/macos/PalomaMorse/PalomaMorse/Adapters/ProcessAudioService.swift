@@ -125,19 +125,28 @@ final class ProcessAudioService: AudioService {
         sendSettings()
     }
 
+    static func settingsCommand(_ settings: AudioSettings) -> String {
+        "S \(settings.toneHz) \(settings.volumePercent) \(settings.front) \(settings.waveform == .square ? 1 : 0) 1"
+    }
+
+    static func playbackCommand(id: PlaybackRequestID, settings: AudioSettings, spacing: SpacingMode, patterns: String, protectedFromKey: Bool = false) -> String {
+        let command = protectedFromKey ? "P_SAFE" : "P"
+        return "\(command) \(id.rawValue) \(settings.speed) \(settings.tonePeriod) \(Int((settings.dashRatio * 10).rounded())) \(Int((settings.pauseFactor * 10).rounded())) \(settings.front) \(settings.waveform == .square ? 1 : 0) 1 \(spacing.rawValue) \(patterns)"
+    }
+
     private func sendSettings() {
-        write("S \(settings.toneHz) \(settings.volumePercent) \(settings.front) \(settings.waveform == .square ? 1 : 0) 0")
+        write(Self.settingsCommand(settings))
     }
 
     func play(_ tokens: [PlaybackToken], spacing: SpacingMode) -> PlaybackRequestID {
-        sendPlayback(tokens, spacing: spacing, command: "P")
+        sendPlayback(tokens, spacing: spacing, protectedFromKey: false)
     }
 
     func playProtected(_ tokens: [PlaybackToken], spacing: SpacingMode) -> PlaybackRequestID {
-        sendPlayback(tokens, spacing: spacing, command: "P_SAFE")
+        sendPlayback(tokens, spacing: spacing, protectedFromKey: true)
     }
 
-    private func sendPlayback(_ tokens: [PlaybackToken], spacing: SpacingMode, command: String) -> PlaybackRequestID {
+    private func sendPlayback(_ tokens: [PlaybackToken], spacing: SpacingMode, protectedFromKey: Bool) -> PlaybackRequestID {
         let id = PlaybackRequestID(rawValue: nextID)
         nextID += 1
         guard ready, !tokens.isEmpty, tokens.allSatisfy({ $0.patterns.allSatisfy { !$0.isEmpty && $0.allSatisfy { $0 == "." || $0 == "-" } } }) else {
@@ -146,7 +155,7 @@ final class ProcessAudioService: AudioService {
         }
         active.insert(id)
         let patterns = tokens.map { $0.isGroupGap ? "/" : $0.patterns.joined(separator: ",") }.joined(separator: "|")
-        write("\(command) \(id.rawValue) \(settings.speed) \(settings.tonePeriod) \(Int((settings.dashRatio * 10).rounded())) \(Int((settings.pauseFactor * 10).rounded())) \(settings.front) \(settings.waveform == .square ? 1 : 0) 0 \(spacing.rawValue) \(patterns)")
+        write(Self.playbackCommand(id: id, settings: settings, spacing: spacing, patterns: patterns, protectedFromKey: protectedFromKey))
         return id
     }
 

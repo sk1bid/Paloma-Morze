@@ -1,0 +1,60 @@
+{
+  "reference": "APAK-CWL 2.12, unmodified Windows executable, fresh process and CWK.dat per speed",
+  "date": "2026-11-07",
+  "mode": "lesson 14, exercise 4, Normal, 5 groups, Timer on, no mnemonics",
+  "tone_period": 23,
+  "ratio": 3,
+  "pause": 3,
+  "front": 6,
+  "capture": "same Windows WASAPI loopback endpoint, 48000 Hz stereo float32, no discontinuities or missing frames",
+  "detector": "101-frame RMS, 10% amplitude; source pulse lengths separately checked against speed",
+  "rows": [
+    {
+      "speed": 30,
+      "characters": 26,
+      "letter_n": 20,
+      "group_n": 5,
+      "letter_mean_ms": 1006.6249999999997,
+      "group_mean_ms": 2202.6916666666652,
+      "programmed_letter_ms": 986.9092970521542,
+      "programmed_group_ms": 2186.9092970521538,
+      "wav_sha256": "48d576903b2d49b72533088df391eb4206d78e71b5f204d310da39db367bc486"
+    },
+    {
+      "speed": 50,
+      "characters": 26,
+      "letter_n": 20,
+      "group_n": 5,
+      "letter_mean_ms": 609.9833333333338,
+      "group_mean_ms": 1332.5708333333323,
+      "programmed_letter_ms": 589.9092970521542,
+      "programmed_group_ms": 1309.9092970521542,
+      "wav_sha256": "7700a2e140da36f7a862c0f0710fa0ae56a798f90f7e84ece2d076169d409aad"
+    },
+    {
+      "speed": 105,
+      "characters": 26,
+      "letter_n": 20,
+      "group_n": 5,
+      "letter_mean_ms": 293.93124999999964,
+      "group_mean_ms": 633.6666666666666,
+      "programmed_letter_ms": 273.1428571428571,
+      "programmed_group_ms": 616.1428571428572,
+      "wav_sha256": "2b2a6f97801d6c681800e237d8f7b274d7cf8255d51590c1e864b20be828077f"
+    },
+    {
+      "speed": 150,
+      "characters": 26,
+      "letter_n": 20,
+      "group_n": 5,
+      "letter_mean_ms": 212.53333333333347,
+      "group_mean_ms": 451.5500000000003,
+      "programmed_letter_ms": 191.0,
+      "programmed_group_ms": 430.99999999999994,
+      "wav_sha256": "37f25ab776f78569d36614fd82e798eee0d404e5be5c56334b16ef1a7d2be988"
+    }
+  ],
+  "chosen_dispatch_ms": 21,
+  "quantized_reference_samples": 232,
+  "scope": "Reference cadence, not a universal Windows latency law. A fixed mean; no synthetic OS jitter. Intra-character timing and source PCM are unchanged. The output-rate conversion is validated independently with windows-105-dash.f32."
+}

@@ -139,7 +139,7 @@ describe('native audio control client',()=>{
   test('serializes patterns and settings; never creates browser audio',()=>{
     global.window={AudioContext:jest.fn(()=>{throw Error('Browser audio forbidden');})};
     engine.playSequence(['E','A',' ','L'],lookup);
-    expect(socket.sent[0]).toMatchObject({op:'play',patterns:['.','.-','/','.-..'],spacing:'text',settings:{quality:'clean',speed:50}});
+    expect(socket.sent[0]).toMatchObject({op:'play',patterns:['.','.-','/','.-..'],spacing:'text',settings:{quality:'original',speed:50}});
     expect(global.window.AudioContext).not.toHaveBeenCalled();
   });
   test('UI callbacks and completion come from native events',async()=>{
@@ -172,7 +172,7 @@ describe('native audio control client',()=>{
   test('loss cancels playback and reconnection sends newest settings',async()=>{
     const p=engine.playSequence(['E'],lookup);socket.emit('close');expect(await p).toMatchObject({cancelled:true});
     engine.setFrequency(612.5);const fresh=new FakeSocket();engine.bindSocket(fresh);fresh.emit('message',{type:'audio',event:'ready'});
-    expect(fresh.sent.at(-1)).toMatchObject({op:'settings',settings:{frequency:612.5}});
+    expect(fresh.sent.at(-1)).toMatchObject({op:'settings',settings:{frequency:612.5,quality:'original'}});
   });
   test('local and remote key ownership are separate commands',()=>{
     engine.keyDown('local');engine.keyDown('local');engine.keyDown('remote');engine.keyUp('local');

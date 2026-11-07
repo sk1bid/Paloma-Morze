@@ -130,7 +130,7 @@ nonisolated struct EngineTiming {
         case .errorRepeat: mul * 2 * c * pause / 10
         case .text: Int(Double(mul * pause * dot) * 1000.0 / 110250.0) + c
         }
-        return dot + Self.roundEven(Double(ms) * Self.referenceRate / 1000)
+        return dot + Self.roundEven(Double(ms) * Self.referenceRate / 1000) + 232
     }
 
     static func seconds(_ samples: Int) -> Double { Double(samples) / referenceRate }

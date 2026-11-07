@@ -1,0 +1,16 @@
+{
+  "source": "Real unmodified APAK 2.12, Windows WASAPI loopback, 2026-11-07",
+  "source_wav_sha256": "24668708355562ea1bda6dc83a29163fa6959a8553157e4afe5355e22da7297c",
+  "original_exe_sha256": "ab3c24b53d1766e87f456f8d1829e1daca4ffa28cec63fc717704c338a5561d2",
+  "speed": 105,
+  "period": 23,
+  "front": 6,
+  "ratio": 3,
+  "sample_rate": 48000,
+  "source_channel": 0,
+  "source_start_frame": 327053,
+  "frames": 6400,
+  "encoding": "little endian float32",
+  "postprocessing": "Only channel extraction; no normalization, filtering or retiming",
+  "test_alignment": "Fit constant gain and integer sample shift -20..20; compare steady dash against rendered frames 600..6999"
+}

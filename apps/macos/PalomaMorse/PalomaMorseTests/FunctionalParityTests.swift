@@ -3,6 +3,17 @@ import Testing
 @testable import PalomaMorse
 
 struct FunctionalParityTests {
+    @Test func nativeAudioAlwaysRequestsOriginalAPAKSignal() {
+        var settings = AudioSettings()
+        settings.speed = 105
+        settings.tonePeriod = 23
+        settings.front = 6
+        settings.dashRatio = 3
+        settings.pauseFactor = 3
+        #expect(ProcessAudioService.settingsCommand(settings).split(separator: " ").last == "1")
+        #expect(ProcessAudioService.playbackCommand(id: PlaybackRequestID(rawValue: 42), settings: settings, spacing: .text, patterns: ".|/|-") == "P 42 105 23 30 30 6 0 1 0 .|/|-")
+        #expect(ProcessAudioService.playbackCommand(id: PlaybackRequestID(rawValue: 42), settings: settings, spacing: .text, patterns: ".|/|-", protectedFromKey: true) == "P_SAFE 42 105 23 30 30 6 0 1 0 .|/|-")
+    }
     @Test func legacySettingsImportAndOverrideRoundTrip() throws {
         let name = "paloma-test-\(UUID())", defaults = UserDefaults(suiteName: name)!
         defer { defaults.removePersistentDomain(forName: name) }

@@ -1,0 +1,84 @@
+APAK-CWL 2.12 audio parity — 2026-11-07
+
+Production choice
+All clients request original APAK PCM8 synthesis in the existing C++ engine.
+There is no quality selector or second production audio engine. User code maps,
+including Paloma's single-dash zero, are unchanged. Custom overrides remain intact.
+
+Source signal
+morse_audio.hpp preserves APAK's 11025 Hz, unsigned PCM8 synthesis, integer-period
+carrier, rounding, phase restart and inside-element attack/release. Four captured
+original waveOutWrite buffers still match the C++ output byte for byte at 11025 Hz.
+The former linear device-rate interpolation is replaced with a 20-tap (at rates
+>=11025) Kaiser-windowed sinc. Original source quantization is retained; this is
+sample-rate conversion, not a clean sine replacement. Coefficients and converted
+dot/dash buffers are prepared outside the audio callback. The callback only reads
+prepared samples. Live keyboard/USB/remote ownership and cancellation stay intact.
+
+Cadence
+Settings::programmedGap retains the disassembled timer and Int.cwl formulas.
+Settings::gap adds 232 reference samples (~21.043 ms) at character boundaries,
+including group boundaries. Dots, dashes and intra-character silences do not change.
+This is a fixed reference cadence matched to observed Windows APAK dispatch overhead,
+not a universal OS latency law. It applies consistently in the continuous C++ stream
+on all platforms; it does not add synthetic random timing jitter or UI timers.
+The extra per-character transition is shared by text, learning and repeat plans;
+physical measurements below validate the exercise-4 path. Learning/repeat retain
+their own original programmed timer formulas and have deterministic regression tests.
+
+Evidence
+ui/tests/fixtures/apak-2.12/windows-cadence.json records fresh-process APAK loopback
+measurements at 30, 50, 105 and 150, pause x3, ratio 3, period 23, front 6, Timer on.
+Twenty letter gaps and five group/end gaps per speed corroborate a ~21 ms average
+transition overhead. Longer original 105 capture adds 40 letter/10 group gaps.
+No capture had missing frames or post-initial discontinuities.
+An exploratory run that changed the speed control without restarting had stale
+synthesis buffers (e.g. displayed 50 but sound at 45). It was discarded for this
+calibration. Fresh CWK.dat settings were loaded in a separate APAK process per speed.
+
+Independent waveform regression
+windows-105-dash.f32 is an unfiltered, unnormalized steady dash excerpt from real
+Windows loopback of the unmodified APAK executable. Its JSON gives exact provenance,
+source hash and extraction bounds. C++ tests fit only constant gain and a bounded
+integer phase offset, then require relative RMS error <0.12%. Current result: 0.06283%.
+The old linear converter fails this test (~0.30%). Exact post-device bit identity
+is not claimed: the Windows resampler and device processing remain external.
+
+Final physical A/B (same endpoint, WASAPI 48000 Hz stereo float32)
+Original APAK 2.12 vs locally rebuilt Windows C++ engine; original PCM mode, 105/3/x3.
+Same 207 elements (50 source characters + SK), no lost frames in either recording.
+                             APAK                 New Paloma
+Sequence span                49.7475625 s         49.7382917 s
+Mean letter silence          293.835938 ms         293.842708 ms
+Mean group/end silence       637.883333 ms         636.927083 ms
+Mean dot threshold duration   57.333333 ms          57.333333 ms
+Mean dash threshold duration 171.855702 ms         171.854167 ms
+Steady-tone median relative RMS difference after constant gain/fractional alignment:
+0.0641%; maximum among 207 elements 0.0750%. This is signal error, not a perceptual score.
+
+Timing detector: centered 101-frame RMS, 10% amplitude. These are measured envelope
+boundaries, not source-buffer lengths. Absolute durations therefore differ slightly
+from the 57.142857/171.428571 ms source buffers. Both recordings use the same detector.
+APAK's individual gaps still vary by roughly +/-10–13 ms around Paloma's fixed gaps;
+no deterministic program can promise to copy another run's unpredictable OS delays.
+Total span mismatch fell from 1.061417 s to 0.009271 s in the recorded 105 comparison.
+
+Scope and reproducibility
+The Windows engine was invoked with the same raw Morse pattern sequence rather
+than through Electron. This isolates sound and its scheduling; it does not certify
+UI generation or dictionary equality, nor should it change their behavior.
+Full WAVs, packet logs, settings screenshots, recorder sources, CSV and analysis:
+  /Users/sk1bid/Downloads/apak-windows-ab-20261107/
+Key outputs: comparison-parity.json, timbre-parity.json, pulse-measurements-parity.csv,
+apak-105.wav, paloma-parity-105.wav and their packet/metadata logs.
+Raw Windows rebuilt helper SHA256:
+31274052122295dc9e26e98ccf208fd3b2a4ce4c2d41ba0d675ec42930a06b09
+The raw sequence includes APAK's five-dash zero solely as test input; production
+Paloma's zero mapping has deliberately NOT been changed.
+
+Validation
+- 56 Swift tests, 20 suites, including live native helper and relay fixtures.
+- 53 legacy client JS tests; real bridge/native-process integration; renderer build.
+- C++ native tests on macOS and Windows, with original PCM and real-output fixtures.
+- Native macOS Release build for Apple silicon.
+- No tag, public release, deployment or main-branch merge performed.

@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdint>
 #include <memory>
+#include <numeric>
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
@@ -15,13 +16,16 @@
 namespace morse {
 constexpr double Pi = 3.14159265358979323846;
 constexpr int ReferenceRate = 11025;
+// Measured mean per-character dispatch overhead of the Windows APAK reference.
+// Kept separate from its original programmed timers; see the capture manifest.
+constexpr int ApakDispatchSamples = 232; // 21 ms, rounded at 11025 Hz.
 inline int roundEven(double x) {
     double lower = std::floor(x), fraction = x - lower;
     return static_cast<int>(fraction == 0.5 ? lower + (static_cast<int64_t>(lower) & 1) : std::floor(x + 0.5));
 }
 struct Settings {
     int speed=50, period=23, ratio=30, pause=30, front=6;
-    bool square=false, original=false;
+    bool square=false, original=true;
     int spacing=0; // 0=text, 1=learning, 2=repeat
     void validate() const {
         if(speed<30 || speed>150 || speed%5 || period<8 || period>38 || ratio<20 || ratio>45 ||
@@ -31,13 +35,14 @@ struct Settings {
     int dot() const { return roundEven(66120.0/speed); }
     int dash() const { return roundEven(dot()*ratio/10.0); }
     int edge() const { return roundEven((13-front)*ReferenceRate/2000.0); }
-    int gap(bool group) const {
+    int programmedGap(bool group) const {
         static constexpr int calibration[]={188,161,140,124,111,93,92,91,70,65,60,62,58,43,56,45,39,37,41,33,41,34,25,23,31};
         int c=calibration[speed/5-6], mul=group?3:1;
         int ms=spacing==1 ? (group?1500:500) : spacing==2 ? mul*2*c*pause/10
             : static_cast<int>(mul*pause*dot()*1000.0/110250.0)+c;
         return dot()+roundEven(ms*ReferenceRate/1000.0);
     }
+    int gap(bool group) const { return programmedGap(group)+ApakDispatchSamples; }
 };
 inline uint8_t legacySample(int i, int length, const Settings& s) {
     const int edge=s.edge();
@@ -45,6 +50,47 @@ inline uint8_t legacySample(int i, int length, const Settings& s) {
     double amplitude=s.square && i>=edge && i<length-edge ? 120 : 127;
     int value=128+roundEven(std::sin(2*Pi*i/s.period)*amplitude*envelope);
     return static_cast<uint8_t>(s.square ? (value>128?248:8) : value);
+}
+// Upsample the original PCM8 before it reaches the device. A linear interpolator
+// adds images that the legacy Windows sample-rate converter suppresses. This
+// finite Kaiser-windowed sinc is prepared off the audio callback, once per plan.
+inline double besselI0(double x) {
+    double sum=1,term=1;
+    for(int k=1;k<=32;++k){term*=x*x/(4.0*k*k);sum+=term;if(term<sum*1e-15)break;}
+    return sum;
+}
+inline std::vector<float> resampleLegacy(const std::vector<uint8_t>& pcm,int rate) {
+    constexpr int radius=10;
+    const int divisor=std::gcd(rate,ReferenceRate), phases=rate/divisor;
+    const double cutoff=std::min(1.0,rate/double(ReferenceRate));
+    // Only production rates >=11025 use this converter. Lower-rate diagnostics
+    // retain an explicitly band-limited (wider) kernel rather than aliasing.
+    const int half=int(std::ceil(radius/cutoff)), width=2*half;
+    const double norm=besselI0(8.6);
+    std::vector<double> weights(size_t(phases)*width);
+    for(int phase=0;phase<phases;++phase){
+        const double fraction=phase/double(phases);double total=0;
+        for(int k=0;k<width;++k){
+            const double x=(k-half+1-fraction)*cutoff;
+            double w=0;
+            if(std::abs(x)<radius){
+                const double sinc=std::abs(x)<1e-12?1:std::sin(Pi*x)/(Pi*x);
+                w=sinc*besselI0(8.6*std::sqrt(1-x*x/(radius*radius)))/norm;
+            }
+            weights[size_t(phase)*width+k]=w;total+=w;
+        }
+        for(int k=0;k<width;++k)weights[size_t(phase)*width+k]/=total;
+    }
+    // An absolute sample clock can round a pulse up by one frame.
+    std::vector<float> result(size_t(std::ceil(pcm.size()*double(rate)/ReferenceRate))+1);
+    for(size_t i=0;i<result.size();++i){
+        const uint64_t position=i*ReferenceRate;
+        const int center=int(position/rate), phase=int((position%rate)/divisor);
+        const auto* w=weights.data()+size_t(phase)*width;double value=0;
+        for(int k=0;k<width;++k){const int src=center+k-half+1;if(src>=0&&src<int(pcm.size()))value+=(int(pcm[src])-128)/128.0*w[k];}
+        result[i]=float(value);
+    }
+    return result;
 }
 struct Pulse { uint64_t start,end; bool dash; };
 struct Character { uint64_t frame; int index; };
@@ -57,6 +103,7 @@ struct Plan {
     std::vector<Pulse> pulses;
     std::vector<Character> characters;
     std::vector<uint8_t> dot, dash;
+    std::vector<float> outputDot, outputDash;
 };
 inline Plan makePlan(uint32_t id,const Settings& s,const std::string& patterns,int rate=48000) {
     s.validate();
@@ -87,6 +134,10 @@ inline Plan makePlan(uint32_t id,const Settings& s,const std::string& patterns,i
     plan.dot.resize(s.dot());plan.dash.resize(s.dash());
     for(int i=0;i<s.dot();++i)plan.dot[i]=legacySample(i,s.dot(),s);
     for(int i=0;i<s.dash();++i)plan.dash[i]=legacySample(i,s.dash(),s);
+    if(s.original && rate!=ReferenceRate){
+        plan.outputDot=resampleLegacy(plan.dot,rate);
+        plan.outputDash=resampleLegacy(plan.dash,rate);
+    }
     return plan;
 }
 inline float carrier(double phase,const Settings& s,int rate) {
@@ -101,9 +152,9 @@ inline float sample(const Plan& p,const Pulse& pulse,uint64_t position) {
     uint64_t i=position-pulse.start, length=pulse.end-pulse.start;
     if(p.settings.original) {
         const auto& data=pulse.dash?p.dash:p.dot;
-        double x=i*double(ReferenceRate)/p.rate;
-        size_t a=std::min(size_t(x),data.size()-1),b=std::min(a+1,data.size()-1);
-        return float(((data[a]-128)*(1-(x-a))+(data[b]-128)*(x-a))/128.0);
+        if(p.rate==ReferenceRate)return (int(data[std::min(size_t(i),data.size()-1)])-128)/128.0f;
+        const auto& output=pulse.dash?p.outputDash:p.outputDot;
+        return output[std::min(size_t(i),output.size()-1)];
     }
     double edge=p.settings.edge()*double(p.rate)/ReferenceRate;
     double envelope=std::min(1.0,std::min(i/edge,(length-1-i)/edge));
@@ -147,7 +198,7 @@ class Engine {
 public:
     const int rate;
     std::atomic<int> period{23},front{6};
-    std::atomic<bool> square{false},original{false},hardware{false},local{false},remote{false},muted{false};
+    std::atomic<bool> square{false},original{true},hardware{false},local{false},remote{false},muted{false};
     std::atomic<float> volume{0.5f};
     std::atomic<bool> emergencyStop{false};
     explicit Engine(int sampleRate=48000):rate(sampleRate){}

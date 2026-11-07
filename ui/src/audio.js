@@ -12,7 +12,7 @@ export class MorseAudioEngine {
   init() { return this.ready; }
   settings() {
     return {speed:this.charWpm,frequency:this.frequency,volume:this.volume,ratio:this.dashRatio,
-      pause:this.pauseFactor,front:this.front,waveform:this.waveform,quality:'clean'};
+      pause:this.pauseFactor,front:this.front,waveform:this.waveform,quality:'original'};
   }
   bindSocket(socket) {
     if(this.socket===socket)return;

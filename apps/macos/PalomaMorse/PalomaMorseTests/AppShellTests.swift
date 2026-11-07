@@ -77,10 +77,10 @@ struct DemoTimingTests {
         #expect(text.dash == 3966)                      // dot × 3.0
         #expect(abs(EngineTiming.seconds(text.dot) - 0.1199) < 0.0001)
         // text gap: dot + (30·1322·1000/110250 → 359 ms + calibration 111 ms)
-        #expect(text.gap(group: false) == 1322 + 5182)
+        #expect(text.gap(group: false) == 1322 + 5182 + 232)
         let learning = EngineTiming(settings: settings, spacing: .lessonOne)
-        #expect(learning.gap(group: false) == 1322 + 5512)   // 500 ms
-        #expect(learning.gap(group: true) == 1322 + 16538)   // 1500 ms
+        #expect(learning.gap(group: false) == 1322 + 5512 + 232)   // 500 ms
+        #expect(learning.gap(group: true) == 1322 + 16538 + 232)   // 1500 ms
     }
 }
 

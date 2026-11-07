@@ -15,7 +15,7 @@ enum Waveform: String, CaseIterable, Identifiable, Codable {
 }
 
 /// User-facing audio parameters (UI-SERVICE `AudioSettings`). Bounds follow
-/// `ui/src/audioSettings.js` and audio-protocol-v1. Output is always clean.
+/// `ui/src/audioSettings.js` and audio-protocol-v1. The audio adapter selects the APAK signal.
 struct AudioSettings: Equatable, Codable {
     static let toneClock = 11025.0
     static let speedRange = 30...150

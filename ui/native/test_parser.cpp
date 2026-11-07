@@ -23,12 +23,40 @@ int main(int argc,char**argv) {
         for(size_t i=0;i<golden.size();i++)assert(pcm[i]==(int(golden[i])-128)/128.0f);
     }
     std::cout<<"4 captured APAK fixtures: byte-exact native rendering\n";
+    // Independent device-output fixture: steady dash captured from unmodified
+    // APAK on Windows. Integer alignment/gain account for device start/volume,
+    // but cannot hide the spectral error of the former linear interpolation.
+    {
+        morse::Settings reference;reference.speed=105;
+        auto pcm=renderPlan(morse::makePlan(100,reference,"-",48000));
+        std::vector<float> captured(6400);
+        std::ifstream file(dir+"/windows-105-dash.f32",std::ios::binary);
+        file.read(reinterpret_cast<char*>(captured.data()),captured.size()*sizeof(float));
+        assert(file.gcount()==std::streamsize(captured.size()*sizeof(float)));
+        double best=1e9;
+        for(int shift=-20;shift<=20;++shift){
+            double xy=0,yy=0,xx=0;
+            for(size_t i=0;i<captured.size();++i){double x=captured[i],y=pcm[600+shift+i];xy+=x*y;yy+=y*y;xx+=x*x;}
+            double gain=xy/yy,error=0;
+            for(size_t i=0;i<captured.size();++i){double delta=captured[i]-gain*pcm[600+shift+i];error+=delta*delta;}
+            best=std::min(best,std::sqrt(error/xx));
+        }
+        std::cout<<"Windows APAK steady-tone relative RMS error: "<<best<<"\n";
+        assert(best<0.0012);
+        assert(reference.dot()==630 && reference.dash()==1890);
+        assert(reference.programmedGap(false)==3011 && reference.programmedGap(true)==6793);
+        assert(reference.gap(false)==3243 && reference.gap(true)==7025);
+        // No timing correction may stretch an element or its intra-character gap.
+        auto pair=morse::makePlan(101,reference,"..|.",11025);
+        assert(pair.pulses[0].end==630 && pair.pulses[1].start==1260);
+        assert(pair.pulses[2].start-pair.pulses[1].end==3243);
+    }
     s.original=false;
     auto text=morse::makePlan(2,s,".|.|/|.",11025);
-    assert(text.pulses[1].start==7826 && text.pulses[2].start==23590 && text.frames==26234);
+    assert(text.pulses[1].start==8058 && text.pulses[2].start==24054 && text.frames==26698);
     s.spacing=1;auto lesson=morse::makePlan(3,s,".|.|/|.",11025);
-    assert(lesson.pulses[1].start==8156 && lesson.pulses[2].start==27338);
-    s.spacing=2;auto repeat=morse::makePlan(4,s,".|.",11025);assert(repeat.pulses[1].start==9987);
+    assert(lesson.pulses[1].start==8388 && lesson.pulses[2].start==27802);
+    s.spacing=2;auto repeat=morse::makePlan(4,s,".|.",11025);assert(repeat.pulses[1].start==10219);
     s.spacing=0;
     assert(morse::roundEven(0.5)==0 && morse::roundEven(1.5)==2 && morse::roundEven(-1.5)==-2);
     auto q=morse::makePlan(5,s,".,.",48000),two=morse::makePlan(6,s,".|.",48000);assert(q.frames==two.frames);

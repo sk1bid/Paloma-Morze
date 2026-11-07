@@ -1,3 +1,8 @@
+Current audio policy (2026-11-07)
+Production now uses original APAK PCM8, prepared sinc sample-rate conversion and
+calibrated reference cadence. See APAK-PARITY.txt for measured scope and tests.
+The historical clean-only notes below describe the previous release.
+
 Central native audio — Paloma Morse 0.4.19, 2026-10-12
 
 Production path:

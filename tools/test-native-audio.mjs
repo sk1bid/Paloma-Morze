@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 const require=createRequire(new URL('../ui/package.json',import.meta.url));
 const WebSocket=require('ws');const bridge=require('../ui/bridge.cjs');
 process.env.PALOMA_AUDIO_PORT='18080';
-const settings={speed:50,frequency:612.5,volume:50,ratio:3,pause:3,front:6,waveform:'sine',quality:'clean'};
+const settings={speed:50,frequency:612.5,volume:50,ratio:3,pause:3,front:6,waveform:'sine',quality:'original'};
 bridge.start(false,['--test-mode','headless']);
 const ws=new WebSocket('ws://127.0.0.1:18080');const messages=[];const waiting=[];
 ws.on('message',data=>{try{const m=JSON.parse(data);messages.push(m);for(const waiter of [...waiting])if(waiter.test(m)){waiting.splice(waiting.indexOf(waiter),1);clearTimeout(waiter.timer);waiter.resolve(m);}}catch{}});
