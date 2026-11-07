@@ -24,21 +24,49 @@ struct Task5SessionTests {
                                    botResponseDelay: delaySource ?? { _, _ in replyDelay }, authenticationWaitDuration: { waitDuration })
         session.configuration.length = full ? .full : .short
         session.seedText = "2483"; session.isEnabled = true
-        if ready { engine.startEngine(); await settle() }
+        if ready {
+            engine.startEngine()
+            try await waitUntil("Audio engine becomes ready") { audio.isReady }
+        }
         return Rig(engine: engine, audio: audio, session: session, clock: clock)
+    }
+
+    private func waitUntil(_ description: String, timeout: Duration = .seconds(5),
+                           _ condition: () -> Bool) async throws {
+        let clock = ContinuousClock(), deadline = ContinuousClock.now.advanced(by: timeout)
+        while !condition(), clock.now < deadline { try await Task.sleep(for: .milliseconds(20)) }
+        try #require(condition(), "Timed out: \(description)")
+    }
+
+    /// Negative cancellation checks deliberately observe a whole interval; they
+    /// must not pass merely because the delayed callback has not run yet.
+    private func remainsTrue(_ description: String, for interval: Duration = .milliseconds(250),
+                             _ condition: () -> Bool) async throws {
+        let clock = ContinuousClock(), deadline = ContinuousClock.now.advanced(by: interval)
+        repeat {
+            try #require(condition(), "Unexpected asynchronous change: \(description)")
+            try await Task.sleep(for: .milliseconds(20))
+        } while clock.now < deadline
+        try #require(condition(), "Unexpected asynchronous change: \(description)")
+    }
+
+    private func requiredPlaybackID(_ engine: ScriptedAudioService) throws -> PlaybackRequestID {
+        try #require(engine.played.last?.id, "Expected a real playback request before emitting its engine event")
+    }
+
+    private func waitForPlayback(_ rig: Rig) async throws {
+        try await waitUntil("Bot delay completes and a real playback request exists") {
+            !rig.session.isWaitingForBot && !rig.engine.played.isEmpty
+        }
     }
 
     /// Advancing the simulated operator clock makes a character eligible for
     /// commit; the production gap task still has to run on the MainActor. Wait
     /// for that state transition rather than assuming a 100 ms scheduling slot.
     private func waitForCharacterCommit(_ session: Task5Session) async throws {
-        let clock = ContinuousClock()
-        let deadline = clock.now.advanced(by: .seconds(3))
-        while !session.buffer.isEmpty, clock.now < deadline {
-            try await Task.sleep(for: .milliseconds(20))
+        try await waitUntil("Character commits: input=\(session.inputText), step=\(session.currentStep?.id ?? "none")") {
+            session.buffer.isEmpty
         }
-        try #require(session.buffer.isEmpty,
-            "Character did not commit: buffer=\(session.buffer), input=\(session.inputText), step=\(session.currentStep?.id ?? "none")")
     }
 
     @Test(arguments: Task5StationRole.allCases) func announcedWaitStartsAfterBotFinishesAndFreezesOnUserPause(role: Task5StationRole) async throws {
@@ -268,7 +296,7 @@ struct Task5SessionTests {
             r.clock.advance(0.08)
         }
         r.clock.advance(0.8)
-        try await Task.sleep(for: .milliseconds(100))
+        try await waitForCharacterCommit(r.session)
     }
 
     @Test(arguments: ["joinedTerminator", "splitQuestion", "compact"]) func authenticationSpacingDoesNotStall(style: String) async throws {
@@ -300,16 +328,20 @@ struct Task5SessionTests {
             r.session.keyUp(from: .keyboard); r.clock.advance(0.08)
         }
         r.clock.advance(0.3)
-        try await Task.sleep(for: .milliseconds(100))
+        try await waitForCharacterCommit(r.session)
         r.session.pause(); r.clock.advance(20); r.session.resume()
         r.clock.advance(7)
-        try await Task.sleep(for: .milliseconds(100))
+        try await waitUntil("Incomplete keyed transmission gets its single continuation notice") {
+            r.session.events.filter { $0.kind == "waitingForTransmission" }.count == 1
+        }
         #expect(r.session.currentStep?.id == "quality-report")
         #expect(r.session.correctionNotice != nil)
         #expect(r.session.events.filter { $0.kind == "waitingForTransmission" }.count == 1)
         #expect(r.session.attempts.allSatisfy { $0.correct })
         r.clock.advance(20)
-        try await Task.sleep(for: .milliseconds(100))
+        try await remainsTrue("An incomplete transmission notice is not duplicated") {
+            r.session.events.filter { $0.kind == "waitingForTransmission" }.count == 1
+        }
         #expect(r.session.events.filter { $0.kind == "waitingForTransmission" }.count == 1)
         try await keyK(r)
         #expect(r.session.currentStep?.id == "auth-peer")
@@ -398,8 +430,7 @@ struct Task5SessionTests {
             r.clock.advance(0.08)
         }
         r.clock.advance(0.3)
-        try await Task.sleep(for: .milliseconds(100))
-        for _ in 0..<50 where !r.session.buffer.isEmpty { try await Task.sleep(for: .milliseconds(20)) }
+        try await waitForCharacterCommit(r.session)
         if count >= 8 {
             #expect(r.session.inputText.isEmpty)
             #expect(r.session.correctionNotice != nil)
@@ -465,13 +496,13 @@ struct Task5SessionTests {
         r.session.submit()
         r.session.focusLost()
         #expect(r.session.isWaitingForBot)
-        try await Task.sleep(for: .milliseconds(200))
+        try await waitForPlayback(r)
         #expect(r.engine.played.count == 1)
         #expect(r.session.status == .playing)
         r.session.focusLost()
         #expect(r.engine.cancelled.isEmpty)
         #expect(r.session.status == .playing)
-        r.engine.emit(r.engine.lastID, .finished(cancelled: false)); await settle()
+        r.engine.emit(try requiredPlaybackID(r.engine), .finished(cancelled: false)); await settle()
         #expect(r.session.currentStep?.id == "quality")
         #expect(r.session.status == .running)
         r.session.stop()
@@ -488,7 +519,7 @@ struct Task5SessionTests {
             r.session.keyUp(from: .keyboard); r.clock.advance(0.08)
         }
         r.clock.advance(0.8)
-        try await Task.sleep(for: .milliseconds(100))
+        try await waitForCharacterCommit(r.session)
         #expect(r.session.currentStep?.id == "quality-reply")
         #expect(r.session.status == .running)
         #expect(r.session.errorMessage == nil)
@@ -509,7 +540,7 @@ struct Task5SessionTests {
             r.session.keyUp(from: .keyboard); r.clock.advance(0.08)
         }
         r.clock.advance(0.8)
-        try await Task.sleep(for: .milliseconds(100))
+        try await waitForCharacterCommit(r.session)
         #expect(r.session.currentStep?.id == "quality-report")
         if withK {
             for mark in "-.-" {
@@ -518,7 +549,13 @@ struct Task5SessionTests {
             }
             r.clock.advance(0.8)
         } else { r.clock.advance(3) }
-        try await Task.sleep(for: .milliseconds(100))
+        if withK {
+            try await waitUntil("Final K advances the quality report") { r.session.currentStep?.id == "auth-peer" }
+        } else {
+            try await remainsTrue("A quality report without K remains unfinished") {
+                r.session.currentStep?.id == "quality-report" && r.session.errorMessage == nil
+            }
+        }
         #expect(r.session.currentStep?.id == (withK ? "auth-peer" : "quality-report"))
         if withK { #expect(r.session.attempts.last?.input == "ЩСА 4 К") }
         else { #expect(r.session.inputText.trimmingCharacters(in: .whitespaces) == "ЩСА 4") }
@@ -555,11 +592,13 @@ struct Task5SessionTests {
             r.clock.advance(0.08)
         }
         r.clock.advance(0.8)
-        try await Task.sleep(for: .milliseconds(100))
+        try await waitForCharacterCommit(r.session)
         if !finalK {
             #expect(r.session.errorMessage == nil)
             r.clock.advance(3)
-            try await Task.sleep(for: .milliseconds(100))
+            try await remainsTrue("An unfinished incorrect report is not treated as a completed message") {
+                r.session.errorMessage == nil && r.session.currentStep?.id == "quality-report"
+            }
             #expect(r.session.errorMessage == nil)
             #expect(r.session.currentStep?.id == "quality-report")
             r.session.stop()
@@ -652,7 +691,7 @@ struct Task5SessionTests {
         r.session.submit()
         #expect(r.session.isWaitingForBot)
         #expect(r.engine.played.isEmpty)
-        try await Task.sleep(for: .milliseconds(250))
+        try await waitForPlayback(r)
         #expect(!r.session.isWaitingForBot)
         #expect(!r.engine.played.isEmpty)
         r.session.stop()
@@ -662,7 +701,9 @@ struct Task5SessionTests {
         stopped.session.inputText = stopped.session.currentStep!.expectedMessages[0]
         stopped.session.submit()
         stopped.session.stop()
-        try await Task.sleep(for: .milliseconds(250))
+        try await remainsTrue("Stopping a pending bot reply prevents later playback") {
+            stopped.engine.played.isEmpty && !stopped.session.isWaitingForBot
+        }
         #expect(stopped.engine.played.isEmpty)
         #expect(!stopped.session.isWaitingForBot)
     }
@@ -674,14 +715,16 @@ struct Task5SessionTests {
         r.session.submit()
         #expect(r.session.isWaitingForBot)
         r.session.pause()
-        try await Task.sleep(for: .milliseconds(250))
+        try await remainsTrue("A paused reply cannot begin playback") {
+            r.engine.played.isEmpty && !r.session.isWaitingForBot
+        }
         #expect(r.engine.played.isEmpty)
         #expect(!r.session.isWaitingForBot)
         r.session.resume()
         #expect(r.session.isWaitingForBot)
-        try await Task.sleep(for: .milliseconds(250))
+        try await waitForPlayback(r)
         #expect(!r.engine.played.isEmpty)
-        r.engine.emit(r.engine.lastID, .finished(cancelled: false)); await settle()
+        r.engine.emit(try requiredPlaybackID(r.engine), .finished(cancelled: false)); await settle()
         #expect(r.session.currentStep?.id == "call")
         #expect(r.session.status == .running)
         r.session.stop()
@@ -695,7 +738,8 @@ struct Task5SessionTests {
             if s.currentStep?.id == target && s.status == .running { return }
             if !s.isSessionActive { return }
             if s.status == .playing {
-                rig.engine.emit(rig.engine.lastID, .finished(cancelled: false)); await settle()
+                try await waitForPlayback(rig)
+                rig.engine.emit(try requiredPlaybackID(rig.engine), .finished(cancelled: false)); await settle()
             } else if let step = s.currentStep, step.kind == .pause {
                 rig.clock.advance(step.requiredPauseSeconds); s.tick()
             } else if let step = s.currentStep {
@@ -839,11 +883,12 @@ struct Task5SessionTests {
             r.clock.advance(0.08)
         }
         r.clock.advance(0.7)
-        for _ in 0..<50 where r.session.status != .playing { try await Task.sleep(for: .milliseconds(20)) }
+        try await waitUntil("Wrong keyed terminator requests an audible repeat") { r.session.status == .playing }
+        try await waitForPlayback(r)
         #expect(r.session.status == .playing)
         #expect(r.session.currentStep?.id == "call")
         #expect(r.session.attempts.last?.correct == false)
-        r.engine.emit(r.engine.lastID, .finished(cancelled: false)); await settle()
+        r.engine.emit(try requiredPlaybackID(r.engine), .finished(cancelled: false)); await settle()
         r.session.keyDown(from: .keyboard)
         #expect(r.session.inputText.isEmpty)
         r.session.stop()
@@ -1057,10 +1102,8 @@ struct Task5SessionTests {
             r.clock.advance(0.08)
         }
         r.clock.advance(0.7)
-        let deadline = ContinuousClock.now.advanced(by: .seconds(5))
-        while r.session.status != .playing, ContinuousClock.now < deadline {
-            try await Task.sleep(for: .milliseconds(20))
-        }
+        try await waitUntil("Keyed repeat starts bot playback") { r.session.status == .playing }
+        try await waitForPlayback(r)
         #expect(r.session.status == .playing)
         #expect(r.session.repeatCount == 1)
         #expect(r.session.currentStepIndex == index)
@@ -1152,10 +1195,7 @@ struct Task5SessionTests {
             r.clock.advance(0.08)
         }
         r.clock.advance(0.7)
-        let deadline = ContinuousClock.now.advanced(by: .seconds(5))
-        while r.session.currentStep?.id == "call", ContinuousClock.now < deadline {
-            try await Task.sleep(for: .milliseconds(20))
-        }
+        try await waitUntil("Keyed terminator advances the call") { r.session.currentStep?.id != "call" }
         #expect(r.session.currentStep?.id == "call-reply")
         #expect(r.session.status == .playing)
         r.session.stop()
