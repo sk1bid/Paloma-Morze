@@ -1,0 +1,7 @@
+body.task5-controller-body { overflow: auto; }
+.task5-controller-root { padding: 18px; min-width: 480px; }
+.task5-controller-help { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.task5-controller-root .task5-development { padding: 10px 14px; text-align: left; }
+.task5-controller-root .task5-field { margin: 6px 0; }
+.task5-controller-root .task5-footer { margin-top: 6px; }
+.task5-controller-root .toggle-btn { padding: 6px 8px; }

@@ -78,7 +78,8 @@ export class MorseAudioEngine {
     }
     const id=String(this.nextId++);
     const promise=new Promise(resolve=>this.pending.set(id,{resolve,characters,onChar:onCharPlay,onPulse}));
-    this.send({op:'play',id,patterns,settings:this.settings(),spacing:options.spacing||'text'});
+    const settings={...this.settings(),...(options.speed===undefined?{}:{speed:options.speed})};
+    this.send({op:'play',id,patterns,settings,spacing:options.spacing||'text',protectedFromKey:options.protectedFromKey===true});
     return promise;
   }
   playString(pattern,_startTime,onPulse=null){return this.playSequence(['_'],()=>pattern,null,onPulse);}

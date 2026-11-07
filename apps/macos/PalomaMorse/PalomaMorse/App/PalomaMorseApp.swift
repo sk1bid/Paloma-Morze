@@ -12,6 +12,7 @@ struct PalomaMorseApp: App {
                 case .ready(let model):
                     RootView(model: model)
                         .themed(model.settings, override: bootstrap.launch.colorScheme)
+                        .modifier(Task5DeveloperWindowLauncher(enabled: model.task5.isDeveloperReview))
                 case .failed(let message):
                     ContentUnavailableView(
                         "Не удалось загрузить каталог",
@@ -43,11 +44,48 @@ struct PalomaMorseApp: App {
         .defaultSize(width: 920, height: 460)
         .commandsRemoved()
 
+        // SceneBuilder cannot conditionally register scenes. This scene is
+        // suppressed from launch/restoration and has no ordinary menu command;
+        // only the explicit isolated launch can open its guarded content.
+        Window("DEV · Управление задачей №5", id: WindowID.task5Developer) {
+            if case .ready(let model) = bootstrap, model.task5.isDeveloperReview {
+                Task5DeveloperController(session: model.task5)
+                    .themed(model.settings, override: bootstrap.launch.colorScheme)
+            }
+        }
+        .defaultSize(width: 800, height: 112)
+        .windowResizability(.contentMinSize)
+        .defaultLaunchBehavior(.suppressed)
+        .restorationBehavior(.disabled)
+        .commandsRemoved()
+
+        Window("Подсказка · Задача №5", id: "task5-guide") {
+            if case .ready(let model) = bootstrap {
+                Task5GuideView(session: model.task5)
+                    .themed(model.settings, override: bootstrap.launch.colorScheme)
+            }
+        }
+        .defaultSize(width: 520, height: 640)
+        .commandsRemoved()
+
         Settings {
             if case .ready(let model) = bootstrap {
                 SettingsView(model: model)
                     .themed(model.settings, override: bootstrap.launch.colorScheme)
             }
+        }
+    }
+}
+
+private struct Task5DeveloperWindowLauncher: ViewModifier {
+    let enabled: Bool
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
+    func body(content: Content) -> some View {
+        content.onAppear {
+            if enabled { openWindow(id: WindowID.task5Developer) }
+        }.onDisappear {
+            if enabled { dismissWindow(id: WindowID.task5Developer) }
         }
     }
 }
@@ -76,7 +114,7 @@ enum AppBootstrap {
 
     var launch: LaunchOptions { LaunchOptions.current }
 
-    static func load() -> AppBootstrap {
+    static func load(options: LaunchOptions = .current) -> AppBootstrap {
         let catalog: MorseCatalog
         do {
             catalog = try MorseCatalog.load()
@@ -84,9 +122,8 @@ enum AppBootstrap {
             return .failed("morse.v1.json: \(error.localizedDescription)")
         }
 
-        let options = LaunchOptions.current
         #if DEBUG
-        if let fixture = options.fixture {
+        if let fixture = options.fixture, !options.developerTask5Review {
             return .ready(PreviewFixtures.appModel(for: fixture, catalog: catalog))
         }
         #endif
@@ -98,10 +135,25 @@ enum AppBootstrap {
         case .demo: audioService = DemoAudioService()
         case .unavailable: audioService = UnavailableAudioService()
         }
-        return .ready(AppModel(
+        if options.developerTask5Review {
+            let model = AppModel(catalog: catalog, audioService: audioService,
+                networkService: UnavailableNetworkService(), settings: SettingsStore(defaults: nil),
+                history: HistoryStore(records: []), fixtureName: "task5.developer-review", developerTask5Review: true)
+            model.select(.task5)
+            model.task5.seedText = "20261102"
+            model.task5.generate()
+            Task { @MainActor in
+                for _ in 0..<100 where !model.audio.isReady { try? await Task.sleep(for: .milliseconds(20)) }
+                if model.audio.isReady { model.task5.developerInspectStage(to: 0) }
+            }
+            return .ready(model)
+        }
+        let model = AppModel(
             catalog: catalog,
             audioService: audioService,
             networkService: SocketIONetworkService(baseURL: options.relayURL),
-            settings: SettingsStore()))
+            settings: SettingsStore())
+        if let section = options.initialSection { model.select(section) }
+        return .ready(model)
     }
 }

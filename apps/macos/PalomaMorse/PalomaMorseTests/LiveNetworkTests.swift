@@ -2,7 +2,90 @@ import Foundation
 import Testing
 @testable import PalomaMorse
 
+struct ProductionRelaySmokeTests {
+    @Test func configuredProductionRelayAllowsAppHostedReadOnlyLobbyRequest() async throws {
+        guard let configured = ProcessInfo.processInfo.environment["PALOMA_PRODUCTION_RELAY_URL"],
+              let url = URL(string: configured) else { return }
+        let service = SocketIONetworkService(baseURL: url, persistCredentials: false)
+        let log = LiveNetworkTests.Log(service)
+        defer { log.task?.cancel(); service.suspend() }
+        service.refreshRooms()
+        _ = try await log.wait { event in
+            switch event { case .lobby, .lobbyFailed: true; default: false }
+        }
+        #expect(log.events.contains { if case .lobby = $0 { true } else { false } }, "Events: \(log.events)")
+        #expect(!log.events.contains { if case .lobbyFailed = $0 { true } else { false } }, "Events: \(log.events)")
+    }
+}
+
 struct LiveNetworkTests {
+    static var relayURL: URL {
+        URL(string: ProcessInfo.processInfo.environment["PALOMA_NETWORK_TEST_URL"] ?? "http://127.0.0.1:33071")!
+    }
+    @Test(arguments: [false, true]) func nativeAndJavaScriptSocketIOInteroperate(forcePolling: Bool) async throws {
+        guard ProcessInfo.processInfo.environment["PALOMA_RUN_NETWORK_TESTS"] == "1" else {
+            if ProcessInfo.processInfo.environment["PALOMA_REQUIRE_NETWORK_TESTS"] == "1" { Issue.record("Network tests were required but not enabled") }
+            return
+        }
+        let url = Self.relayURL
+        let nativeName = forcePolling ? "NATIVEPOLL" : "NATIVEWEB"
+        let jsName = forcePolling ? "JAVAPOLL" : "JAVAWEB"
+        let native = SocketIONetworkService(baseURL: url, persistCredentials: false, forcePolling: forcePolling)
+        let log = Log(native)
+        defer { log.task?.cancel(); native.signOut() }
+        func peer(_ action: String, name: String? = nil, value: [String: Any]? = nil) async throws -> [[String: Any]] {
+            var body: [String: Any] = ["action": action, "callsign": jsName]
+            body["name"] = name; body["value"] = value
+            var request = URLRequest(url: url.appendingPathComponent("fixture/js-peer"))
+            request.httpMethod = "POST"
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            #expect((response as? HTTPURLResponse)?.statusCode == 200)
+            return (try JSONSerialization.jsonObject(with: data) as? [String: Any])?["events"] as? [[String: Any]] ?? []
+        }
+        native.signIn(callsign: nativeName, password: "fixture-pass", register: true)
+        #expect(try await log.wait { $0 == .connectionRestored })
+        native.createRoom(name: "JS interop \(nativeName)", password: "cross-client")
+        #expect(try await log.wait { if case .joined = $0 { true } else { false } })
+        guard case .joined(let room)? = log.events.first(where: { if case .joined = $0 { true } else { false } }) else { return }
+        _ = try await peer("connect")
+        _ = try await peer("emit", name: "join", value: ["roomId": room.id, "password": "wrong", "token": "fixture-\(jsName)"])
+        var peerEvents: [[String: Any]] = []
+        for _ in 0..<100 {
+            peerEvents = try await peer("events")
+            if peerEvents.contains(where: { $0["name"] as? String == "error" }) { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(peerEvents.contains { $0["value"] as? String == "Invalid lobby password" })
+        _ = try await peer("emit", name: "join", value: ["roomId": room.id, "password": "cross-client", "token": "fixture-\(jsName)"])
+        #expect(try await log.wait { if case .roomUpdated(let people, _) = $0 { people.count == 2 } else { false } })
+        // A pending join must not redirect keying away from the confirmed room.
+        native.join(roomID: "missing-\(nativeName)", password: nil)
+        native.sendKey(pressed: true); native.sendKey(pressed: false)
+        #expect(try await log.wait { $0 == .joinFailed("Lobby not found") })
+        _ = try await peer("emit", name: "start_session", value: ["roomId": room.id])
+        #expect(try await log.wait { $0 == .sessionLaunched })
+        // Overlapping presses are simplex collisions: both clients must receive
+        // the other operator's edges, in order, without a turn gate.
+        native.sendKey(pressed: true)
+        _ = try await peer("emit", name: "morse_event", value: ["roomId": room.id, "value": 1])
+        #expect(try await log.wait { $0 == .remoteKey(callsign: jsName, pressed: true) })
+        native.sendKey(pressed: false)
+        _ = try await peer("emit", name: "morse_event", value: ["roomId": room.id, "value": 0])
+        #expect(try await log.wait { $0 == .remoteKey(callsign: jsName, pressed: false) })
+        for _ in 0..<100 {
+            peerEvents = try await peer("events")
+            if peerEvents.filter({ $0["name"] as? String == "remote_morse" }).count == 4 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let edges = peerEvents.filter { $0["name"] as? String == "remote_morse" }.compactMap { $0["value"] as? [String: Any] }
+        #expect(edges.compactMap { $0["value"] as? Int } == [1, 0, 1, 0])
+        #expect(edges.allSatisfy { $0["callsign"] as? String == nativeName })
+        _ = try await peer("emit", name: "leave_room", value: ["roomId": room.id])
+        #expect(try await log.wait { $0 == .sessionEnded })
+        _ = try await peer("close")
+    }
+
     final class Log {
         var events: [NetworkEvent] = []
         var task: Task<Void, Never>?
@@ -22,7 +105,7 @@ struct LiveNetworkTests {
             if ProcessInfo.processInfo.environment["PALOMA_REQUIRE_NETWORK_TESTS"] == "1" { Issue.record("Network tests were required but not enabled") }
             return
         }
-        let url = URL(string: "http://127.0.0.1:33071")!
+        let url = Self.relayURL
         let first = SocketIONetworkService(baseURL: url, persistCredentials: false)
         let second = SocketIONetworkService(baseURL: url, persistCredentials: false, forcePolling: true)
         let a = Log(first), b = Log(second)
@@ -67,7 +150,8 @@ struct PollingFallbackTests {
             if ProcessInfo.processInfo.environment["PALOMA_REQUIRE_NETWORK_TESTS"] == "1" { Issue.record("Network tests were required but not enabled") }
             return
         }
-        let service = SocketIONetworkService(baseURL: URL(string: "http://127.0.0.1:33072")!, persistCredentials: false)
+        let url = URL(string: ProcessInfo.processInfo.environment["PALOMA_POLLING_TEST_URL"] ?? "http://127.0.0.1:33072")!
+        let service = SocketIONetworkService(baseURL: url, persistCredentials: false)
         let log = LiveNetworkTests.Log(service)
         defer { log.task?.cancel(); service.signOut() }
         service.signIn(callsign: "CCC", password: "fixture-pass", register: false)

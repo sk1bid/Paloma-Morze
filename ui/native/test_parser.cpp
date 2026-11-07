@@ -66,6 +66,29 @@ int main(int argc,char**argv) {
     assert(process_command("STOP 90",engine));engine.render(block.data(),256);
     bool wrongStop=false;while(engine.poll(event))if(event.type==morse::EventType::Done&&event.id==91)wrongStop=true;
     assert(!wrongStop);engine.stop();engine.render(block.data(),256);while(engine.poll(event)){}
+    // Task 5 replies ignore every key source without cancellation or sidetone.
+    for(int source=0;source<3;++source) {
+        morse::Engine protectedEngine;
+        assert(process_command("P_SAFE 95 50 23 30 30 6 0 0 0 .",protectedEngine));
+        protectedEngine.render(block.data(),256);
+        if(source==0)key_press(protectedEngine);
+        else assert(process_command(source==1 ? "K local 1" : "K remote 1",protectedEngine));
+        bool finished=false;
+        for(int i=0;i<300;++i) {
+            protectedEngine.render(block.data(),block.size());
+            while(protectedEngine.poll(event))if(event.type==morse::EventType::Done) {
+                assert(event.id==95 && event.value==0);finished=true;
+            }
+        }
+        assert(finished);
+        for(float sample:block)assert(sample==0); // A held key stays ignored after DONE.
+        key_release(protectedEngine);
+        assert(process_command("K local 0",protectedEngine));
+        assert(process_command("K remote 0",protectedEngine));
+        protectedEngine.render(block.data(),block.size());
+        key_press(protectedEngine);protectedEngine.render(block.data(),block.size());
+        assert(block[100]!=0); // A fresh press works normally again.
+    }
     // Concurrent command producer, audio callback, and event consumer.
     morse::Engine stress;std::atomic<bool> complete{false};
     std::thread producer([&]{for(uint32_t i=1;i<=1000;i++){while(!stress.submit(morse::makePlan(i,s,".-|...",48000)))std::this_thread::yield();}complete=true;});

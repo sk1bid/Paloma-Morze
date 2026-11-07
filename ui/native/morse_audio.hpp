@@ -49,6 +49,7 @@ inline uint8_t legacySample(int i, int length, const Settings& s) {
 struct Pulse { uint64_t start,end; bool dash; };
 struct Character { uint64_t frame; int index; };
 struct Plan {
+    bool keyProtected=false;
     uint32_t id=0;
     Settings settings;
     int rate=48000;
@@ -134,6 +135,7 @@ class Engine {
     std::unordered_map<uint32_t,std::unique_ptr<Plan>> ownership;
     Plan* active=nullptr;
     uint64_t position=0;size_t pulseIndex=0,charIndex=0;bool pulseOn=false;
+    bool blockedKey=false;
     float envelope=0;double phase=0;
     int notification=0;uint64_t notificationFrame=0;
     std::atomic<int> requestedNotification{0};
@@ -176,7 +178,10 @@ public:
         if(emergencyStop.exchange(false)){done(true);local=false;remote=false;}
         Settings live;live.period=period.load();live.front=front.load();live.square=square.load();live.original=original.load();
         bool held=remote.load() || local.load() || (hardware.load()&&!muted.load());
-        if(held)done(true); // Manual/remote CW preempts lessons; never mix two Morse tones.
+        if(!held)blockedKey=false;
+        if(held && active && active->keyProtected)blockedKey=true;
+        if(blockedKey)held=false; // Ignore the entire press, including after playback ends.
+        if(held)done(true); // Ordinary lessons retain manual-key preemption.
         int notice=requestedNotification.exchange(0);
         if(notice<0)notification=0;
         else if(notice&&!held&&!active){notification=notice;notificationFrame=0;phase=0;}

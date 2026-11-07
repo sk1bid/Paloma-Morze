@@ -93,6 +93,7 @@ protocol AudioService: AnyObject {
     /// Live parameters (`S`) apply immediately; sequence parameters apply to the next `play`.
     func updateSettings(_ settings: AudioSettings)
     func play(_ tokens: [PlaybackToken], spacing: SpacingMode) -> PlaybackRequestID
+    func playProtected(_ tokens: [PlaybackToken], spacing: SpacingMode) -> PlaybackRequestID
     func cancel(_ id: PlaybackRequestID)
     func stopAll()
     func setLocalKey(_ pressed: Bool)
@@ -102,6 +103,9 @@ protocol AudioService: AnyObject {
 }
 
 extension AudioService {
+    func playProtected(_ tokens: [PlaybackToken], spacing: SpacingMode) -> PlaybackRequestID {
+        play(tokens, spacing: spacing)
+    }
     func setSidetoneMuted(_ muted: Bool) {}
     func notifyConnection(_ connected: Bool) {}
 }

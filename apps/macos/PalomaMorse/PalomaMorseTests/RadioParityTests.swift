@@ -21,6 +21,37 @@ final class ScriptedNetworkService: NetworkService {
 }
 
 struct RadioParityTests {
+    @Test func relayRecoveryReturnsToLobbyWhenRoomCannotBeRejoined() async {
+        let network = ScriptedNetworkService()
+        let radio = RadioModel(network: network, audio: AudioCoordinator(service: ScriptedAudioService()))
+        network.emit(.signedIn(callsign: "AAA"))
+        network.emit(.connectionLost(reason: "offline"))
+        await settle()
+        network.emit(.connectionRestored)
+        network.emit(.lobby(rooms: [], online: 1))
+        await settle()
+        #expect(radio.screen == .lobby(.loaded([])))
+        network.emit(.joinFailed("Lobby not found"))
+        await settle()
+        #expect(radio.screen == .lobby(.failed("Lobby not found")))
+    }
+
+    @Test func duplicateSessionLaunchReleasesAnAlreadyHeldKey() async {
+        let engine = ScriptedAudioService(), network = ScriptedNetworkService()
+        let radio = RadioModel(network: network, audio: AudioCoordinator(service: engine))
+        engine.startEngine()
+        network.emit(.signedIn(callsign: "AAA"))
+        network.emit(.joined(RadioRoom(id: "room", name: "Room", owner: "AAA", isPrivate: false)))
+        network.emit(.sessionLaunched)
+        await settle()
+        radio.keyDown()
+        network.emit(.sessionLaunched)
+        await settle()
+        #expect(network.keys == [true, false])
+        #expect(!radio.localRhythm.isDown)
+        #expect(engine.localKey.last == false)
+    }
+
     @Test func waitingRoomTransmissionRemoteSidetoneAndCollision() async throws {
         let engine = ScriptedAudioService(), network = ScriptedNetworkService()
         let audio = AudioCoordinator(service: engine), settings = SettingsStore(defaults: nil)

@@ -1,10 +1,54 @@
-const { app, BrowserWindow, ipcMain, powerMonitor, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, powerMonitor, dialog, Menu, MenuItem } = require('electron');
 
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
+const fs = require('fs');
 const bridge = require('./bridge.cjs');
+const { createControllerBroker } = require('./task5-dev-controller.cjs');
+const task5Development = process.argv.includes('--task5-dev');
+if (task5Development) {
+  const developmentData = `${app.getPath('userData')}-task5-dev`;
+  fs.mkdirSync(developmentData, { recursive: true });
+  app.setPath('userData', developmentData);
+  app.setPath('sessionData', developmentData);
+  process.env.PALOMA_AUDIO_PORT = '8085';
+}
+const task5Query = task5Development ? '?task5dev=1' : '';
 
 let mainWindow;
+let controllerWindow = null;
+let controllerBroker = null;
+
+function loadRenderer(window, query) {
+  const indexPath = path.join(__dirname, 'dist', 'index.html');
+  if (!app.isPackaged) {
+    const port = process.env.VITE_PORT || 5173;
+    window.loadURL(`http://localhost:${port}${query}`).catch(() => window.loadURL(`file://${indexPath}${query}`));
+  } else window.loadURL(`file://${indexPath}${query}`);
+}
+function showTask5Controller() {
+  if (!task5Development || !mainWindow || mainWindow.isDestroyed()) return;
+  if (controllerWindow && !controllerWindow.isDestroyed()) { controllerWindow.show(); controllerWindow.focus(); return; }
+  controllerWindow = new BrowserWindow({
+    width: 720, height: 470, minWidth: 600, minHeight: 380,
+    title: 'DEV · Управление задачей №5', backgroundColor: '#0b0e14', show: false,
+    webPreferences: { nodeIntegration: true, contextIsolation: false }
+  });
+  loadRenderer(controllerWindow, '?task5dev=1&task5controller=1');
+  controllerWindow.once('ready-to-show', () => controllerWindow?.show());
+  // Destroying this renderer clears only its automatic-preview timer. The main
+  // session, its selected stage, and manually started audio remain untouched.
+  controllerWindow.on('closed', () => { controllerWindow = null; });
+}
+function installTask5DevelopmentMenu() {
+  const item = { label: 'DEV', submenu: [{ label: 'Показать управление задачей №5', accelerator: 'CmdOrCtrl+Alt+D', click: showTask5Controller }] };
+  const menu = Menu.getApplicationMenu();
+  if (menu) { menu.append(new MenuItem(item)); Menu.setApplicationMenu(menu); }
+  else Menu.setApplicationMenu(Menu.buildFromTemplate([
+    ...(process.platform === 'darwin' ? [{ role: 'appMenu' }] : []),
+    { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' }, item
+  ]));
+}
 
 // --- Auto Updater Configuration ---
 autoUpdater.autoDownload = false;
@@ -84,28 +128,19 @@ function createWindow() {
     }
   });
 
+  loadRenderer(mainWindow, task5Query);
   if (!app.isPackaged) {
-    const port = process.env.VITE_PORT || 5173;
-    // Development mode: Connect to Vite dev server
-    mainWindow.loadURL(`http://localhost:${port}`).catch(() => {
-      // Fallback if Vite is not running
-      const indexPath = path.join(__dirname, 'dist', 'index.html');
-      mainWindow.loadURL(`file://${indexPath}`);
-    });
     // Open DevTools by default in dev mode for easier debugging
     mainWindow.webContents.openDevTools();
-  } else {
-    // Production mode: Load built files
-    const indexPath = path.join(__dirname, 'dist', 'index.html');
-    mainWindow.loadURL(`file://${indexPath}`);
   }
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.setTitle('Paloma Morse');
     mainWindow.show();
+    if (task5Development) showTask5Controller();
 
     // Check for updates 3 seconds after window is ready
-    if (app.isPackaged) {
+    if (app.isPackaged && !task5Development) {
       setTimeout(() => {
         console.log(`[Updater] Current version: ${app.getVersion()}`);
         autoUpdater.checkForUpdates().catch(err => {
@@ -126,6 +161,7 @@ function createWindow() {
   });
 
   mainWindow.on('closed', function () {
+    if (controllerWindow && !controllerWindow.isDestroyed()) controllerWindow.close();
     mainWindow = null;
   });
 }
@@ -134,6 +170,7 @@ function createWindow() {
 // translocated copy, and Squirrel cannot install updates over it.
 // Offer to move it into /Applications; on success Electron relaunches it there.
 function offerMoveToApplications() {
+  if (task5Development) return false;
   if (process.platform !== 'darwin' || !app.isPackaged || app.isInApplicationsFolder()) return false;
 
   const ru = app.getLocale().toLowerCase().startsWith('ru');
@@ -163,8 +200,10 @@ app.on('ready', () => {
   console.log(`[Main] Starting Paloma Morse (Packaged: ${app.isPackaged})`);
   if (offerMoveToApplications()) return; // relaunching from /Applications
   bridge.start(app.isPackaged);
-  setupAutoUpdater();
+  if (!task5Development) setupAutoUpdater();
+  if (task5Development) controllerBroker = createControllerBroker({ ipcMain, getMainWindow: () => mainWindow, getControllerWindow: () => controllerWindow });
   createWindow();
+  if (task5Development) installTask5DevelopmentMenu();
 
   // Listen for system sleep/wake to re-sync or reconnect if needed
   powerMonitor.on('resume', () => {
@@ -191,6 +230,7 @@ app.on('activate', function () {
 });
 
 app.on('will-quit', () => {
+  controllerBroker?.dispose();
   console.log('[Main] Cleaning up engine...');
   bridge.stop();
 });

@@ -43,12 +43,22 @@ final class KeyRhythm {
     private(set) var isDown = false
     private(set) var lastRelease: Date?
 
-    @ObservationIgnored private var lastDot = KeyTiming.unit
+    /// The default preserves released free-transmission timing. Task-specific
+    /// training can choose its operator tempo independently of the bot's speed.
+    @ObservationIgnored var unit: TimeInterval {
+        didSet { if unit != oldValue { lastDot = max(0.001, unit) } }
+    }
+    @ObservationIgnored private var lastDot: TimeInterval
     @ObservationIgnored private var nextID = 0
 
     /// How far back the tape can show (a 2× wide window shows ≈ 45 s at
     /// 100 pt/s); older marks are dropped.
     static let retention: TimeInterval = 60
+
+    init(unit: TimeInterval = KeyTiming.unit) {
+        self.unit = max(0.001, unit)
+        lastDot = max(0.001, unit)
+    }
 
     func press(at date: Date = .now) {
         guard !isDown else { return }
@@ -63,7 +73,14 @@ final class KeyRhythm {
         guard isDown, let index = marks.indices.last else { return nil }
         isDown = false
         lastRelease = date
-        let kind = KeyTiming.classify(duration: date.timeIntervalSince(marks[index].start), lastDot: &lastDot)
+        let duration = date.timeIntervalSince(marks[index].start)
+        let kind: KeyMarkKind
+        if duration >= unit * 2 {
+            kind = duration > lastDot * KeyTiming.tooLongFactor ? .tooLong : .dash
+        } else {
+            lastDot = duration
+            kind = .dot
+        }
         marks[index].end = date
         marks[index].kind = kind
         return kind

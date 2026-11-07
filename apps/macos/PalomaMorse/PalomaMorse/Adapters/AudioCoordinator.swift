@@ -11,6 +11,8 @@ final class AudioCoordinator {
     private(set) var engineState: EngineState = .notStarted
     private(set) var hardware: HardwareKeyState = .unknown
     private(set) var hardwareKeyPressed = false
+    private(set) var activePlaybackCount = 0
+    var hasActivePlayback: Bool { activePlaybackCount > 0 }
 
     @ObservationIgnored private var handlers: [PlaybackRequestID: (PlaybackEvent) -> Void] = [:]
     @ObservationIgnored private var keyObservers: [UUID: (Bool) -> Void] = [:]
@@ -62,11 +64,13 @@ final class AudioCoordinator {
     func play(
         _ tokens: [PlaybackToken],
         spacing: SpacingMode,
+        protectedFromKey: Bool = false,
         onEvent: @escaping (PlaybackRequestID, PlaybackEvent) -> Void
     ) -> PlaybackRequestID? {
         guard isReady, !tokens.isEmpty else { return nil }
-        let id = service.play(tokens, spacing: spacing)
+        let id = protectedFromKey ? service.playProtected(tokens, spacing: spacing) : service.play(tokens, spacing: spacing)
         handlers[id] = { onEvent(id, $0) }
+        activePlaybackCount = handlers.count
         return id
     }
 
@@ -107,10 +111,12 @@ final class AudioCoordinator {
             case .failed(let reason):
                 let pending = handlers
                 handlers.removeAll()
+                activePlaybackCount = 0
                 pending.values.forEach { $0(.failed(reason)) }
             case .stopped:
                 let pending = handlers
                 handlers.removeAll()
+                activePlaybackCount = 0
                 pending.values.forEach { $0(.finished(cancelled: true)) }
             default: break
             }
@@ -133,6 +139,7 @@ final class AudioCoordinator {
             switch playback {
             case .finished, .failed:
                 handlers[id] = nil
+                activePlaybackCount = handlers.count
             default:
                 break
             }

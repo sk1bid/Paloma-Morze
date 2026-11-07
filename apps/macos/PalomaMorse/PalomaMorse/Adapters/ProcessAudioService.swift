@@ -130,6 +130,14 @@ final class ProcessAudioService: AudioService {
     }
 
     func play(_ tokens: [PlaybackToken], spacing: SpacingMode) -> PlaybackRequestID {
+        sendPlayback(tokens, spacing: spacing, command: "P")
+    }
+
+    func playProtected(_ tokens: [PlaybackToken], spacing: SpacingMode) -> PlaybackRequestID {
+        sendPlayback(tokens, spacing: spacing, command: "P_SAFE")
+    }
+
+    private func sendPlayback(_ tokens: [PlaybackToken], spacing: SpacingMode, command: String) -> PlaybackRequestID {
         let id = PlaybackRequestID(rawValue: nextID)
         nextID += 1
         guard ready, !tokens.isEmpty, tokens.allSatisfy({ $0.patterns.allSatisfy { !$0.isEmpty && $0.allSatisfy { $0 == "." || $0 == "-" } } }) else {
@@ -138,7 +146,7 @@ final class ProcessAudioService: AudioService {
         }
         active.insert(id)
         let patterns = tokens.map { $0.isGroupGap ? "/" : $0.patterns.joined(separator: ",") }.joined(separator: "|")
-        write("P \(id.rawValue) \(settings.speed) \(settings.tonePeriod) \(Int((settings.dashRatio * 10).rounded())) \(Int((settings.pauseFactor * 10).rounded())) \(settings.front) \(settings.waveform == .square ? 1 : 0) 0 \(spacing.rawValue) \(patterns)")
+        write("\(command) \(id.rawValue) \(settings.speed) \(settings.tonePeriod) \(Int((settings.dashRatio * 10).rounded())) \(Int((settings.pauseFactor * 10).rounded())) \(settings.front) \(settings.waveform == .square ? 1 : 0) 0 \(spacing.rawValue) \(patterns)")
         return id
     }
 

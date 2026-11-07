@@ -54,3 +54,5 @@ Transport implementation
 macOS: Foundation Process + Pipe; helper bundled in the app.
 Qt: QProcess; helper bundled with the platform package.
 Released Electron continues using its existing bridge. No frontend generates PCM.
+
+P_SAFE: same arguments as P; protects this playback from manual/remote/hardware key preemption. A press during playback is ignored until released, including its sidetone. STOP/RESET still cancel. Ordinary P behavior is unchanged.

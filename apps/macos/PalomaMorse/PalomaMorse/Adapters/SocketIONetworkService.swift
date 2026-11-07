@@ -1,7 +1,7 @@
 import Foundation
 
 /// Native Engine.IO 4 + Socket.IO 5 JSON default namespace transport.
-/// Default is loopback until the delivery configuration is explicitly approved.
+/// The app supplies its configured relay origin; standalone adapters default to loopback.
 final class SocketIONetworkService: NetworkService {
     let kind = NetworkAdapterKind.live
     let events: AsyncStream<NetworkEvent>
@@ -113,8 +113,8 @@ final class SocketIONetworkService: NetworkService {
         roomID = nil; roomPassword = nil; confirmedRoomID = nil; confirmedRoomPassword = nil
         awaitingJoin = false; continuation.yield(.left)
     }
-    func launchSession() { if let roomID { emit("start_session", ["roomId": roomID]) } }
-    func sendKey(pressed: Bool) { if let roomID { emit("morse_event", ["roomId": roomID, "value": pressed ? 1 : 0]) } }
+    func launchSession() { if let confirmedRoomID { emit("start_session", ["roomId": confirmedRoomID]) } }
+    func sendKey(pressed: Bool) { if let confirmedRoomID { emit("morse_event", ["roomId": confirmedRoomID, "value": pressed ? 1 : 0]) } }
     func reconnect() { attempts = 0; connect() }
     func suspend() { disconnect() }
     func restoreAuthentication() {

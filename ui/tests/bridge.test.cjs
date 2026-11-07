@@ -125,6 +125,16 @@ describe('native audio protocol bridge',()=>{
     ready();ws.emit('message',JSON.stringify({type:'audio',op:'play',id:1,settings,patterns:['.\nRESET'],spacing:'text'}));
     expect(child.stdin.write).not.toHaveBeenCalled();ws.emit('message','F500\nRESET');expect(child.stdin.write).not.toHaveBeenCalled();
   });
+  test('routes protected playback to P_SAFE and rejects malformed protection',()=>{
+    ready();
+    const play={type:'audio',op:'play',id:'bot',settings,patterns:['.'],spacing:'text',protectedFromKey:true};
+    ws.emit('message',JSON.stringify(play));
+    expect(child.stdin.write.mock.calls.at(-1)[0]).toMatch(/^P_SAFE \d+ /);
+    child.stdin.write.mockClear();
+    ws.emit('message',JSON.stringify({...play,protectedFromKey:'yes'}));
+    expect(child.stdin.write).not.toHaveBeenCalled();
+    expect(ws.send).toHaveBeenLastCalledWith(expect.stringContaining('Invalid audio sequence'));
+  });
   test('disconnection releases native keys',()=>{
     ready();ws.emit('message',JSON.stringify({type:'audio',op:'key',source:'local',down:true}));ws.emit('close');
     expect(child.stdin.write).toHaveBeenLastCalledWith('RESET\n');

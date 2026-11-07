@@ -7,6 +7,8 @@ import { Reception } from './Reception';
 import Auth from './Auth';
 import LobbyBrowser from './LobbyBrowser';
 import { RadioNetwork } from './RadioNetwork';
+import { Task5 } from './task5/Task5';
+import { task5DevelopmentEnabled } from './task5/development';
 import { MORSE_RU, MORSE_EN, MNEMONICS_RU, MNEMONICS_EN } from './constants';
 import { UpdateChecker } from './UpdateChecker';
 import { getMorsePattern, getMnemonic } from './utils/morseProvider';
@@ -22,19 +24,26 @@ const CHARACTER_SETS = {
   'ЦИФРЫ (DIGITS)': '0123456789'.split(''),
   'СИМВОЛЫ (SYMBOLS)': '/=?'.split('')
 };
+const TASK5_DEVELOPMENT = task5DevelopmentEnabled({
+  development: import.meta.env.DEV,
+  previewBuild: import.meta.env.VITE_TASK5_DEV_TOOLS === '1',
+  search: window.location.search
+});
 
 function App() {
-  const [activeTab, setActiveTab] = useState('reception'); // 'transmission', 'reception', or 'online'
+  const [activeTab, setActiveTab] = useState(TASK5_DEVELOPMENT ? 'task5' : 'reception');
   const [user, setUser] = useState(() => {
+    if (TASK5_DEVELOPMENT) return null;
     const saved = localStorage.getItem('paloma_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [token, setToken] = useState(() => localStorage.getItem('paloma_token'));
+  const [token, setToken] = useState(() => TASK5_DEVELOPMENT ? null : localStorage.getItem('paloma_token'));
   const [roomId, setRoomId] = useState(null);
   const [roomAuth, setRoomAuth] = useState(null); // Stores password for joining
 
   // Persistence Initialization
   const loadSetting = (key, defaultValue) => {
+    if (TASK5_DEVELOPMENT) return defaultValue;
     const saved = localStorage.getItem('paloma_morse_v1');
     if (saved) {
       try {
@@ -82,6 +91,10 @@ function App() {
   const [networkCollision, setNetworkCollision] = useState(false);
 
   const socketRef = useRef(null);
+  const roomRef = useRef({ roomId, roomAuth });
+  roomRef.current = { roomId, roomAuth };
+  const joinedRoomRef = useRef(null);
+  const joinedAuthRef = useRef(null);
 
   const ws = useRef(null);
   const reconnectTimer = useRef(null);
@@ -91,7 +104,7 @@ function App() {
     if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) return;
 
     console.log('[App] Connecting to Morse Engine...');
-    const socket = new WebSocket('ws://127.0.0.1:8080');
+    const socket = new WebSocket(`ws://127.0.0.1:${TASK5_DEVELOPMENT ? 8085 : 8080}`);
     ws.current = socket;
     audioEngine.bindSocket(socket);
 
@@ -165,9 +178,20 @@ function App() {
     socket.on('connect', () => {
       console.log('[App] Connected to Relay Server');
       // If we already have a direct roomId (e.g. from invite), join it
-      if (roomId) {
-        socket.emit('join', { roomId, password: roomAuth, token });
+      const latest = roomRef.current;
+      if (latest.roomId) {
+        socket.emit('join', { roomId: latest.roomId, password: latest.roomAuth, token });
+        joinedRoomRef.current = latest.roomId;
+        joinedAuthRef.current = latest.roomAuth;
       }
+    });
+
+    socket.on('disconnect', () => {
+      audioEngine.keyUp('remote');
+      setRemoteSignal(0);
+      setIsNetworkActive(false);
+      joinedRoomRef.current = null;
+      joinedAuthRef.current = null;
     });
 
     socket.on('room_update', ({ participants, owner }) => {
@@ -198,6 +222,8 @@ function App() {
 
     return () => {
       console.log('[App] Cleaning up global socket...');
+      audioEngine.keyUp('remote');
+      setRemoteSignal(0);
       socket.disconnect();
     };
   }, [token]);
@@ -207,16 +233,21 @@ function App() {
    */
   useEffect(() => {
     if (socketRef.current && socketRef.current.connected && token) {
-      if (roomId) {
+      const previousRoom = joinedRoomRef.current;
+      if (previousRoom && previousRoom !== roomId) {
+        socketRef.current.emit('leave_room', { roomId: previousRoom });
+        audioEngine.keyUp('remote');
+        setRemoteSignal(0);
+        setIsNetworkActive(false);
+      }
+      if (roomId && (previousRoom !== roomId || joinedAuthRef.current !== roomAuth)) {
         console.log('[App] Joining Room:', roomId);
         socketRef.current.emit('join', { roomId, password: roomAuth, token });
-      } else {
-        // If we were in a room but no longer are, the server handles cleanup,
-        // but it's good practice to have a 'leave' if needed. 
-        // Our server currently handles it via 'join' to a new room or disconnect.
       }
+      joinedRoomRef.current = roomId;
+      joinedAuthRef.current = roomAuth;
     }
-  }, [roomId, token]);
+  }, [roomId, roomAuth, token]);
 
   useEffect(() => {
     connectWebSocket();
@@ -263,6 +294,7 @@ function App() {
 
   // Persistence Sync Effect
   useEffect(() => {
+    if (TASK5_DEVELOPMENT) return;
     const settings = { frequency, volume, lang, theme, wpm, transWpm, dashRatio, pauseFactor, front, waveform, transmissionKey, customOverrides };
     localStorage.setItem('paloma_morse_v1', JSON.stringify(settings));
   }, [frequency, volume, lang, theme, wpm, transWpm, dashRatio, pauseFactor, front, waveform, transmissionKey, customOverrides]);
@@ -295,7 +327,7 @@ function App() {
 
   const resetSettings = () => {
     if (confirm(lang === 'RU' ? 'СБРОСИТЬ ВСЕ НАСТРОЙКИ?' : 'RESET ALL SETTINGS?')) {
-      localStorage.removeItem('paloma_morse_v1');
+      if (!TASK5_DEVELOPMENT) localStorage.removeItem('paloma_morse_v1');
       setFrequency(APAK_RATE / 23);
       setFront(6);
       setWaveform('sine');
@@ -465,7 +497,7 @@ function App() {
                 <LogOut size={18} />
               </button>
             )}
-            <UpdateChecker />
+            {!TASK5_DEVELOPMENT && <UpdateChecker />}
           </div>
         </header>
 
@@ -568,7 +600,15 @@ function App() {
             <Radio size={18} /> {lang === 'RU' ? 'ПЕРЕДАЧА' : 'TRANSMISSION'}
           </button>
           <button
+            className={`tab-btn ${activeTab === 'task5' ? 'active' : ''} ${isNetworkActive ? 'disabled' : ''}`}
+            disabled={isNetworkActive}
+            onClick={() => setActiveTab('task5')}
+          >
+            <Radio size={18} /> {lang === 'RU' ? 'ЗАДАЧА 5' : 'TASK 5'}
+          </button>
+          <button
             className={`tab-btn ${activeTab === 'online' ? 'active' : ''}`}
+            disabled={TASK5_DEVELOPMENT}
             onClick={() => setActiveTab('online')}
           >
             <Globe size={18} /> {lang === 'RU' ? 'ЭФИР' : 'ONLINE'}
@@ -616,6 +656,7 @@ function App() {
             className="tab-motion-wrapper"
           >
             <Reception
+              active={activeTab === 'reception'}
               frequency={frequency}
               volume={volume}
               lang={lang}
@@ -632,6 +673,10 @@ function App() {
               token={token}
             />
           </motion.div>
+
+          <div className="tab-motion-wrapper" style={{ display: activeTab === 'task5' ? 'block' : 'none' }}>
+            <Task5 active={activeTab === 'task5'} disabled={showSettings} ws={wsNode} transmissionKey={transmissionKey} customOverrides={customOverrides} development={TASK5_DEVELOPMENT} />
+          </div>
 
           <motion.div
             animate={{
@@ -662,6 +707,7 @@ function App() {
                   onQuit={() => {
                     if (socketRef.current && roomId) {
                       socketRef.current.emit('leave_room', { roomId });
+                      joinedRoomRef.current = null;
                     }
                     // Safety: kill audio on manual exit
                     audioEngine.keyUp();
@@ -679,6 +725,9 @@ function App() {
                   activeRoomId={roomId}
                   onLeaveRoom={() => {
                     if (socketRef.current) socketRef.current.emit('leave_room', { roomId });
+                    joinedRoomRef.current = null;
+                    audioEngine.keyUp('remote');
+                    setRemoteSignal(0);
                     setRoomId(null);
                     setCurrentRoomOwner(null);
                   }}

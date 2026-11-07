@@ -15,6 +15,7 @@ enum PreviewFixtures {
         "radio.live", "radio.collision", "radio.lost",
         "history.empty", "history.filled",
         "settings.panel", "settings.diagnostics",
+        "task5.setup", "task5.duty",
     ]
 
     static var catalog: MorseCatalog {
@@ -44,6 +45,19 @@ enum PreviewFixtures {
         model.section = AppSection(rawValue: section) ?? .reception
 
         switch name {
+        case "task5.setup", "task5.duty":
+            model.task5.seedText = "20261102"
+            model.task5.configuration.ownCallsign = "КВМЗ"
+            model.task5.configuration.botCallsign = "ТУЧА"
+            model.task5.generate()
+            if name == "task5.duty" {
+                Task { @MainActor in
+                    for _ in 0..<50 where !model.audio.isReady {
+                        try? await Task.sleep(for: .milliseconds(20))
+                    }
+                    model.task5.startRadioExchange()
+                }
+            }
         case "reception.start":
             break
 

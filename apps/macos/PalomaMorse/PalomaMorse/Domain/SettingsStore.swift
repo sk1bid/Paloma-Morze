@@ -6,6 +6,7 @@ import Observation
 @Observable
 final class SettingsStore {
     private enum Key {
+        static let task5 = "task5.configuration.v1"
         static let audio = "audio.settings.v1"
         static let alphabet = "training.alphabet"
         static let appearance = "interface.appearance"
@@ -32,6 +33,14 @@ final class SettingsStore {
     var customOverrides: [String: MorseOverride] {
         didSet { if let data = try? JSONEncoder().encode(customOverrides) { defaults?.set(data, forKey: Key.overrides) } }
     }
+    var task5Configuration: Task5Configuration {
+        didSet {
+            guard task5Configuration != oldValue,
+                  let data = try? JSONEncoder().encode(task5Configuration) else { return }
+            // UserDefaults updates memory immediately and writes to disk asynchronously.
+            defaults?.set(data, forKey: Key.task5)
+        }
+    }
     var transmissionSpeed: Int { didSet { defaults?.set(transmissionSpeed, forKey: Key.transSpeed) } }
     var transmissionKey: String { didSet { defaults?.set(transmissionKey, forKey: Key.key) } }
 
@@ -50,6 +59,8 @@ final class SettingsStore {
     /// Pass `nil` for previews and tests so nothing is written to disk.
     init(defaults: UserDefaults? = .standard) {
         self.defaults = defaults
+        task5Configuration = defaults?.data(forKey: Key.task5)
+            .flatMap { try? JSONDecoder().decode(Task5Configuration.self, from: $0) } ?? Task5Configuration()
         parametersCollapsed = defaults?.bool(forKey: Key.parametersCollapsed) ?? false
         customOverrides = defaults?.data(forKey: Key.overrides).flatMap { try? JSONDecoder().decode([String: MorseOverride].self, from: $0) } ?? [:]
         transmissionSpeed = defaults?.object(forKey: Key.transSpeed) as? Int ?? 50
@@ -77,6 +88,7 @@ final class SettingsStore {
         transmissionKey = "Space"
         transmissionSpeed = 50
         parametersCollapsed = false
+        task5Configuration = Task5Configuration()
         onResetAll?()
     }
 

@@ -19,5 +19,13 @@ try {
   await until(m=>m.event==='start'&&m.id==='long');send({op:'key',source:'remote',down:true});
   assert.equal((await until(m=>m.event==='done'&&m.id==='long')).value,1);
   send({op:'key',source:'remote',down:false});send({op:'reset'});
-  console.log('PASS: real C++ bridge READY, PCM-clock progress/completion, 3000-byte sequence, remote preemption.');
+  for (const source of ['local','remote']) {
+    const id=`protected-${source}`;
+    send({op:'play',id,settings,spacing:'text',patterns:['.-..','.'],protectedFromKey:true});
+    await until(m=>m.event==='start'&&m.id===id);
+    send({op:'key',source,down:true});
+    assert.equal((await until(m=>m.event==='done'&&m.id===id)).value,0);
+    send({op:'key',source,down:false});send({op:'reset'});
+  }
+  console.log('PASS: real C++ bridge READY, PCM-clock progress/completion, 3000-byte sequence, remote preemption, protected bot playback.');
 } finally {ws.close();bridge.stop();for(const w of waiting)clearTimeout(w.timer);}

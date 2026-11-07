@@ -47,6 +47,7 @@ enum ReceptionExercise: Int, CaseIterable, Identifiable {
 
 enum ReceptionStatus: Equatable {
     case idle
+    case preparing(secondsRemaining: Int)
     case playing
     case waitingForAnswer
     case feedback(correct: Bool)
@@ -78,6 +79,7 @@ final class ReceptionSession {
     @ObservationIgnored private let audio: AudioCoordinator
     @ObservationIgnored private let settings: SettingsStore
     @ObservationIgnored private let history: HistoryStore
+    @ObservationIgnored private let sleep: (Duration) async throws -> Void
 
     // MARK: Selection
 
@@ -127,11 +129,13 @@ final class ReceptionSession {
     static let recognizeCount = 15
     static let repeatCount = 5
 
-    init(catalog: MorseCatalog, audio: AudioCoordinator, settings: SettingsStore, history: HistoryStore) {
+    init(catalog: MorseCatalog, audio: AudioCoordinator, settings: SettingsStore, history: HistoryStore,
+         sleep: @escaping (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) {
         self.catalog = catalog
         self.audio = audio
         self.settings = settings
         self.history = history
+        self.sleep = sleep
     }
 
     // MARK: Derived
@@ -150,7 +154,7 @@ final class ReceptionSession {
 
     var isSessionActive: Bool {
         switch status {
-        case .playing, .waitingForAnswer, .feedback, .repeatingError, .cancelling: true
+        case .preparing, .playing, .waitingForAnswer, .feedback, .repeatingError, .cancelling: true
         default: false
         }
     }
@@ -225,21 +229,34 @@ final class ReceptionSession {
         playedTokens = 0
         chosenSign = nil
         activeSign = nil
-        startedAt = .now
 
         switch exercise {
         case .learn:
             sequence = lessonSigns.flatMap { Array(repeating: $0, count: Self.repeatCount) + [SequenceGenerator.groupGap] }
-            playContinuous(spacing: .lessonOne)
         case .exam:
             sequence = SequenceGenerator.generate(
                 pool: studiedPool, count: groupCount * Self.groupSize, groupSize: Self.groupSize, groupGaps: true)
-            playContinuous(spacing: .text)
         case .recognize, .groups:
             let pool = exercise == .recognize ? lessonSigns : studiedPool
             let count = exercise == .groups ? groupCount * Self.groupSize : Self.recognizeCount
             sequence = SequenceGenerator.generate(pool: pool, count: count, groupSize: Self.groupSize, groupGaps: false)
-            playTarget()
+        }
+        prepare(secondsRemaining: 5)
+    }
+
+    private func prepare(secondsRemaining: Int) {
+        status = .preparing(secondsRemaining: secondsRemaining)
+        schedule(after: .seconds(1)) { session in
+            if secondsRemaining > 1 {
+                session.prepare(secondsRemaining: secondsRemaining - 1)
+            } else {
+                session.startedAt = .now
+                switch session.exercise {
+                case .learn: session.playContinuous(spacing: .lessonOne)
+                case .exam: session.playContinuous(spacing: .text)
+                case .recognize, .groups: session.playTarget()
+                }
+            }
         }
     }
 
@@ -467,8 +484,9 @@ final class ReceptionSession {
     /// They only delay the next `play` request; audio timing stays in the engine.
     private func schedule(after delay: Duration, _ action: @escaping (ReceptionSession) -> Void) {
         pendingStep?.cancel()
+        let sleep = self.sleep
         pendingStep = Task { [weak self] in
-            try? await Task.sleep(for: delay)
+            do { try await sleep(delay) } catch { return }
             guard !Task.isCancelled, let self else { return }
             action(self)
         }

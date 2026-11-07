@@ -1,0 +1,86 @@
+/* Task 5 reuses reception's layout, controls, colors and type. Additional rules
+   only accommodate the existing radio forms and the shared 10×10 TDR table. */
+.task5-main { min-width: 0; }
+.task5-main > .scrolling-tape-container { flex-shrink: 0; margin-bottom: 0; }
+.task5-workspace { min-height: 260px; flex: 1; display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+.task5-idle { flex: 1; display: grid; place-content: center; min-height: 170px; font-size: 32px; color: var(--text-secondary); }
+.task5-field { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; font-size: 12px; }
+.task5-field input, .task5-field select, .task5-field textarea { width: 100%; box-sizing: border-box; background: var(--bg-app); color: var(--text-primary); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px; font: inherit; }
+.task5-field textarea { min-height: 110px; resize: vertical; }
+.task5-reception { flex: 1; }
+.task5-reception textarea { flex: 1; font-size: 20px; }
+.task5-wire { white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; font-size: 20px; line-height: 1.8; margin: 0; }
+.task5-radiogram { white-space: normal; overflow-wrap: normal; }
+.task5-radiogram-paper { box-sizing: border-box; width: 100%; min-width: 0; padding: 4px; border: 1px solid var(--glass-border); border-radius: 16px; background: rgba(var(--sink-rgb), 0.2); color: var(--text-primary); }
+.task5-radiogram-heading { display: grid; grid-template-columns: 1.4fr 0.6fr 0.8fr 0.7fr 1fr 0.85fr; border-bottom: 1px solid var(--glass-border); }
+.task5-radiogram-field { min-width: 0; padding: 1px 6px; border-right: 1px solid var(--glass-border); }
+.task5-radiogram-field:last-child { border-right: 0; }
+.task5-radiogram-caption { display: block; font-size: 9px; line-height: 1.05; color: var(--text-secondary); white-space: nowrap; }
+.task5-radiogram-value { display: block; line-height: inherit; white-space: nowrap; }
+.task5-radiogram-address { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--glass-border); }
+.task5-radiogram-line { padding: 4px 10px; border: 1px solid transparent; }
+.task5-radiogram-body { width: 100%; min-width: 0; table-layout: fixed; border-collapse: collapse; }
+.task5-radiogram-body td { box-sizing: border-box; width: 20%; padding: 1px 8px; border: 1px solid var(--glass-border); white-space: nowrap; font-family: inherit; font-size: 20px; line-height: 1.25; }
+.task5-radiogram .requested { background: rgba(var(--accent-rgb), 0.12); border-color: var(--accent-color); }
+.task5-radiogram-request { margin-top: 12px; }
+.task5-radiogram-request p { margin: 0; }
+.task5-input { min-height: 32px; font-size: 22px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.task5-input span, .task5-notice { color: var(--text-secondary); }
+.task5-key-display { max-height: 160px; overflow-y: auto; flex-shrink: 0; }
+.task5-key-display .task5-input { margin: 0; min-height: 32px; text-align: left; font-size: 22px; color: var(--text-primary); }
+/* Outgoing forms devote the available height to the complete radiogram. */
+.task5-radiogram-main { gap: 10px; }
+.task5-radiogram-main > .scrolling-tape-container { height: 60px; }
+.task5-radiogram-main .task5-key-display { box-sizing: border-box; height: 44px; min-height: 44px; max-height: 44px; padding: 6px 12px; }
+.task5-radiogram-main .task5-key-display .task5-input { min-height: 0; font-size: 18px; line-height: 1.2; }
+.task5-radiogram-main .task5-workspace { min-height: 0; gap: 6px; }
+.task5-radiogram-main > .task5-error { margin: 0; font-size: 12px; line-height: 1.2; }
+.task5-radiogram-main .task5-footer { margin-top: 0; }
+.task5-radiogram-main .task5-radiogram { font-size: var(--task5-gram-font-size, 20px); line-height: 1; }
+.task5-radiogram-main .task5-radiogram-line { padding: 2px 6px; border: 0; line-height: inherit; }
+.task5-radiogram-main .task5-radiogram-address { border-bottom: 1px solid var(--glass-border); }
+.task5-radiogram-main .task5-radiogram-body td { padding: 0 8px; border: 1px solid var(--glass-border); font-size: inherit; line-height: inherit; }
+.task5-radiogram-main .task5-radiogram .requested { outline: 1px solid var(--accent-color); outline-offset: -1px; }
+.task5-radiogram-main .task5-radiogram-request { margin-top: 6px; }
+.task5-footer { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.task5-footer > .toggle-btn, .task5-files > .toggle-btn { padding-inline: 12px; }
+.task5-key { margin-left: auto; touch-action: none; user-select: none; min-width: 150px; }
+.task5-overlay { z-index: 1000; padding: 24px; }
+.task5-dialog { width: min(1100px, 95vw); max-width: 1100px; max-height: 88vh; overflow: auto; text-align: left; }
+.task5-dialog p { line-height: 1.6; }
+.task5-dialog dl { display: grid; grid-template-columns: minmax(60px, auto) 1fr; gap: 8px 16px; }
+.task5-dialog dd { margin: 0; }
+.task5-table-scroll { overflow: auto; max-height: 65vh; padding: 10px; background: var(--bg-app); }
+/* Match the native TDR: 136×148 cells, 14 pt padding, 6 pt gaps. */
+.task5-tdr { border-collapse: separate; border-spacing: 6px; table-layout: fixed; width: max-content; font-size: 11px; }
+.task5-tdr th, .task5-tdr td { box-sizing: border-box; padding: 0; }
+.task5-tdr thead { position: sticky; top: 0; z-index: 1; background: var(--bg-app); }
+.task5-tdr th { width: 136px; min-width: 136px; height: 64px; text-align: center; background: var(--bg-app); border: 0.5px solid var(--glass-border-bright); }
+.task5-tdr thead th { position: sticky; top: 0; z-index: 1; }
+.task5-tdr tr > th:first-child { width: 60px; min-width: 60px; }
+.task5-tdr tbody th { height: 148px; }
+.task5-tdr thead th:first-child { border-color: transparent; }
+.task5-axis-digit, .task5-axis-keys { display: block; }
+.task5-axis-digit { color: var(--text-secondary); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; margin-bottom: 6px; }
+.task5-axis-keys { color: var(--accent-color); font-size: 15px; font-weight: 600; white-space: pre; }
+.task5-tdr td button { box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; width: 136px; height: 148px; padding: 14px; border: 0.5px solid var(--glass-border-bright); border-radius: 0; background: var(--bg-app); color: var(--text-primary); font: inherit; cursor: pointer; }
+.task5-tdr tbody tr:nth-child(even) td button { background: rgba(var(--lift-rgb), 0.03); }
+.task5-cell-expression { display: flex; flex: 1; align-items: center; justify-content: center; width: 100%; text-align: center; line-height: 1.3; overflow-wrap: anywhere; }
+.task5-cell-footer { display: flex; justify-content: space-between; gap: 6px; color: var(--text-secondary); font-weight: 500; font-variant-numeric: tabular-nums; }
+.task5-tdr th.on-axis { background: rgba(var(--accent-rgb), 0.12); }
+.task5-tdr tbody tr td button.on-axis { background: rgba(var(--accent-rgb), 0.05); }
+.task5-tdr tbody tr td button.selected { background: rgba(var(--accent-rgb), 0.16); outline: 2px solid var(--accent-color); outline-offset: -2px; }
+.task5-tdr td button:hover { border-color: var(--accent-color); }
+.task5-tdr td button:focus-visible { outline: 2px solid var(--accent-color); outline-offset: -2px; }
+.task5-journal { border-collapse: collapse; width: 100%; font-size: 11px; }
+.task5-journal th, .task5-journal td { border: 1px solid var(--glass-border); padding: 5px; vertical-align: top; }
+.task5-journal-scroll { overflow: auto; }
+.task5-journal small { display: block; margin-top: 3px; color: var(--text-secondary); }
+.task5-journal-fields { display: flex; gap: 12px; flex-wrap: wrap; }
+.task5-journal-fields label { flex: 1; }
+.task5-files { margin-top: 12px; }
+.task5-files button { margin: 8px 8px 0 0; }
+.task5-container summary { cursor: pointer; font-size: 12px; padding: 8px 0; }
+.task5-error { color: var(--error, #e06c75); }
+.task5-result { margin: auto; text-align: center; }
+@media (max-width: 700px) { .task5-container { flex-direction: column; } .task5-container .reception-sidebar { width: auto; max-width: none; } .task5-dialog { padding: 16px; } .task5-key { margin-left: 0; } }

@@ -148,6 +148,22 @@ describe('native audio control client',()=>{
     expect(char).toHaveBeenCalledWith('L');expect(pulse).toHaveBeenCalledWith('dash');
     socket.emit('message',{type:'audio',event:'done',id,value:0});expect(await p).toEqual({cancelled:false});
   });
+  test('protected bot playback survives key commands until native completion',async()=>{
+    const pending=engine.playSequence(['E'],lookup,null,null,{protectedFromKey:true});
+    const play=socket.sent[0];
+    expect(play.protectedFromKey).toBe(true);
+    engine.keyDown('local');engine.keyUp('local');
+    expect(engine.pending.has(play.id)).toBe(true);
+    socket.emit('message',{type:'audio',event:'done',id:play.id,value:0});
+    expect(await pending).toEqual({cancelled:false});
+  });
+  test('bot speed applies only to its playback, preserving reception settings',()=>{
+    engine.playSequence(['E'],lookup,null,null,{speed:95,protectedFromKey:true});
+    engine.playSequence(['E'],lookup);
+    expect(socket.sent[0].settings.speed).toBe(95);
+    expect(socket.sent[1].settings.speed).toBe(50);
+    expect(engine.charWpm).toBe(50);
+  });
   test('stop resolves pending calls and suppresses delayed progress',async()=>{
     const pulse=jest.fn(),p=engine.playString('.',null,pulse),id=socket.sent[0].id;
     engine.stopAll();expect(await p).toMatchObject({cancelled:true});socket.emit('message',{type:'audio',event:'pulse',id,value:1});

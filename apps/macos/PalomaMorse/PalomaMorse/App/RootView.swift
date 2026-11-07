@@ -12,7 +12,7 @@ struct RootView: View {
 
     /// Below this width the toolbar has no room for the tabs next to the title
     /// (with its data-source marker) and the tone/volume controls.
-    private static let toolbarTabsWidth: CGFloat = 1320
+    private static let toolbarTabsWidth: CGFloat = 1460
     private var tabsInToolbar: Bool { windowWidth >= Self.toolbarTabsWidth }
 
     var body: some View {
@@ -31,6 +31,11 @@ struct RootView: View {
                         .transition(.opacity)
                 case .radio:
                     RadioView(model: model.radio)
+                        .transition(.opacity)
+                case .task5:
+                    Task5View(session: model.task5, parametersCollapsed: Binding(
+                        get: { model.settings.parametersCollapsed },
+                        set: { model.settings.parametersCollapsed = $0 }))
                         .transition(.opacity)
                 }
             }
@@ -54,7 +59,7 @@ struct RootView: View {
         .navigationSubtitle(model.dataSourceNotice ?? "")
         .toolbar { AppToolbar(model: model, showsTabs: tabsInToolbar) }
         .onAppear { model.startKeyboardInput(); model.radio.windowOpened(); model.audio.startEngine(with: model.settings.audio) }
-        .onDisappear { model.stopKeyboardInput(); model.reception.stop(); model.transmission.releaseKey(); model.radio.windowClosed(); model.audio.service.stopEngine() }
+        .onDisappear { model.stopKeyboardInput(); model.reception.stop(); model.transmission.releaseKey(); model.task5.interrupt(reason: "Окно закрыто"); model.radio.windowClosed(); model.audio.service.stopEngine() }
         .task {
             // Review fixtures for secondary windows open them directly.
             if model.fixtureName?.hasPrefix("settings.") == true { openSettings() }
@@ -118,10 +123,6 @@ struct AppToolbar: ToolbarContent {
         }
         ToolbarItemGroup(placement: .primaryAction) {
             HistoryButton()
-            SettingsLink {
-                Label("Настройки", systemImage: "gearshape")
-            }
-            .help("Настройки (⌘,)")
         }
     }
 }

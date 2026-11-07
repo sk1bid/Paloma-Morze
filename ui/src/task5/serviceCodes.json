@@ -1,0 +1,6319 @@
+{
+  "schemaVersion": 1,
+  "createdOn": "2026-11-01",
+  "status": "Документальный корпус для будущего режима; не подключён к приложению",
+  "scope": "Все основные таблицы пяти фотографий; обрезанные края соседних страниц не являются отдельным полным источником. Это не универсальный полный набор всех изданий Щ-/З-/Q-кодов.",
+  "normalization": "Коды кириллицей, знак вопроса сохранён как часть формы. Переносы и межсловные пробелы нормализованы, многоточия унифицированы. Слова и перечни опций не дополнялись по догадке. Пунктуация нормализована; это смысловая транскрипция, не дипломатическая копия набора.",
+  "sources": [
+    {
+      "id": "P01",
+      "path": "sources/new-materials/радиокод-алфавит-стр-7.jpg",
+      "printedPage": 7,
+      "title": "Алфавитный перечень: продолжение Щ-кода и служебные сокращения",
+      "edition": "Не установлено по представленным страницам",
+      "transcription": "Ручная по фотографии; переносы строк и пробелы нормализованы; многоточия обозначают места параметров."
+    },
+    {
+      "id": "P02",
+      "path": "sources/new-materials/радиокод-алфавит-стр-6.jpg",
+      "printedPage": 6,
+      "title": "Алфавитный перечень: начало Щ-кода",
+      "edition": "Не установлено по представленным страницам",
+      "transcription": "Ручная по фотографии; переносы строк и пробелы нормализованы; многоточия обозначают места параметров."
+    },
+    {
+      "id": "P03",
+      "path": "sources/new-materials/радиокод-по-темам-стр-3.jpg",
+      "printedPage": null,
+      "title": "Перечень по темам: окончание обмена, режимы, настройка, буквопечатание",
+      "edition": "Не установлено по представленным страницам",
+      "transcription": "Ручная по фотографии; переносы строк и пробелы нормализованы; многоточия обозначают места параметров.",
+      "sequencePageHint": 3,
+      "pageNote": "Номер на снимке не виден; название файла «стр-3» отражает предполагаемое продолжение тематической страницы 2."
+    },
+    {
+      "id": "P04",
+      "path": "sources/new-materials/радиокод-по-темам-стр-2.jpg",
+      "printedPage": 2,
+      "title": "Перечень по темам: установление связи, приём, радиообмен",
+      "edition": "Не установлено по представленным страницам",
+      "transcription": "Ручная по фотографии; переносы строк и пробелы нормализованы; многоточия обозначают места параметров."
+    },
+    {
+      "id": "P05",
+      "path": "sources/new-materials/основные-кодовые-сокращения-стр-10.jpg",
+      "printedPage": 10,
+      "title": "Учебная памятка: основные кодовые сокращения и выражения",
+      "edition": "Не установлено по представленным страницам",
+      "transcription": "Ручная по фотографии; переносы строк и пробелы нормализованы; многоточия обозначают места параметров."
+    }
+  ],
+  "thematicIndex": [
+    {
+      "code": "ЩАТ",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩВГ",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩВД",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩВЗ?",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩВЗ",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩДК",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩЛС",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩРЗ?",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩРЗ",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩРЛ",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩСЖ",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩСО?",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩСО",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩЫЗ",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩЫИ",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩЫМ",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩФЙ",
+      "id": "P04",
+      "column": "left",
+      "section": "1. Установление связи"
+    },
+    {
+      "code": "ЩАА",
+      "id": "P04",
+      "column": "left",
+      "section": "2. Условия приема"
+    },
+    {
+      "code": "ЩЙВ",
+      "id": "P04",
+      "column": "left",
+      "section": "2. Условия приема"
+    },
+    {
+      "code": "ЩРЙ?",
+      "id": "P04",
+      "column": "left",
+      "section": "2. Условия приема"
+    },
+    {
+      "code": "ЩРЙ",
+      "id": "P04",
+      "column": "left",
+      "section": "2. Условия приема"
+    },
+    {
+      "code": "ЩРК?",
+      "id": "P04",
+      "column": "left",
+      "section": "2. Условия приема"
+    },
+    {
+      "code": "ЩРК",
+      "id": "P04",
+      "column": "left",
+      "section": "2. Условия приема"
+    },
+    {
+      "code": "ЩРХ",
+      "id": "P04",
+      "column": "left",
+      "section": "2. Условия приема"
+    },
+    {
+      "code": "ЩСА?",
+      "id": "P04",
+      "column": "left",
+      "section": "2. Условия приема"
+    },
+    {
+      "code": "ЩСА",
+      "id": "P04",
+      "column": "left",
+      "section": "2. Условия приема"
+    },
+    {
+      "code": "ЩСБ",
+      "id": "P04",
+      "column": "left",
+      "section": "2. Условия приема"
+    },
+    {
+      "code": "ЩСД",
+      "id": "P04",
+      "column": "left",
+      "section": "2. Условия приема"
+    },
+    {
+      "code": "ЩБМ",
+      "id": "P04",
+      "column": "left",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩВВ",
+      "id": "P04",
+      "column": "left",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩВМ?",
+      "id": "P04",
+      "column": "left",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩВМ",
+      "id": "P04",
+      "column": "left",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩВН",
+      "id": "P04",
+      "column": "left",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩВП",
+      "id": "P04",
+      "column": "left",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩВТ",
+      "id": "P04",
+      "column": "left",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩДА?",
+      "id": "P04",
+      "column": "left",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩДА",
+      "id": "P04",
+      "column": "left",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩДБ?",
+      "id": "P04",
+      "column": "left",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩДБ",
+      "id": "P04",
+      "column": "left",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩДЦ?",
+      "id": "P04",
+      "column": "left",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩДЦ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЕЩ?",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЕЩ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЙГ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЙЛ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЙО",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЛА",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЛИ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЛЙ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЛК",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЛН",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЛЩ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩМЛ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩОИ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩРЖ?",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩРЖ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩРС",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩРУ?",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩРУ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩРЩ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩСГ?",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩСГ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩСЗ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩСМ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩСФ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩТА",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩТБ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩТД",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩТР?",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩТР",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩТЦ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩУЦ?",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩУЦ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЦЗ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЦЬ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЩС?",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЩС",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЩТ?",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЩТ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЫБ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЫВ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЫГ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЫЖ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЬС",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЬУ",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЬЩ?",
+      "id": "P04",
+      "column": "right",
+      "section": "3. Ведение радиообмена"
+    },
+    {
+      "code": "ЩЬЩ",
+      "id": "P03",
+      "column": "left",
+      "section": "3. Ведение радиообмена (окончание)"
+    },
+    {
+      "code": "ЩЬЬ",
+      "id": "P03",
+      "column": "left",
+      "section": "3. Ведение радиообмена (окончание)"
+    },
+    {
+      "code": "ЩАП",
+      "id": "P03",
+      "column": "left",
+      "section": "4. Режимы и виды работы"
+    },
+    {
+      "code": "ЩБЕ",
+      "id": "P03",
+      "column": "left",
+      "section": "4. Режимы и виды работы"
+    },
+    {
+      "code": "ЩВЖ?",
+      "id": "P03",
+      "column": "left",
+      "section": "4. Режимы и виды работы"
+    },
+    {
+      "code": "ЩВЖ",
+      "id": "P03",
+      "column": "left",
+      "section": "4. Режимы и виды работы"
+    },
+    {
+      "code": "ЩЛХ",
+      "id": "P03",
+      "column": "left",
+      "section": "4. Режимы и виды работы"
+    },
+    {
+      "code": "ЩРР",
+      "id": "P03",
+      "column": "left",
+      "section": "4. Режимы и виды работы"
+    },
+    {
+      "code": "ЩСВ",
+      "id": "P03",
+      "column": "left",
+      "section": "4. Режимы и виды работы"
+    },
+    {
+      "code": "ЩСУ",
+      "id": "P03",
+      "column": "left",
+      "section": "4. Режимы и виды работы"
+    },
+    {
+      "code": "ЩЦР",
+      "id": "P03",
+      "column": "left",
+      "section": "4. Режимы и виды работы"
+    },
+    {
+      "code": "ЩЫА",
+      "id": "P03",
+      "column": "left",
+      "section": "4. Режимы и виды работы"
+    },
+    {
+      "code": "ЩЫП",
+      "id": "P03",
+      "column": "left",
+      "section": "4. Режимы и виды работы"
+    },
+    {
+      "code": "ЩЫТ",
+      "id": "P03",
+      "column": "left",
+      "section": "4. Режимы и виды работы"
+    },
+    {
+      "code": "ЩЬТ",
+      "id": "P03",
+      "column": "left",
+      "section": "4. Режимы и виды работы"
+    },
+    {
+      "code": "ЩЙБ",
+      "id": "P03",
+      "column": "left",
+      "section": "4. Режимы и виды работы"
+    },
+    {
+      "code": "ЩВЦ",
+      "id": "P03",
+      "column": "left",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩДЬ",
+      "id": "P03",
+      "column": "left",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЙЕ",
+      "id": "P03",
+      "column": "left",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЙЗ",
+      "id": "P03",
+      "column": "left",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЙИ",
+      "id": "P03",
+      "column": "left",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЙК",
+      "id": "P03",
+      "column": "left",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЙН",
+      "id": "P03",
+      "column": "left",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЙП",
+      "id": "P03",
+      "column": "left",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЙР",
+      "id": "P03",
+      "column": "left",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЙС",
+      "id": "P03",
+      "column": "left",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЙТ",
+      "id": "P03",
+      "column": "left",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЙУ",
+      "id": "P03",
+      "column": "left",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЙЦ",
+      "id": "P03",
+      "column": "left",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЛБ",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЛМ",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЛС",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩОР",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩОХ",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩРО",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩРП",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩФЬ",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЦМ",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЩР",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЫД?",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЫД",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЫЕ",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЫЙ",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЫК",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЫЛ",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩЫУ",
+      "id": "P03",
+      "column": "right",
+      "section": "5. Настройка канала и ретрансляция"
+    },
+    {
+      "code": "ЩАА",
+      "id": "P03",
+      "column": "right",
+      "section": "6. Работа буквопечатанием"
+    },
+    {
+      "code": "ЩЙГ",
+      "id": "P03",
+      "column": "right",
+      "section": "6. Работа буквопечатанием"
+    },
+    {
+      "code": "ЩЙЖ",
+      "id": "P03",
+      "column": "right",
+      "section": "6. Работа буквопечатанием"
+    },
+    {
+      "code": "ЩЙИ",
+      "id": "P03",
+      "column": "right",
+      "section": "6. Работа буквопечатанием"
+    },
+    {
+      "code": "ЩЙК",
+      "id": "P03",
+      "column": "right",
+      "section": "6. Работа буквопечатанием"
+    },
+    {
+      "code": "ЩЙО",
+      "id": "P03",
+      "column": "right",
+      "section": "6. Работа буквопечатанием"
+    },
+    {
+      "code": "ЩЙП",
+      "id": "P03",
+      "column": "right",
+      "section": "6. Работа буквопечатанием"
+    },
+    {
+      "code": "ЩОР",
+      "id": "P03",
+      "column": "right",
+      "section": "6. Работа буквопечатанием"
+    },
+    {
+      "code": "ЩОХ",
+      "id": "P03",
+      "column": "right",
+      "section": "6. Работа буквопечатанием"
+    },
+    {
+      "code": "ЩСБ",
+      "id": "P03",
+      "column": "right",
+      "section": "6. Работа буквопечатанием"
+    },
+    {
+      "code": "ЩОИ",
+      "id": "P03",
+      "column": "right",
+      "section": "6. Работа буквопечатанием"
+    }
+  ],
+  "limitations": [
+    "Издание и год фотографий не установлены; фотографии не доказывают актуальность для ВС РФ в 2026 году.",
+    "Алфавитные страницы 6–7 перенесены целиком в пределах основного листа. Тематические страницы дают индекс и значимые варианты, а не вторую посимвольную копию всех повторов.",
+    "ЩРЙ: алфавитная таблица содержит оценки 2–5, тематическая — 2–4; оценка 1 не напечатана и не добавлена.",
+    "ЩЙК: пункт 5 «нажатие» есть в алфавитной таблице и тематическом разделе 6, но отсутствует в разделе 5 и краткой памятке.",
+    "ЩСВ: в P05 есть 10-й режим ОФТ; в алфавитной таблице перечень заканчивается 9-м БД.",
+    "Код З отсылает к таблице ЗЕТ-кода, которой на пяти снимках нет. Полный З-код по этим фото восстановить нельзя.",
+    "Тематические повторы могут различаться сокращениями р/с, р/ст, р/станция и пунктуацией; эти типографские отличия не превращены в отдельные смысловые варианты.",
+    "Принадлежность к разделу или знак вопроса не заменяет формальную модель ожидаемого ответа; логика бота ещё не реализована."
+  ],
+  "entries": [
+    {
+      "code": "ЩАА",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩАА@P02",
+          "meaning": "Вашу работу получаю … 1) временами, 2) с искажениями",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "временами"
+            },
+            {
+              "value": 2,
+              "meaning": "с искажениями"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "2. Условия приема"
+        },
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "6. Работа буквопечатанием"
+        }
+      ]
+    },
+    {
+      "code": "ЩАП",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩАП@P02",
+          "meaning": "Работайте в режиме дежурного приема",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "4. Режимы и виды работы"
+        }
+      ]
+    },
+    {
+      "code": "ЩАТ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩАТ@P02",
+          "meaning": "Перед передачей прослушивайте, работаете одновременно с р/ст … (позывной)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩБЕ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩБЕ@P02",
+          "meaning": "Выключаюсь по приказу",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ЩБЕ@P05",
+          "meaning": "Выключаюсь по приказу",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "4. Режимы и виды работы"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩБМ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩБМ@P02",
+          "meaning": "Сообщаю переданную для Вас … (кем) корреспонденцию в …",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩВВ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩВВ@P02",
+          "meaning": "Откройте дополнительный прием на … кГц",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩВГ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩВГ@P02",
+          "meaning": "Примите на себя функцию главной р/ст",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩВД",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩВД@P02",
+          "meaning": "Принимаю на себя функцию главной р/ст",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩВЖ?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩВЖ?@P02",
+          "meaning": "Разрешите выключиться, за Вами слежу?",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "4. Режимы и виды работы"
+        }
+      ]
+    },
+    {
+      "code": "ЩВЖ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩВЖ@P02",
+          "meaning": "Выключение разрешаю, за Вами слежу",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "4. Режимы и виды работы"
+        }
+      ]
+    },
+    {
+      "code": "ЩВЗ?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩВЗ?@P02",
+          "meaning": "Установлена ли связь с р/ст … (позывной)?",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩВЗ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩВЗ@P02",
+          "meaning": "Связь с р/ст … (позывной) установлена",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩВМ?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩВМ?@P02",
+          "meaning": "От кого исходит р/грамма № … ?",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩВМ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩВМ@P02",
+          "meaning": "Р/грамма № … исходит от р/ст … (позывной)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩВН",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩВН@P02",
+          "meaning": "Вам р/ст … (позывной) отвечает, следите",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩВП",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩВП@P02",
+          "meaning": "Прекратите передачу, выполняйте указание главной р/ст",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ЩВП@P05",
+          "meaning": "Прекратите передачу, выполняйте указания главной радиостанции",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩВТ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩВТ@P02",
+          "meaning": "Р/грамму № … передайте для р/ст … (позывной)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩВЦ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩВЦ@P02",
+          "meaning": "Передатчик работает плохо, замените",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩДА?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩДА?@P02",
+          "meaning": "Можете ли принять р/грамму для р/ст … ?",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩДА",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩДА@P02",
+          "meaning": "Передавайте р/грамму для р/ст … (позывной)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩДБ?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩДБ?@P02",
+          "meaning": "Передали ли Вы р/грамму № … для р/ст … ?",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩДБ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩДБ@P02",
+          "meaning": "Я передал р/грамму № … для р/ст …",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩДК",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩДК@P02",
+          "meaning": "Отвечайте по очереди в алфавитном порядке позывных",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩДЦ?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩДЦ?@P02",
+          "meaning": "Вручена ли р/грамма № … адресату?",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩДЦ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩДЦ@P02",
+          "meaning": "Р/грамма № … вручена адресату в … (ч, мин)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩДЬ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩДЬ@P02",
+          "meaning": "Ваша оконечная не отвечает, проверьте",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЕЩ?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩЕЩ?@P02",
+          "meaning": "Ускорьте ответ на р/грамму № …",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЕЩ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЕЩ@P02",
+          "meaning": "На № … ответ последует, ждите",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙБ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙБ@P02",
+          "meaning": "Переходите (перехожу) на … 1) радио СТ, 2) частотную манипуляцию, 3) спецаппаратуру",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "радио СТ"
+            },
+            {
+              "value": 2,
+              "meaning": "частотную манипуляцию"
+            },
+            {
+              "value": 3,
+              "meaning": "спецаппаратуру"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "4. Режимы и виды работы"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙВ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙВ@P02",
+          "meaning": "Выключаюсь из-за грозы",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "2. Условия приема"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙГ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙГ@P02",
+          "meaning": "Переходите к обмену",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        },
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "6. Работа буквопечатанием"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙЕ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙЕ@P02",
+          "meaning": "Работайте (работаю) со сдвигом частот … 1) 500 Гц, 2) 250 Гц, 3) 125 Гц",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "500 Гц"
+            },
+            {
+              "value": 2,
+              "meaning": "250 Гц"
+            },
+            {
+              "value": 3,
+              "meaning": "125 Гц"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙЖ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙЖ@P02",
+          "meaning": "Проверьте работу «на себя»",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "6. Работа буквопечатанием"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙЗ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙЗ@P02",
+          "meaning": "Ретранслируйте для р/ст … (позывной) мою работу",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙИ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙИ@P02",
+          "meaning": "Дайте нажатие … 1) плюс, 2) минус",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "плюс"
+            },
+            {
+              "value": 2,
+              "meaning": "минус"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "5. Настройка канала и ретрансляция"
+        },
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "6. Работа буквопечатанием"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙК",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙК@P02",
+          "meaning": "От Вас получаю … 1) обратную работу, 2) преобладание плюса, 3) преобладание минуса, 4) меняющееся преобладание, 5) нажатие",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "обратную работу"
+            },
+            {
+              "value": 2,
+              "meaning": "преобладание плюса"
+            },
+            {
+              "value": 3,
+              "meaning": "преобладание минуса"
+            },
+            {
+              "value": 4,
+              "meaning": "меняющееся преобладание"
+            },
+            {
+              "value": 5,
+              "meaning": "нажатие"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩЙК@P03",
+          "meaning": "От Вас получаю … 1) обратную работу, 2) преобладание плюса, 3) преобладание минуса, 4) меняющееся преобладание",
+          "sources": [
+            {
+              "id": "P03",
+              "column": "left",
+              "section": "5. Настройка канала и ретрансляция"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "обратную работу"
+            },
+            {
+              "value": 2,
+              "meaning": "преобладание плюса"
+            },
+            {
+              "value": 3,
+              "meaning": "преобладание минуса"
+            },
+            {
+              "value": 4,
+              "meaning": "меняющееся преобладание"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩЙК@P05",
+          "meaning": "От Вас получаю: 1 — обратную работу; 2 — преобладание плюс; 3 — преобладание минус; 4 — меняющиеся преобладания",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "5. Настройка канала и ретрансляция"
+        },
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "6. Работа буквопечатанием"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙЛ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙЛ@P02",
+          "meaning": "Раздел между группами … 1) увеличьте, 2) уменьшите",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "увеличьте"
+            },
+            {
+              "value": 2,
+              "meaning": "уменьшите"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙН",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙН@P02",
+          "meaning": "Ретранслировать работу для … (позывной) не могу",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙО",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙО@P02",
+          "meaning": "Отвечать не могу. За Вами слежу",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        },
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "6. Работа буквопечатанием"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙП",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙП@P02",
+          "meaning": "Держите точки, канал сдаю на кросс",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "5. Настройка канала и ретрансляция"
+        },
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "6. Работа буквопечатанием"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙР",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙР@P02",
+          "meaning": "Ретранслируйте для меня работу р/ст … (позывной)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙС",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙС@P02",
+          "meaning": "Ретранслируйте для меня … по слуховому каналу",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙТ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙТ@P02",
+          "meaning": "Ретранслирую для Вас работу р/ст … (позывной)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙУ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙУ@P02",
+          "meaning": "Ретранслирую Вашу работу для р/ст … (позывной)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЙЦ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЙЦ@P02",
+          "meaning": "Проверьте у себя … 1) девиацию, 2) комплект, 3) манипуляцию, 4) несущую частоту, 5) канал управления",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "девиацию"
+            },
+            {
+              "value": 2,
+              "meaning": "комплект"
+            },
+            {
+              "value": 3,
+              "meaning": "манипуляцию"
+            },
+            {
+              "value": 4,
+              "meaning": "несущую частоту"
+            },
+            {
+              "value": 5,
+              "meaning": "канал управления"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЛА",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЛА@P02",
+          "meaning": "В р/грамме № … счет групп не сходится, проверьте",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩЛБ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЛБ@P02",
+          "meaning": "Передатчик заменен, следите",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЛИ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЛИ@P02",
+          "meaning": "Р/грамму № … доставьте любыми средствами, вручение подтвердите",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЛЙ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЛЙ@P02",
+          "meaning": "Р/грамму вручить не могу — нет адресата",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЛК",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЛК@P02",
+          "meaning": "Реагируйте быстрее на наши запросы",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЛМ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЛМ@P02",
+          "meaning": "Вышел из строя приемник",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЛН",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЛН@P02",
+          "meaning": "На р/грамму № … дайте квитанцию проводом",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЛС",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЛС@P02",
+          "meaning": "Подберите частоту для своего приема … 1) ниже, 2) выше",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "ниже"
+            },
+            {
+              "value": 2,
+              "meaning": "выше"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        },
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЛХ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЛХ@P02",
+          "meaning": "Передавайте рукой (ДКМ)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "4. Режимы и виды работы"
+        }
+      ]
+    },
+    {
+      "code": "ЩЛЩ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЛЩ@P02",
+          "meaning": "Повторите каждую 10-ю группу р/граммы № …",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩМЛ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩМЛ@P02",
+          "meaning": "В р/ст (р/н) № … прослушиваю работу членов экипажа, проверьте",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩОИ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩОИ@P02",
+          "meaning": "Готово, работайте",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        },
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "6. Работа буквопечатанием"
+        }
+      ]
+    },
+    {
+      "code": "ЩОР",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩОР@P02",
+          "meaning": "Дайте точки … 1) с р/станции, 2) с оконечной",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "с р/станции"
+            },
+            {
+              "value": 2,
+              "meaning": "с оконечной"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩОР@P05",
+          "meaning": "Дайте точки",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        },
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "6. Работа буквопечатанием"
+        }
+      ]
+    },
+    {
+      "code": "ЩОХ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩОХ@P02",
+          "meaning": "Дайте чистую коррекцию",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ЩОХ@P05",
+          "meaning": "Дайте коррекцию",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        },
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "6. Работа буквопечатанием"
+        }
+      ]
+    },
+    {
+      "code": "ЩРЖ?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩРЖ?@P02",
+          "meaning": "Готовы ли Вы?",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ЩРЖ?@P05",
+          "meaning": "Готовы ли Вы?",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩРЖ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩРЖ@P02",
+          "meaning": "Я готов (к работе готов)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ЩРЖ@P05",
+          "meaning": "Я готов (к работе готов)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩРЗ?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩРЗ?@P02",
+          "meaning": "Кто меня вызывает?",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩРЗ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩРЗ@P02",
+          "meaning": "Вас вызывает … (позывной)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩРЙ?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩРЙ?@P02",
+          "meaning": "Как получаете мою работу?",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "2. Условия приема"
+        }
+      ]
+    },
+    {
+      "code": "ЩРЙ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩРЙ@P02",
+          "meaning": "Вашу работу получаю … 2) плохо, 3) удовлетворительно, 4) хорошо, 5) отлично",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 2,
+              "meaning": "плохо"
+            },
+            {
+              "value": 3,
+              "meaning": "удовлетворительно"
+            },
+            {
+              "value": 4,
+              "meaning": "хорошо"
+            },
+            {
+              "value": 5,
+              "meaning": "отлично"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩРЙ@P04",
+          "meaning": "Вашу работу получаю … 2) плохо, 3) удовлетворительно, 4) хорошо",
+          "sources": [
+            {
+              "id": "P04",
+              "column": "left",
+              "section": "2. Условия приема"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 2,
+              "meaning": "плохо"
+            },
+            {
+              "value": 3,
+              "meaning": "удовлетворительно"
+            },
+            {
+              "value": 4,
+              "meaning": "хорошо"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "2. Условия приема"
+        }
+      ]
+    },
+    {
+      "code": "ЩРК?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩРК?@P02",
+          "meaning": "Какова разборчивость моих (или …) сигналов?",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩРК?@P05",
+          "meaning": "Какова разборчивость моих сигналов … (позывной)?",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "2. Условия приема"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩРК",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩРК@P02",
+          "meaning": "Ваши (или …) сигналы … 1) неразборчивы, 2) разборчивы временами, 3) разборчивы с трудом, 4) разборчивы, 5) вполне разборчивы",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "неразборчивы"
+            },
+            {
+              "value": 2,
+              "meaning": "разборчивы временами"
+            },
+            {
+              "value": 3,
+              "meaning": "разборчивы с трудом"
+            },
+            {
+              "value": 4,
+              "meaning": "разборчивы"
+            },
+            {
+              "value": 5,
+              "meaning": "вполне разборчивы"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩРК@P05",
+          "meaning": "Ваши сигналы или сигналы … (позывной): 1 — неразборчивы, 2 — разборчивы временами, 3 — разборчивы с трудом, 4 — разборчивы, 5 — вполне разборчивы",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "2. Условия приема"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩРЛ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩРЛ@P02",
+          "meaning": "Я занят, просьба не мешать",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩРО",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩРО@P02",
+          "meaning": "Увеличьте мощность передатчика",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ЩРО@P05",
+          "meaning": "Увеличьте мощность передатчика",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩРП",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩРП@P02",
+          "meaning": "Уменьшите мощность передатчика",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ЩРП@P05",
+          "meaning": "Уменьшите мощность передатчика",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩРР",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩРР@P02",
+          "meaning": "Работайте аппаратурой Т-600",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "4. Режимы и виды работы"
+        }
+      ]
+    },
+    {
+      "code": "ЩРС",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩРС@P02",
+          "meaning": "Передавайте медленнее (… групп/мин)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "parameterUnit": "groups/min",
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩРС@P05",
+          "meaning": "Передавайте медленнее (… слов в минуту)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "parameterUnit": "words/min",
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩРУ?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩРУ?@P02",
+          "meaning": "Имеете ли Вы что-нибудь для меня?",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩРУ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩРУ@P02",
+          "meaning": "Для Вас ничего не имею",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩРХ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩРХ@P02",
+          "meaning": "Ваша частота меняется",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "2. Условия приема"
+        }
+      ]
+    },
+    {
+      "code": "ЩРЩ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩРЩ@P02",
+          "meaning": "Передавайте быстрее (… групп/мин)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "parameterUnit": "groups/min",
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩРЩ@P05",
+          "meaning": "Передавайте быстрее (… слов в минуту)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "parameterUnit": "words/min",
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩСА?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩСА?@P02",
+          "meaning": "Какова сила моих (или …) сигналов?",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩСА?@P05",
+          "meaning": "Какова сила моих сигналов … (позывной)?",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "2. Условия приема"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩСА",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩСА@P02",
+          "meaning": "Ваши (или …) сигналы … 1) очень слабые, 2) слабые, 3) удовлетворительные, 4) хорошие, 5) очень хорошие",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "очень слабые"
+            },
+            {
+              "value": 2,
+              "meaning": "слабые"
+            },
+            {
+              "value": 3,
+              "meaning": "удовлетворительные"
+            },
+            {
+              "value": 4,
+              "meaning": "хорошие"
+            },
+            {
+              "value": 5,
+              "meaning": "очень хорошие"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩСА@P05",
+          "meaning": "Ваши сигналы или сигналы … (позывной): 1 — едва слышны, 2 — слабые, 3 — удовлетворительные, 4 — хорошие, 5 — очень хорошие",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "2. Условия приема"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩСБ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩСБ@P02",
+          "meaning": "Ваши сигналы …, проверьте 1) слабеют, 2) сливаются, 3) замирают",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "слабеют"
+            },
+            {
+              "value": 2,
+              "meaning": "сливаются"
+            },
+            {
+              "value": 3,
+              "meaning": "замирают"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "2. Условия приема"
+        },
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "6. Работа буквопечатанием"
+        }
+      ]
+    },
+    {
+      "code": "ЩСВ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩСВ@P02",
+          "meaning": "Работайте (ю) в режиме … 1) АТ, 2) ЧТ-125, 3) ЧТ-250, 4) ЧТ-500, 5) ДЧТ-125, 6) ДЧТ-250, 7) ДЧТ-500, 8) ЧТ бпч, 9) БД",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "АТ"
+            },
+            {
+              "value": 2,
+              "meaning": "ЧТ-125"
+            },
+            {
+              "value": 3,
+              "meaning": "ЧТ-250"
+            },
+            {
+              "value": 4,
+              "meaning": "ЧТ-500"
+            },
+            {
+              "value": 5,
+              "meaning": "ДЧТ-125"
+            },
+            {
+              "value": 6,
+              "meaning": "ДЧТ-250"
+            },
+            {
+              "value": 7,
+              "meaning": "ДЧТ-500"
+            },
+            {
+              "value": 8,
+              "meaning": "ЧТ бпч"
+            },
+            {
+              "value": 9,
+              "meaning": "БД"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩСВ@P05",
+          "meaning": "Работайте (ю) в режиме … 1) АТ; 2) ЧТ 125; 3) ЧТ-250; 4) ЧТ-500; 5) ДЧТ 125; 6) ДЧТ 250; 7) ДЧТ-500; 8) ЧТ бпч; 9) БД; 10) ОФТ",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "АТ"
+            },
+            {
+              "value": 2,
+              "meaning": "ЧТ 125"
+            },
+            {
+              "value": 3,
+              "meaning": "ЧТ-250"
+            },
+            {
+              "value": 4,
+              "meaning": "ЧТ-500"
+            },
+            {
+              "value": 5,
+              "meaning": "ДЧТ 125"
+            },
+            {
+              "value": 6,
+              "meaning": "ДЧТ 250"
+            },
+            {
+              "value": 7,
+              "meaning": "ДЧТ-500"
+            },
+            {
+              "value": 8,
+              "meaning": "ЧТ бпч"
+            },
+            {
+              "value": 9,
+              "meaning": "БД"
+            },
+            {
+              "value": 10,
+              "meaning": "ОФТ"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "4. Режимы и виды работы"
+        }
+      ]
+    },
+    {
+      "code": "ЩСГ?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩСГ?@P02",
+          "meaning": "Могу ли я передавать по … р/грамм подряд?",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩСГ?@P05",
+          "meaning": "Могу ли я передать по … радиограммы подряд?",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩСГ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩСГ@P02",
+          "meaning": "Передавайте по … р/грамм подряд",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩСГ@P05",
+          "meaning": "Передайте по … радиограммы подряд",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩСД",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩСД@P02",
+          "meaning": "Ваша манипуляция на … канале искажается",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "2. Условия приема"
+        }
+      ]
+    },
+    {
+      "code": "ЩСЖ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩСЖ@P02",
+          "meaning": "Дайте серию букв «Ж» (дайте настройку)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ЩСЖ@P05",
+          "meaning": "Передайте серию букв Ж (дайте настройку)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩСЗ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩСЗ@P02",
+          "meaning": "Передавайте каждую группу дважды (или по … раз)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩСМ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩСМ@P02",
+          "meaning": "Повторите последнюю переданную Вами р/грамму (или р/грамму № …)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩСО?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩСО?@P02",
+          "meaning": "Можете ли Вы связаться с р/ст … (позывной)",
+          "sources": [
+            {
+              "id": "P02",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩСО",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩСО@P01",
+          "meaning": "Я могу связаться с р/ст … (или могу связаться через р/ст …)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩСУ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩСУ@P01",
+          "meaning": "Работайте (ю) в режиме … 1) ВБП, 2) НБП, 3) ЧМ, 4) АМ, 5) ВБ + НБ",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "ВБП"
+            },
+            {
+              "value": 2,
+              "meaning": "НБП"
+            },
+            {
+              "value": 3,
+              "meaning": "ЧМ"
+            },
+            {
+              "value": 4,
+              "meaning": "АМ"
+            },
+            {
+              "value": 5,
+              "meaning": "ВБ + НБ"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩСУ@P05",
+          "meaning": "Работайте в режиме: 1) ВБП; 2) НБП; 3) ЧМ; 4) АМ; 5) ВБ+НБ",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "ВБП"
+            },
+            {
+              "value": 2,
+              "meaning": "НБП"
+            },
+            {
+              "value": 3,
+              "meaning": "ЧМ"
+            },
+            {
+              "value": 4,
+              "meaning": "АМ"
+            },
+            {
+              "value": 5,
+              "meaning": "ВБ+НБ"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "4. Режимы и виды работы"
+        }
+      ]
+    },
+    {
+      "code": "ЩСФ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩСФ@P01",
+          "meaning": "Буду передавать р/грамму частями по … групп",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩТА",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩТА@P01",
+          "meaning": "Р/грамму № … аннулируйте",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩТБ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩТБ@P01",
+          "meaning": "Я не согласен с Вашим счетом групп. Повторяю 1-й знак каждой группы",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩТД",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩТД@P01",
+          "meaning": "Ваш счет групп верен",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩТР?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩТР?@P01",
+          "meaning": "Каково точное время?",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ЩТР?@P05",
+          "meaning": "Каково точное время?",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩТР",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩТР@P01",
+          "meaning": "Точное время … (ч, мин)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "ЩТР@P05",
+          "meaning": "Точное время … (часы, минуты)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩТЦ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩТЦ@P01",
+          "meaning": "Примите р/грамму",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ЩТЦ@P05",
+          "meaning": "Примите радиограмму",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩУЦ?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩУЦ?@P01",
+          "meaning": "Какой № последней р/граммы, принятой от меня?",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩУЦ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩУЦ@P01",
+          "meaning": "Номер последней принятой от Вас р/граммы …",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩФЙ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩФЙ@P01",
+          "meaning": "Работайте азимутом … градусов",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩФЬ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩФЬ@P01",
+          "meaning": "Работайте (ю) на антенну … 1) ромб, 2) диполь, 3) Т-образная, 4) У-образная, 5) бегущей волны, 6) штырь, 7) крышевая",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "ромб"
+            },
+            {
+              "value": 2,
+              "meaning": "диполь"
+            },
+            {
+              "value": 3,
+              "meaning": "Т-образная"
+            },
+            {
+              "value": 4,
+              "meaning": "У-образная"
+            },
+            {
+              "value": 5,
+              "meaning": "бегущей волны"
+            },
+            {
+              "value": 6,
+              "meaning": "штырь"
+            },
+            {
+              "value": 7,
+              "meaning": "крышевая"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЦЗ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЦЗ@P01",
+          "meaning": "Вы нарушаете правила радиообмена",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ЩЦЗ@P05",
+          "meaning": "Вы нарушаете правила радиосвязи (инструкции)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩЦМ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЦМ@P01",
+          "meaning": "Ваш передатчик неисправен, проверьте",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ЩЦМ@P05",
+          "meaning": "Ваш передатчик неисправен, проверьте",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЦР",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЦР@P01",
+          "meaning": "Дежурство (вахту) нести до особого распоряжения",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "4. Режимы и виды работы"
+        }
+      ]
+    },
+    {
+      "code": "ЩЦЬ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЦЬ@P01",
+          "meaning": "Вы работаете неверными позывными, проверьте",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ЩЦЬ@P05",
+          "meaning": "Вы работаете неверными позывными, проверьте",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЩЩР",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЩР@P01",
+          "meaning": "У меня отказал (неисправен) … 1) приемник, 2) УКВ передатчик, 3) антенная система, 4) система питания, 5) система дистанционного управления, 6) оконечная аппаратура",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "приемник"
+            },
+            {
+              "value": 2,
+              "meaning": "УКВ передатчик"
+            },
+            {
+              "value": 3,
+              "meaning": "антенная система"
+            },
+            {
+              "value": 4,
+              "meaning": "система питания"
+            },
+            {
+              "value": 5,
+              "meaning": "система дистанционного управления"
+            },
+            {
+              "value": 6,
+              "meaning": "оконечная аппаратура"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЩС?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩЩС?@P01",
+          "meaning": "Принята ли от меня (или от …) р/грамма, переданная в … ?",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЩС",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЩС@P01",
+          "meaning": "Р/грамма от Вас (или …), переданная в … принята",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЩТ?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩЩТ?@P01",
+          "meaning": "Повторите, что Вами (или …) было передано в …",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЩТ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЩТ@P01",
+          "meaning": "Повторяю, что мною (или …) было передано в …",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫА",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫА@P01",
+          "meaning": "Без разрешения связь с … не прекращать",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "4. Режимы и виды работы"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫБ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫБ@P01",
+          "meaning": "Срочно дайте ответ на нашу р/грамму № …",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫВ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫВ@P01",
+          "meaning": "Помогите мне связаться с …",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫГ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫГ@P01",
+          "meaning": "Ответа на р/грамму № … нет",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫД?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩЫД?@P01",
+          "meaning": "Сообщите причину неответа с … до … (ч, мин)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫД",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫД@P01",
+          "meaning": "Работать не мог по причине … 1) неисправности аппаратуры, 2) ухудшения прохождения радиоволн, 3) наличия помех",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "неисправности аппаратуры"
+            },
+            {
+              "value": 2,
+              "meaning": "ухудшения прохождения радиоволн"
+            },
+            {
+              "value": 3,
+              "meaning": "наличия помех"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫЕ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫЕ@P01",
+          "meaning": "Сообщите время перехода на … частоты 1) дневные, 2) ночные",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "дневные"
+            },
+            {
+              "value": 2,
+              "meaning": "ночные"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫЖ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫЖ@P01",
+          "meaning": "Р/грамма № … (сообщение) … 1) искажена, 2) не раскодируется",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "искажена"
+            },
+            {
+              "value": 2,
+              "meaning": "не раскодируется"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫЗ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫЗ@P01",
+          "meaning": "Вас вызываю, слежу. Немедленно отвечайте",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫИ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫИ@P01",
+          "meaning": "Имеется срочная нагрузка, обеспечьте прием",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫЙ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫЙ@P01",
+          "meaning": "Снимите высокое напряжение на … мин",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫК",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫК@P01",
+          "meaning": "… генератор 1) дайте нормальный, 2) снимите",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "дайте нормальный"
+            },
+            {
+              "value": 2,
+              "meaning": "снимите"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫЛ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫЛ@P01",
+          "meaning": "Наблюдаю взаимное влияние каналов",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫМ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫМ@P01",
+          "meaning": "Откройте связь с ВзПУ по варианту № …",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "left",
+          "section": "1. Установление связи"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫП",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫП@P01",
+          "meaning": "Переходите на один канал",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "4. Режимы и виды работы"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫТ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫТ@P01",
+          "meaning": "Работайте аппаратурой … 1) Т-206, 2) Т-207, 3) Т-217 (Т-617), 4) Т-219 (Т-817), 5) Т-222, 6) Т-230, 7) Т-226, 8) Р-016В, 9) Т-208",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "Т-206"
+            },
+            {
+              "value": 2,
+              "meaning": "Т-207"
+            },
+            {
+              "value": 3,
+              "meaning": "Т-217 (Т-617)"
+            },
+            {
+              "value": 4,
+              "meaning": "Т-219 (Т-817)"
+            },
+            {
+              "value": 5,
+              "meaning": "Т-222"
+            },
+            {
+              "value": 6,
+              "meaning": "Т-230"
+            },
+            {
+              "value": 7,
+              "meaning": "Т-226"
+            },
+            {
+              "value": 8,
+              "meaning": "Р-016В"
+            },
+            {
+              "value": 9,
+              "meaning": "Т-208"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "4. Режимы и виды работы"
+        }
+      ]
+    },
+    {
+      "code": "ЩЫУ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫУ@P01",
+          "meaning": "… уровень на входе возбудителя 1) уменьшите, 2) увеличьте",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "left"
+            }
+          ],
+          "numberedOptions": [
+            {
+              "value": 1,
+              "meaning": "уменьшите"
+            },
+            {
+              "value": 2,
+              "meaning": "увеличьте"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "right",
+          "section": "5. Настройка канала и ретрансляция"
+        }
+      ]
+    },
+    {
+      "code": "ЩЬС",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЬС@P01",
+          "meaning": "Пригласите к аппарату … (позывной) для переговоров",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЬТ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЬТ@P01",
+          "meaning": "Прекратите связь до … (ч, мин)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "4. Режимы и виды работы"
+        }
+      ]
+    },
+    {
+      "code": "ЩЬУ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЬУ@P01",
+          "meaning": "Ваша р/грамма № … не получена",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЬЩ?",
+      "family": "Щ-код",
+      "questionMarkPrinted": true,
+      "variants": [
+        {
+          "id": "ЩЬЩ?@P01",
+          "meaning": "Подтвердите ясность и исполнение нашего № …",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P04",
+          "column": "right",
+          "section": "3. Ведение радиообмена"
+        }
+      ]
+    },
+    {
+      "code": "ЩЬЩ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЬЩ@P01",
+          "meaning": "Ясность и исполнение № … подтверждаю",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "3. Ведение радиообмена (окончание)"
+        }
+      ]
+    },
+    {
+      "code": "ЩЬЬ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЬЬ@P01",
+          "meaning": "Прошу заменить оператора",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "thematicOccurrences": [
+        {
+          "id": "P03",
+          "column": "left",
+          "section": "3. Ведение радиообмена (окончание)"
+        }
+      ]
+    },
+    {
+      "code": "АА",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "АА@P01",
+          "meaning": "Все после …",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "АА@P05",
+          "meaning": "Все после (номер группы или сама группа)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "АБ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "АБ@P01",
+          "meaning": "Все перед …",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "АБ@P05",
+          "meaning": "Все перед (номер группы или сама группа)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "АБЖ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "АБЖ@P01",
+          "meaning": "Повторите (ю) цифры в сокращенной форме",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "АГН",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "АГН@P01",
+          "meaning": "Снова",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "АГН@P05",
+          "meaning": "Снова",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "АДС",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "АДС@P01",
+          "meaning": "Адрес",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "АДС@P05",
+          "meaning": "Адрес",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "АЛ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "АЛ@P01",
+          "meaning": "Все, что только было передано",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "АЛ@P05",
+          "meaning": "Все, что только было передано",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "АНТ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "АНТ@P01",
+          "meaning": "Перед",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "АР",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "АР@P01",
+          "meaning": "Конец моей передачи, ответ не требуется",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "АР@P05",
+          "meaning": "Конец передачи, ответ не требуется",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "АС",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "АС@P01",
+          "meaning": "Ждите",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "АС@P05",
+          "meaning": "Ждите (указывается, сколько ждать)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "БК",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "БК@P01",
+          "meaning": "Прекратите передачу",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "БК@P05",
+          "meaning": "Прекратите передачу",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "БН",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "БН@P01",
+          "meaning": "Все между … и …",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        },
+        {
+          "id": "БН@P05",
+          "meaning": "Все между (номер группы или сами группы)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "БЩ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "БЩ@P01",
+          "meaning": "Даю просимую справку (ответ на «РЩ»)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "В",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "В@P01",
+          "meaning": "Слово (а) или группа (ы)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "ГА",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ГА@P01",
+          "meaning": "Возобновите передачу",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ГА@P05",
+          "meaning": "Возобновите передачу",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ГР",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ГР@P01",
+          "meaning": "Группа (ы)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ГР@P05",
+          "meaning": "Группа (группы)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ДЕ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ДЕ@P01",
+          "meaning": "Знак раздела между позывными",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ДЕ@P05",
+          "meaning": "Раздел между позывными (смысл — Я)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЕР",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЕР@P01",
+          "meaning": "Здесь",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "З",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "З@P01",
+          "meaning": "Смотрите таблицу ЗЕТ кода",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "К",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "К@P01",
+          "meaning": "Конец моей передачи, жду ответа",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "К@P05",
+          "meaning": "Знак окончания передачи (предложение к передаче корреспонденту)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "КЫ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "КЫ@P01",
+          "meaning": "Ключ (ключи)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "КЫ@P05",
+          "meaning": "Ключ (ключи)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "НВ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "НВ@P01",
+          "meaning": "Начинаю передачу",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "НВ@P05",
+          "meaning": "Начинаю передачу",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "НО",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "НО@P01",
+          "meaning": "Нет (отрицание)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "НО@P05",
+          "meaning": "Нет",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "НР",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "НР@P01",
+          "meaning": "Номер",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "НР@P05",
+          "meaning": "Номер",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ОК",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ОК@P01",
+          "meaning": "Понял (согласен)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ОК@P05",
+          "meaning": "Понял (согласен)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ПБЛ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ПБЛ@P01",
+          "meaning": "Заголовок",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ПБЛ@P05",
+          "meaning": "Заголовок",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "Р",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "Р@P01",
+          "meaning": "Принято (подтверждение приема)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "Р@P05",
+          "meaning": "Принято (подтверждение приема)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "РПТ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "РПТ@P01",
+          "meaning": "Повторите (повторяю)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "РПТ@P05",
+          "meaning": "Повторите (повторяю)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "РЩ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "РЩ@P01",
+          "meaning": "Указание просьбы (запрос)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "СК",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "СК@P01",
+          "meaning": "Конец работы связи",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "СК@P05",
+          "meaning": "Конец работы связи",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "СОС",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "СОС@P01",
+          "meaning": "Сигнал бедствия",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "СОС@P05",
+          "meaning": "Сигнал бедствия",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "ТК",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ТК@P01",
+          "meaning": "Так (применяется при буквопечатании)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "ТТТ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ТТТ@P01",
+          "meaning": "Сигнал безопасности",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "ТЬТ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ТЬТ@P01",
+          "meaning": "Текст",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ТЬТ@P05",
+          "meaning": "Текст",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ФИ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ФИ@P01",
+          "meaning": "Повторите (повторяю) цифры",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "ФОР",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ФОР@P01",
+          "meaning": "Для",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ФОР@P05",
+          "meaning": "Для",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "ФМ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ФМ@P01",
+          "meaning": "Из",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ФМ@P05",
+          "meaning": "Из",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "Ц",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "Ц@P01",
+          "meaning": "Да",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "Ц@P05",
+          "meaning": "Да",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "ЦОЛ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЦОЛ@P01",
+          "meaning": "Проверьте (проверяю)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "ЦОР",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЦОР@P01",
+          "meaning": "Исправление …",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": true
+        }
+      ]
+    },
+    {
+      "code": "ЦФМ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЦФМ@P01",
+          "meaning": "Подтвердите (подтверждаю)",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "ЦЩ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЦЩ@P01",
+          "meaning": "Общий вызов всем станциям",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    },
+    {
+      "code": "Щ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "Щ@P01",
+          "meaning": "Смотрите таблицу Щ-кода",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "ЬЩ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЬЩ@P01",
+          "meaning": "Служебная записка по вопросам связи",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "ЬЬЬ",
+      "family": "Служебное сокращение",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЬЬЬ@P01",
+          "meaning": "Сигнал срочности",
+          "sources": [
+            {
+              "id": "P01",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        },
+        {
+          "id": "ЬЬЬ@P05",
+          "meaning": "Срочное сообщение (сигнал)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "ЩСТ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩСТ@P05",
+          "meaning": "Работайте со мной радиотелефоном",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "left"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ]
+    },
+    {
+      "code": "ЩЫК1",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫК1@P05",
+          "meaning": "Дайте генератор",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "baseCode": "ЩЫК"
+    },
+    {
+      "code": "ЩЫК2",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩЫК2@P05",
+          "meaning": "Снимите генератор",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "baseCode": "ЩЫК"
+    },
+    {
+      "code": "ЩДВ",
+      "family": "Щ-код",
+      "questionMarkPrinted": false,
+      "variants": [
+        {
+          "id": "ЩДВ@P05",
+          "meaning": "Переходите на запасную частоту (кГц)",
+          "sources": [
+            {
+              "id": "P05",
+              "column": "right"
+            }
+          ],
+          "hasParameterPlaceholder": false
+        }
+      ],
+      "task5Candidate": true
+    }
+  ],
+  "statistics": {
+    "forms": 180,
+    "baseCodes": 157,
+    "meaningVariants": 236,
+    "questionForms": 21,
+    "thematicOccurrences": 143,
+    "photos": 5,
+    "task5Candidates": 41,
+    "alphabeticalForms": 176
+  }
+}

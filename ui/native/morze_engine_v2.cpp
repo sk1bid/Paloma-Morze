@@ -118,13 +118,15 @@ bool process_command(const std::string& line, MorseState& state) {
   uint32_t requestId=0;
   try {
     std::istringstream in(line);std::string verb;in>>verb;
-    if(verb=="P") {
+    if(verb=="P" || verb=="P_SAFE") {
       morse::Settings settings;int square,quality;std::string patterns;
       if(!(in>>requestId>>settings.speed>>settings.period>>settings.ratio>>settings.pause>>settings.front>>square>>quality>>settings.spacing>>patterns))
         throw std::runtime_error("invalid-play-command");
       settings.square=square!=0;settings.original=quality!=0;
       std::string extra;if(in>>extra)throw std::runtime_error("invalid-play-command");
-      if(!state.submit(morse::makePlan(requestId,settings,patterns,state.rate)))throw std::runtime_error("audio-queue-full");
+      auto plan=morse::makePlan(requestId,settings,patterns,state.rate);
+      plan.keyProtected=verb=="P_SAFE";
+      if(!state.submit(std::move(plan)))throw std::runtime_error("audio-queue-full");
     } else if(verb=="STOP") {in>>requestId;state.stop(requestId);}
     else if(verb=="RESET") {state.stop();state.local=false;state.remote=false;state.muted=false;state.clearNotice();}
     else if(verb=="K") {

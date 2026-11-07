@@ -225,6 +225,8 @@ final class RadioModel {
             if case .connectionLost = screen { return }
             screen = .lobby(.failed(reason))
         case .joined(let room):
+            keyUp()
+            setRemoteKey(false)
             localRhythm.clear()
             remoteRhythm.clear()
             screen = .room(RoomSession(room: room, participants: [], owner: room.owner, phase: .waitingForCorrespondent))
@@ -250,6 +252,7 @@ final class RadioModel {
             screen = .room(session)
         case .sessionLaunched:
             guard case .room(var session) = screen else { return }
+            keyUp()
             localRhythm.clear(); remoteRhythm.clear()
             if remoteKeyDown { remoteRhythm.press() }
             audio.service.setSidetoneMuted(remoteKeyDown)
@@ -276,6 +279,7 @@ final class RadioModel {
             loss.attempt = attempt
             screen = .connectionLost(loss)
         case .connectionRestored:
+            if case .connectionLost = screen { screen = .lobby(.loading) }
             refreshRooms()
         }
     }

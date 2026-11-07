@@ -90,7 +90,7 @@ const LobbyBrowser = ({
         token
       });
       setShowCreateModal(false);
-      onJoinRoom(resp.data.id, newRoomPassword);
+      onJoinRoom(resp.data.id, isPrivate ? newRoomPassword : '');
     } catch (e) {
       alert('Ошибка при создании комнаты');
     }

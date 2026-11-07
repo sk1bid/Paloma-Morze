@@ -1,0 +1,91 @@
+name: Four-client preview
+
+on:
+  push:
+    branches: ['ci/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # CI already calls the reusable native macOS workflow, which tests and uploads
+  # its universal preview. Do not build that fourth client a second time here.
+  validate:
+    name: Validate all clients and build native preview
+    uses: ./.github/workflows/ci.yml
+
+  electron-preview:
+    name: Electron preview (${{ matrix.platform }})
+    needs: validate
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            artifacts: ui/release/*.AppImage
+          - os: windows-latest
+            platform: win
+            artifacts: ui/release/*.exe
+          - os: macos-latest
+            platform: mac
+            artifacts: |
+              ui/release/*.dmg
+              ui/release/*.zip
+    env:
+      # These are production renderers, never the local DEV inspection build.
+      VITE_TASK5_DEV_TOOLS: '0'
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      MAC_SIGN_IDENTITY: '-'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install Linux audio headers
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+
+      - name: Compile native audio helper for the packaged client
+        shell: bash
+        run: |
+          set -euo pipefail
+          flags=(-std=c++17 -O2 -lpthread -lm)
+          case "$RUNNER_OS" in
+            Linux) flags+=(-lasound -ldl); engine=ui/native/morze_app ;;
+            macOS) flags+=(-framework CoreAudio -framework AudioUnit -framework CoreFoundation); engine=ui/native/morze_app ;;
+            Windows) flags+=(-static); engine=ui/native/morze_app.exe ;;
+          esac
+          g++ ui/native/morze_engine_v2.cpp -I ui/native -o "$engine" "${flags[@]}"
+
+      - name: Install locked dependencies
+        working-directory: ui
+        run: npm ci
+
+      - name: Build production renderer
+        working-directory: ui
+        run: npm run build
+
+      - name: Package preview without publishing
+        working-directory: ui
+        run: npx electron-builder --${{ matrix.platform }} --publish never
+
+      - name: Retain Electron preview packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: preview-electron-${{ matrix.platform }}-${{ runner.arch }}
+          path: ${{ matrix.artifacts }}
+          if-no-files-found: error
+          retention-days: 7

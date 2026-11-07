@@ -2,14 +2,33 @@
 // Run: node local-relay-fixture.cjs /absolute/path/to/socket.io 33071
 const http = require('node:http');
 const {Server} = require(process.argv[2]);
+// Match Electron's installed Socket.IO client, independently of the server version.
+// This peer exercises the same event contract as Electron, not a packet mock.
+const {io: javascriptClient} = require(require.resolve('socket.io-client', {paths:[process.argv[2] + '/..']}));
 const port = Number(process.argv[3] || 33071);
 const rooms = new Map();
 const members = new Map();
 let next = 0;
+const peers = new Map();
 const server = http.createServer(async (req,res) => {
   let raw=''; for await(const data of req) raw += data;
   const body=raw ? JSON.parse(raw) : {};
   const reply=(code,value)=>{res.writeHead(code,{'Content-Type':'application/json'});res.end(JSON.stringify(value));};
+  if(req.url === '/fixture/js-peer' && req.method === 'POST') {
+    if(body.action === 'connect') {
+      const socket = javascriptClient(`http://127.0.0.1:${port}`, {transports:['websocket'], auth:{callsign:body.callsign}, reconnection:false});
+      const peer = {socket, events:[]}; peers.set(body.callsign, peer);
+      socket.onAny((name, value)=>peer.events.push({name, value}));
+      try { await new Promise((resolve,reject)=>{socket.once('connect',resolve);socket.once('connect_error',reject);setTimeout(()=>reject(new Error('JS peer timeout')),3000).unref();}); }
+      catch(error) { socket.disconnect(); return reply(500,{error:error.message}); }
+      return reply(200,{ok:true});
+    }
+    const peer = peers.get(body.callsign);
+    if(!peer) return reply(404,{error:'Unknown JS peer'});
+    if(body.action === 'emit') peer.socket.emit(body.name,body.value);
+    if(body.action === 'close') { peer.socket.disconnect(); peers.delete(body.callsign); }
+    return reply(200,{events:peer.events});
+  }
   if(req.url === '/api/auth/login' || req.url === '/api/auth/register') {
     if(body.password !== 'fixture-pass') return reply(401,{error:'Invalid callsign or password'});
     const callsign=body.callsign.toUpperCase(); return reply(200,{token:'fixture-'+callsign,user:{userId:callsign,callsign}});

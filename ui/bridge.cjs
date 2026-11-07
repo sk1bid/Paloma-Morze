@@ -55,11 +55,12 @@ function message(ws, data) {
         if (!validSettings(m.settings) || !Array.isArray(m.patterns) || m.patterns.length>2000 ||
             !m.patterns.length || m.patterns.some(p => typeof p!=='string'|| !/^(?:[.-]+(?:,[.-]+)*|\/)$/.test(p)) ||
             m.patterns.join('|').length>20000 || !['text','learning','repeat'].includes(m.spacing) ||
+            (m.protectedFromKey !== undefined && typeof m.protectedFromKey !== 'boolean') ||
             (typeof m.id !== 'string' && typeof m.id !== 'number')) { error(ws,m.id,'Invalid audio sequence'); return; }
         if (requests.size>=64) { error(ws,m.id,'Audio queue full'); return; }
         const s=m.settings, id=nextId++;
         requests.set(id,{ ws,id:m.id }); audioOwner=ws;
-        write(`P ${id} ${s.speed} ${Math.round(11025/s.frequency)} ${Math.round(s.ratio*10)} ${Math.round(s.pause*10)} ${s.front} ${s.waveform==='square'?1:0} ${s.quality==='original'?1:0} ${['text','learning','repeat'].indexOf(m.spacing)} ${m.patterns.join('|')}`);
+        write(`${m.protectedFromKey ? 'P_SAFE' : 'P'} ${id} ${s.speed} ${Math.round(11025/s.frequency)} ${Math.round(s.ratio*10)} ${Math.round(s.pause*10)} ${s.front} ${s.waveform==='square'?1:0} ${s.quality==='original'?1:0} ${['text','learning','repeat'].indexOf(m.spacing)} ${m.patterns.join('|')}`);
     } else if (m.op === 'key' && ['local','remote'].includes(m.source) && typeof m.down === 'boolean') {
         audioOwner=ws; write(`K ${m.source} ${m.down?1:0}`);
     } else if (m.op === 'stop') {

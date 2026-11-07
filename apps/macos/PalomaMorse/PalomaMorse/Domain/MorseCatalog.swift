@@ -123,7 +123,8 @@ struct MorseCatalog: Decodable {
         }
         if let overridden = overrides.sorted(by: { $0.value.order == $1.value.order ? $0.key < $1.key : $0.value.order < $1.value.order }).last(where: { $0.value.pattern == pattern && !pattern.isEmpty }) { return overridden.key }
         let table = alphabets[alphabet.rawValue] ?? [:]
-        return table.first { $0.value == pattern }?.key ?? "?"
+        // Keep undecodable input distinct from the valid question-mark signal.
+        return table.first { $0.value == pattern }?.key ?? "�"
     }
 
     /// Meaning of a 3–4 letter Q-code at the end of decoded text, if any.

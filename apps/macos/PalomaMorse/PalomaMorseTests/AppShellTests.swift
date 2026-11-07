@@ -17,7 +17,7 @@ struct AppShellTests {
     }
 
     @Test func modesMatchTheReleasedTabs() {
-        #expect(AppSection.allCases.map(\.title) == ["Приём", "Передача", "Эфир"])
+        #expect(AppSection.allCases.map(\.title) == ["Приём", "Передача", "Эфир", "Задача №5"])
         #expect(model.section == .reception)
     }
 

@@ -16,10 +16,15 @@ final class NativeKeyboardInput {
             return handle(event)
         }
         focusObserver = NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.release() }
+            MainActor.assumeIsolated { self?.focusLost() }
         }
-        windowObserver = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.release() }
+        windowObserver = NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: nil, queue: .main) { [weak self] note in
+            MainActor.assumeIsolated {
+                guard let window = note.object as? NSWindow,
+                      window.title == "Paloma Morse", window.attachedSheet == nil else { return }
+                self?.release()
+                self?.model?.task5.focusLost()
+            }
         }
     }
     func stop() {
@@ -30,7 +35,11 @@ final class NativeKeyboardInput {
     }
     private func release() {
         held = false; heldScan = nil
-        model?.transmission.releaseKey(); model?.radio.keyUp()
+        model?.transmission.releaseKey(); model?.radio.keyUp(); model?.task5.releaseKey()
+    }
+    private func focusLost() {
+        release()
+        model?.task5.focusLost()
     }
     func handle(_ event: NSEvent, in window: NSWindow? = NSApp.keyWindow) -> NSEvent? {
         guard let model else { return event }
@@ -62,6 +71,10 @@ final class NativeKeyboardInput {
         guard !event.isARepeat, !held else { return nil }
         if model.section == .transmission {
             held = true; heldScan = event.keyCode; model.transmission.keyDown(from: .keyboard); return nil
+        } else if model.section == .task5, model.task5.isSessionActive {
+            held = true; heldScan = event.keyCode
+            if model.task5.canSubmit { model.task5.keyDown(from: .keyboard) }
+            return nil
         } else if model.section == .radio, model.radio.isLive {
             held = true; heldScan = event.keyCode; model.radio.keyDown(); return nil
         }

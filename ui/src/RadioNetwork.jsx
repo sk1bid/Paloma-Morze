@@ -31,6 +31,8 @@ export const RadioNetwork = ({
   onQuit
 }) => {
   const [isLocalPressed, setIsLocalPressed] = useState(false);
+  const localPressed = useRef(false);
+  const localSource = useRef(null);
   const localEvents = useRef([]);
   const remoteEvents = useRef([]);
 
@@ -70,8 +72,12 @@ export const RadioNetwork = ({
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.repeat) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
       if (e.code === transmissionKey) {
         e.preventDefault();
+        if (localPressed.current) return;
+        localPressed.current = true;
+        localSource.current = 'keyboard';
         lastLocalPressTime.current = Date.now();
         setIsLocalPressed(true);
         audioEngine.init();
@@ -81,20 +87,34 @@ export const RadioNetwork = ({
     };
 
     const handleKeyUp = (e) => {
-      if (e.code === transmissionKey) {
+      if (e.code === transmissionKey && localPressed.current && localSource.current === 'keyboard') {
         e.preventDefault();
+        localPressed.current = false;
+        localSource.current = null;
         setIsLocalPressed(false);
         audioEngine.keyUp('local');
         emitMorse(0);
         recordLocalRelease(Date.now());
       }
     };
+    const release = () => {
+      if (!localPressed.current) return;
+      localPressed.current = false;
+      localSource.current = null;
+      setIsLocalPressed(false);
+      audioEngine.keyUp('local');
+      emitMorse(0);
+      recordLocalRelease(Date.now());
+    };
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', release);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', release);
+      release();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transmissionKey, socket, roomId]);
@@ -108,19 +128,38 @@ export const RadioNetwork = ({
 
     const handleHwMessage = (event) => {
       const val = event.data;
-      if (val === '1') {
+      if (val === '1' && !localPressed.current) {
+        localPressed.current = true;
+        localSource.current = 'hardware';
         lastLocalPressTime.current = Date.now();
         setIsLocalPressed(true);
         emitMorse(1);
-      } else if (val === '0') {
+      } else if (val === '0' && localPressed.current && localSource.current === 'hardware') {
+        localPressed.current = false;
+        localSource.current = null;
         setIsLocalPressed(false);
         emitMorse(0);
         recordLocalRelease(Date.now());
+      } else if (val === 'STATUS:DISCONNECTED') {
+        releaseHardware();
       }
+    };
+    const releaseHardware = () => {
+      if (!localPressed.current || localSource.current !== 'hardware') return;
+      localPressed.current = false;
+      localSource.current = null;
+      setIsLocalPressed(false);
+      emitMorse(0);
+      recordLocalRelease(Date.now());
     };
 
     hwSocket.addEventListener('message', handleHwMessage);
-    return () => hwSocket.removeEventListener('message', handleHwMessage);
+    hwSocket.addEventListener('close', releaseHardware);
+    return () => {
+      hwSocket.removeEventListener('message', handleHwMessage);
+      hwSocket.removeEventListener('close', releaseHardware);
+      releaseHardware();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ws, ws?.current, socket, roomId]);
 

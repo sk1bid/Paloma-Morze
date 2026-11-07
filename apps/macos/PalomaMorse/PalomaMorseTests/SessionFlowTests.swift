@@ -9,15 +9,69 @@ struct ReceptionFlowTests {
     let audio: AudioCoordinator
     let history = HistoryStore(defaults: nil)
     let session: ReceptionSession
+    private let clock: ReceptionTestClock
 
     init() throws {
+        let clock = ReceptionTestClock()
+        self.clock = clock
         audio = AudioCoordinator(service: engine)
-        session = ReceptionSession(catalog: try loadCatalog(), audio: audio, settings: SettingsStore(defaults: nil), history: history)
+        session = ReceptionSession(catalog: try loadCatalog(), audio: audio, settings: SettingsStore(defaults: nil), history: history,
+                                   sleep: { [clock] in await clock.sleep($0) })
     }
 
     func ready() async {
         engine.startEngine()
         await settle()
+    }
+
+    func startPlayback() async {
+        session.start()
+        for _ in 0..<5 { await clock.advance() }
+    }
+
+    @Test(arguments: ReceptionExercise.allCases)
+    func preparesAllExercisesBeforeAudio(exercise: ReceptionExercise) async {
+        await ready()
+        session.exercise = exercise
+        session.start()
+        for remaining in stride(from: 5, through: 1, by: -1) {
+            #expect(session.status == .preparing(secondsRemaining: remaining))
+            #expect(session.isConfigurationLocked)
+            #expect(engine.played.isEmpty)
+            session.tap(session.lessonSigns[0])
+            session.repeatCurrent()
+            #expect(engine.played.isEmpty)
+            await clock.advance()
+        }
+        #expect(session.status == .playing)
+        #expect(engine.played.count == 1)
+    }
+
+    @Test func stopAndRestartDiscardsOldPreparation() async {
+        await ready()
+        session.start()
+        await clock.advance()
+        session.stop()
+        #expect(session.status == .idle)
+        session.start()
+        // Wake both the cancelled sleep and the new preparation's first tick.
+        await clock.advance()
+        #expect(session.status == .preparing(secondsRemaining: 4))
+        #expect(engine.played.isEmpty)
+        for _ in 0..<4 { await clock.advance() }
+        #expect(engine.played.count == 1)
+        #expect(history.records.isEmpty)
+    }
+
+    @Test func stopPreparationNeverSubmitsAudio() async {
+        await ready()
+        session.start()
+        await clock.advance()
+        session.stop()
+        for _ in 0..<6 { await clock.advance() }
+        #expect(session.status == .idle)
+        #expect(engine.played.isEmpty)
+        #expect(history.records.isEmpty)
     }
 
     @Test func startIsBlockedWithoutEngine() {
@@ -31,7 +85,7 @@ struct ReceptionFlowTests {
         await ready()
         session.lessonIndex = 0
         session.exercise = .learn
-        session.start()
+        await startPlayback()
         #expect(session.status == .playing)
         let request = engine.played[0]
         #expect(request.spacing == .lessonOne)
@@ -55,7 +109,7 @@ struct ReceptionFlowTests {
         await ready()
         session.lessonIndex = 2
         session.exercise = .recognize
-        session.start()
+        await startPlayback()
         let first = engine.played[0]
         #expect(first.tokens.count == 1)
         #expect(session.activeSign == nil)
@@ -70,7 +124,7 @@ struct ReceptionFlowTests {
         #expect(session.status == .feedback(correct: false))
         #expect(session.errors == [target])
 
-        try await Task.sleep(for: .milliseconds(1100))
+        await clock.advance()
         #expect(session.status == .repeatingError)
         let repeatRequest = engine.played[1]
         #expect(repeatRequest.spacing == .errorRepeat)
@@ -78,10 +132,23 @@ struct ReceptionFlowTests {
         #expect(session.activeSign == target)
     }
 
+    @Test func nextTargetDoesNotRepeatPreparation() async throws {
+        await ready()
+        session.exercise = .recognize
+        await startPlayback()
+        engine.emit(engine.played[0].id, .finished(cancelled: false))
+        await settle()
+        session.answer(try #require(session.currentTarget))
+        await clock.advance()
+        #expect(engine.played.count == 2)
+        #expect(session.status == .playing)
+        #expect(session.step == 1)
+    }
+
     @Test func stopWaitsForEngineCancellation() async {
         await ready()
         session.exercise = .learn
-        session.start()
+        await startPlayback()
         let request = engine.played[0]
         session.stop()
         #expect(session.status == .cancelling)
@@ -96,7 +163,7 @@ struct ReceptionFlowTests {
     @Test func staleEventsAreIgnored() async {
         await ready()
         session.exercise = .learn
-        session.start()
+        await startPlayback()
         engine.emit(PlaybackRequestID(rawValue: 999), .token(3))
         engine.emit(PlaybackRequestID(rawValue: 999), .finished(cancelled: false))
         await settle()
@@ -109,7 +176,7 @@ struct ReceptionFlowTests {
         session.lessonIndex = 3
         session.exercise = .exam
         session.groupCount = 5
-        session.start()
+        await startPlayback()
         let request = engine.played[0]
         #expect(request.tokens.filter(\.isGroupGap).count == 4)
 
@@ -136,6 +203,23 @@ struct ReceptionFlowTests {
         #expect(session.studiedPool == ["Ф"])
         session.includeSigns = true
         #expect(session.studiedPool == ["Ф", "/", "=", "?"])
+    }
+}
+
+@MainActor
+private final class ReceptionTestClock {
+    private var sleepers: [CheckedContinuation<Void, Never>] = []
+
+    func sleep(_ duration: Duration) async {
+        await withCheckedContinuation { sleepers.append($0) }
+    }
+
+    func advance() async {
+        await settle()
+        let pending = sleepers
+        sleepers = []
+        for sleeper in pending { sleeper.resume() }
+        await settle()
     }
 }
 

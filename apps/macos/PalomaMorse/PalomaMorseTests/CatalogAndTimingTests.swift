@@ -36,7 +36,8 @@ struct CatalogTests {
         #expect(catalog.decode("-", alphabet: .en) == "T")
         #expect(catalog.decode(".-..", alphabet: .ru) == "Л")
         #expect(catalog.decode("-----", alphabet: .ru) == "0")
-        #expect(catalog.decode("........", alphabet: .ru) == "?")
+        #expect(catalog.decode("........", alphabet: .ru) == "�")
+        #expect(catalog.decode("..--..", alphabet: .ru) == "?")
     }
 
     @Test func qCodeMeaningAtEndOfText() {

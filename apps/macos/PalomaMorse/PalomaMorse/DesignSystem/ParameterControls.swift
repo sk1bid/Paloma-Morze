@@ -48,7 +48,7 @@ struct ModeTabs: View {
         .animation(.smooth(duration: 0.35), value: selected)
         .disabled(locked)
         .accessibilityAddTraits(selected ? .isSelected : [])
-        .help(locked ? "Недоступно во время сеанса в эфире" : "\(section.title) (⌘\(index(of: section)))")
+        .help(locked ? "Сначала завершите текущий сеанс" : "\(section.title) (⌘\(index(of: section)))")
     }
 
     private func index(of section: AppSection) -> Int {
@@ -392,6 +392,46 @@ struct GlassSegmented<Value: Hashable & Identifiable>: View {
     }
 }
 
+/// Shared caption and sizing for actions and toggles in every parameter column.
+struct ParameterCapsuleLabel: View {
+    var title: String
+    var isHighlighted = false
+    var isEnabled = true
+    var systemImage: String? = nil
+    var titleColor: Color? = nil
+
+    @Environment(\.uiScale) private var uiScale
+
+    var body: some View {
+        HStack(spacing: Spacing.xs) {
+            Text(title.uppercased())
+                .font(.system(size: 10 * uiScale.controlScale, weight: .heavy))
+                .tracking(1.2)
+            if let systemImage {
+                Image(systemName: systemImage)
+                    .font(.system(size: 10 * uiScale.controlScale, weight: .semibold))
+            }
+        }
+        .foregroundStyle(isHighlighted ? Color.white : (isEnabled ? (titleColor ?? Color.primary) : Color.secondary))
+        .frame(maxWidth: .infinity)
+        .frame(height: 32 * uiScale.controlScale)
+        .contentShape(.capsule)
+    }
+}
+
+struct ParameterActionButton: View {
+    var title: String
+    var titleColor: Color? = nil
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) { ParameterCapsuleLabel(title: title, titleColor: titleColor) }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive(), in: .capsule)
+            .accessibilityLabel(title)
+    }
+}
+
 /// Full-width on/off button of the parameter column (ВЫБРАТЬ БУКВЫ, ЗНАКИ, РАДИОГРАММА).
 struct OptionToggle: View {
     var title: String
@@ -405,13 +445,7 @@ struct OptionToggle: View {
     /// option locked for the session keeps its colour and just stops reacting.
     var body: some View {
         Button { if isEnabled { isOn.toggle() } } label: {
-            Text(title.uppercased())
-                .font(.system(size: 10 * uiScale.controlScale, weight: .heavy))
-                .tracking(1.2)
-                .foregroundStyle(isOn ? Color.white : (isEnabled ? Color.primary : Color.secondary))
-                .frame(maxWidth: .infinity)
-                .frame(height: 32 * uiScale.controlScale)
-                .contentShape(.capsule)
+            ParameterCapsuleLabel(title: title, isHighlighted: isOn, isEnabled: isEnabled)
         }
         .buttonStyle(.plain)
         .glassEffect(isOn ? .regular.tint(.accentColor).interactive()
@@ -434,6 +468,7 @@ struct OptionToggle: View {
 struct StartStopButton: View {
     var isRunning: Bool
     var disabledReason: String?
+    var runningHelp: String? = nil
     var action: () -> Void
 
     @Environment(\.parameterColumnCollapsed) private var isCompact
@@ -467,7 +502,7 @@ struct StartStopButton: View {
             .animation(.smooth(duration: 0.35), value: isEnabled)
             .disabled(!isEnabled)
             .frame(maxWidth: .infinity)
-            .help(isRunning ? "Остановить (⌘↩)" : (disabledReason ?? "Начать (⌘↩)"))
+            .help(isRunning ? (runningHelp ?? "Остановить (⌘↩)") : (disabledReason ?? "Начать (⌘↩)"))
             .accessibilityLabel(isRunning ? "Стоп" : "Старт")
             .accessibilityHint(disabledReason ?? "")
 

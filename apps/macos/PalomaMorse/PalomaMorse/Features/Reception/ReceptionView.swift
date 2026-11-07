@@ -178,6 +178,7 @@ struct LessonHeader: View {
     /// exercises 1–3, as released); never during the control work, and the
     /// answer feedback briefly takes precedence over a hover.
     private var displayedSign: String? {
+        if case .preparing = session.status { return nil }
         if let active = session.activeSign { return active }
         if session.exercise == .exam, session.isSessionActive { return nil }
         if case .feedback = session.status { return nil }
@@ -193,6 +194,7 @@ struct LessonHeader: View {
 
     private var prompt: String {
         switch session.status {
+        case .preparing: return "Приготовьтесь"
         case .feedback(let correct): return correct ? "Верно" : "Неверно"
         case .cancelling: return "Остановка…"
         case .completed: return "Упражнение завершено"
@@ -220,6 +222,9 @@ struct LessonHeader: View {
     /// The sign's mnemonic (or Q-code meaning), as released; no instructions.
     /// Only a playback failure puts its reason here, in full.
     private var detail: String {
+        if case .preparing(let secondsRemaining) = session.status {
+            return "Начало через \(secondsRemaining) с"
+        }
         if let sign = displayedSign {
             return session.mnemonic(for: sign, alphabet: alphabet)
         }

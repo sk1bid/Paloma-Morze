@@ -5,6 +5,7 @@ import { audioEngine } from './audio';
 import { MORSE_RU, MNEMONICS_RU, MNEMONICS_EN } from './constants';
 import { getMorsePattern, getMnemonic } from './utils/morseProvider';
 import { Q_LESSON_GROUPS } from './utils/q_codes';
+import { createReceptionPreparation } from './utils/receptionPreparation';
 
 export const LESSONS = [
   { id: 1, chars: ['Е', 'Л', 'Ж', 'А'] },
@@ -140,7 +141,7 @@ export const generateSequence = (activePool, totalCount, exerciseIndex, symbolsP
   return sequence;
 };
 
-export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setWpm, dashRatio, setDashRatio, pauseFactor, setPauseFactor, front = 6, waveform = 'sine', customOverrides = {} }) => {
+export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setWpm, dashRatio, setDashRatio, pauseFactor, setPauseFactor, front = 6, waveform = 'sine', customOverrides = {}, active = true }) => {
   const [lessonIndex, setLessonIndex] = useState(0);
   const [exerciseIndex, setExerciseIndex] = useState(0); // 0 = Learning (Ex 1), 1 = Practice (Ex 2)
   const [groupCount, setGroupCount] = useState(5);
@@ -165,6 +166,8 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   const [playingChar, setPlayingChar] = useState(null);
   const [pulseType, setPulseType] = useState(null); // 'dot', 'dash' or null
   const [isRunning, setIsRunning] = useState(false);
+  const [preparationSeconds, setPreparationSeconds] = useState(0);
+  const [preparation] = useState(() => createReceptionPreparation(setPreparationSeconds));
 
   const [includeDigits, setIncludeDigits] = useState(false);
   const [includeSymbols, setIncludeSymbols] = useState(false);
@@ -183,6 +186,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
 
   // Refs for stable access in async loops
   const isRunningRef = useRef(false);
+  const sessionEpoch = useRef(0);
   const currentStepRef = useRef(0);
   const sequenceRef = useRef([]);
   const waitingRef = useRef(false);
@@ -235,6 +239,9 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   const getCharMnemonic = (char) => getMnemonic(char, lang, customOverrides);
 
   const playSingleCharFiltered = async (char) => {
+    if (!active) return;
+    // Preparation and playback cannot be interrupted by a preview tap.
+    if (isRunningRef.current && !waitingRef.current) return;
     // 1. FOR CUSTOM SELECTION: Strict lock (cannot select another until current finished)
     if (manualMode && !isRunning && isPlayingRef.current) return;
 
@@ -270,21 +277,26 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     // Audio Feedback / Preview
     const morsePattern = getCharPattern(char);
     if (morsePattern) {
+      const epoch = sessionEpoch.current;
       isPlayingRef.current = true;
       setPlayingChar(char);
       try {
         const result = await audioEngine.playString(morsePattern, null, setPulseType);
+        if (epoch !== sessionEpoch.current) return;
         if (result.cancelled) { clearCancelledPlayback(); return; }
       } finally {
-        setPlayingChar(null);
-        setPulseType(null);
-        isPlayingRef.current = false;
+        if (epoch === sessionEpoch.current) {
+          setPlayingChar(null);
+          setPulseType(null);
+          isPlayingRef.current = false;
+        }
       }
     }
   };
 
   const handleUserAnswer = async (char) => {
     if (!waitingRef.current || !isRunningRef.current) return;
+    const epoch = sessionEpoch.current;
 
     const target = sequenceRef.current[currentStepRef.current];
     setSelectedChar(char);
@@ -295,6 +307,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       setWaitingForInput(false);
       waitingRef.current = false;
       setTimeout(() => {
+        if (epoch !== sessionEpoch.current || !isRunningRef.current) return;
         setFeedbackStatus(null);
         setSelectedChar(null);
         advanceSession();
@@ -308,6 +321,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
 
       // Awareness pause so user can see the red feedback
       await new Promise(r => setTimeout(r, 1000));
+      if (epoch !== sessionEpoch.current || !isRunningRef.current) return;
 
       // Play 5 times as penalty
       const morsePattern = getCharPattern(target);
@@ -318,6 +332,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
         const result = await audioEngine.playSequence(
           Array(5).fill(target), getCharPattern, null, setPulseType, { spacing: 'repeat' }
         );
+        if (epoch !== sessionEpoch.current) return;
         if (result.cancelled) { clearCancelledPlayback(); return; }
         if (!isRunningRef.current) return;
         setPlayingChar(null);
@@ -326,6 +341,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
 
         // Added reset pause after penalty
         await new Promise(r => setTimeout(r, 1000));
+        if (epoch !== sessionEpoch.current) return;
         if (!isRunningRef.current) return;
       }
       setFeedbackStatus(null);
@@ -347,11 +363,13 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
 
   const playCurrentTarget = async () => {
     if (!isRunningRef.current) return;
+    const epoch = sessionEpoch.current;
 
     const target = sequenceRef.current[currentStepRef.current];
     if (target === ' ') {
       // Gap between groups
       await new Promise(r => setTimeout(r, 1000));
+      if (epoch !== sessionEpoch.current) return;
       if (!isRunningRef.current) return;
       advanceSession();
       return;
@@ -361,6 +379,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     if (morsePattern) {
       if (exerciseIndex === 0) setPlayingChar(target); // Only highlight in Ex 1
       const result = await audioEngine.playString(morsePattern, null, setPulseType);
+      if (epoch !== sessionEpoch.current) return;
       if (result.cancelled) { clearCancelledPlayback(); return; }
       if (!isRunningRef.current) {
         setPlayingChar(null);
@@ -387,7 +406,11 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
   };
 
   const startExercise = async () => {
-    if (isRunning) {
+    if (!active) return;
+    if (isRunningRef.current) {
+      sessionEpoch.current += 1;
+      preparation.cancel();
+      setPreparationSeconds(0);
       audioEngine.stopAll();
       setIsRunning(false);
       isRunningRef.current = false;
@@ -406,11 +429,17 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     setSessionErrors(new Set());
     setExamResult([]);
     setShowReport(false);
+    setFeedbackStatus(null);
+    setSelectedChar(null);
+    setWaitingForInput(false);
+    waitingRef.current = false;
+    setIsRunning(true);
+    isRunningRef.current = true;
+    const epoch = ++sessionEpoch.current;
+    if (!await preparation.start() || epoch !== sessionEpoch.current) return;
 
     if (exerciseIndex === 0) {
       // EX 1: Learning Mode
-      setIsRunning(true);
-      isRunningRef.current = true;
       let sequence = [];
       lessonChars.forEach(c => {
         for (let i = 0; i < 5; i++) sequence.push(c);
@@ -420,6 +449,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       const result = await audioEngine.playSequence(sequence, getCharPattern, (char) => {
         setPlayingChar(char);
       }, setPulseType, { spacing: 'learning' });
+      if (epoch !== sessionEpoch.current) return;
       if (result.cancelled) { clearCancelledPlayback(); return; }
 
       setIsRunning(false);
@@ -433,13 +463,13 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
 
       console.log('[Reception] Starting Exam Sequence:', freshSequence);
       setExamResult(freshSequence);
-      setIsRunning(true);
-      isRunningRef.current = true;
 
       try {
         const result = await audioEngine.playSequence(freshSequence, getCharPattern, null, null);
+        if (epoch !== sessionEpoch.current) return;
         if (result.cancelled) { clearCancelledPlayback(); return; }
       } catch (err) {
+        if (epoch !== sessionEpoch.current) return;
         console.error('[Reception] Playback Error:', err);
       }
 
@@ -458,8 +488,6 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       sequenceRef.current = sequence;
       setCurrentStep(0);
       currentStepRef.current = 0;
-      setIsRunning(true);
-      isRunningRef.current = true;
 
       playCurrentTarget();
     }
@@ -467,8 +495,31 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
 
   // Ensure audio stops if component unmounts
   useEffect(() => {
-    return () => audioEngine.stopAll();
-  }, []);
+    return () => {
+      sessionEpoch.current += 1;
+      isRunningRef.current = false;
+      preparation.cancel();
+      audioEngine.stopAll();
+    };
+  }, [preparation]);
+
+  useEffect(() => {
+    if (active) return;
+    const hadPlayback = isRunningRef.current || isPlayingRef.current;
+    sessionEpoch.current += 1;
+    isRunningRef.current = false;
+    waitingRef.current = false;
+    isPlayingRef.current = false;
+    preparation.cancel();
+    if (hadPlayback) audioEngine.stopAll();
+    setPreparationSeconds(0);
+    setIsRunning(false);
+    setWaitingForInput(false);
+    setPlayingChar(null);
+    setPulseType(null);
+    setFeedbackStatus(null);
+    setSelectedChar(null);
+  }, [active, preparation]);
 
   const ui = UI_STRINGS[lang] || UI_STRINGS.RU;
   const mnemonics = lang === 'RU' ? MNEMONICS_RU : MNEMONICS_EN;
@@ -486,6 +537,11 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
     headerDesc = getCharMnemonic(activeChar);
   }
 
+  if (preparationSeconds > 0) {
+    headerTitle = lang === 'RU' ? 'Приготовьтесь' : 'Get ready';
+    headerDesc = lang === 'RU' ? `Начало через ${preparationSeconds} с` : `Starting in ${preparationSeconds} s`;
+  }
+
   return (
     <div className="reception-container">
       <div className="reception-sidebar">
@@ -499,7 +555,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
             cursor: exerciseIndex < 2 ? 'not-allowed' : 'pointer'
           }}
           title={exerciseIndex < 2 ? (lang === 'RU' ? 'Доступно в 3 и 4 упражнении' : 'Available in Exercises 3 & 4') : ''}
-          disabled={exerciseIndex < 2}
+          disabled={isRunning || exerciseIndex < 2}
         >
           {ui.selectLetters}
         </button>
@@ -633,7 +689,7 @@ export const Reception = React.memo(({ frequency, volume, lang = 'RU', wpm, setW
       </div>
 
       <div className="reception-main">
-        <div className="lesson-header">
+        <div className="lesson-header" role="status" aria-live="polite">
           <motion.h2
             key={headerTitle}
             initial={{ opacity: 0, scale: 0.95 }}

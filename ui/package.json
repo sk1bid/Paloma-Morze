@@ -14,6 +14,7 @@
     "start": "electron .",
     "dev": "vite",
     "dev:electron": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && npm start\"",
+    "dev:task5": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron . --task5-dev\"",
     "sync-version": "bash ../scripts/update_version.sh",
     "prebuild": "npm run sync-version",
     "build": "vite build",
@@ -21,6 +22,7 @@
     "publish:app": "npm run sync-version && electron-builder -mwl -p always",
     "lint": "eslint .",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:task5-layout": "electron tests/task5Geometry.cjs",
     "preview": "vite preview",
     "release": "bash ../scripts/tag_release.sh"
   },
@@ -44,6 +46,7 @@
     "files": [
       "dist/**/*",
       "electron-main.cjs",
+      "task5-dev-controller.cjs",
       "bridge.cjs",
       "assets/icon.*",
       "native/morze_app",
