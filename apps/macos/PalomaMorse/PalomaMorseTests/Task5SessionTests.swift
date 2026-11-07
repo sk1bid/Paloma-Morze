@@ -28,6 +28,19 @@ struct Task5SessionTests {
         return Rig(engine: engine, audio: audio, session: session, clock: clock)
     }
 
+    /// Advancing the simulated operator clock makes a character eligible for
+    /// commit; the production gap task still has to run on the MainActor. Wait
+    /// for that state transition rather than assuming a 100 ms scheduling slot.
+    private func waitForCharacterCommit(_ session: Task5Session) async throws {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(3))
+        while !session.buffer.isEmpty, clock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        try #require(session.buffer.isEmpty,
+            "Character did not commit: buffer=\(session.buffer), input=\(session.inputText), step=\(session.currentStep?.id ?? "none")")
+    }
+
     @Test(arguments: Task5StationRole.allCases) func announcedWaitStartsAfterBotFinishesAndFreezesOnUserPause(role: Task5StationRole) async throws {
         let r = try await rig()
         r.session.configuration.role = role
@@ -408,7 +421,8 @@ struct Task5SessionTests {
         s.startRadioExchange()
         s.keyDown(from: .keyboard); r.clock.advance(0.08); s.keyUp(from: .keyboard)
         r.clock.advance(0.3)
-        try await Task.sleep(for: .milliseconds(100))
+        try await waitForCharacterCommit(s)
+        #expect(s.inputText == "Е")
         let call = s.currentStep!.expectedMessages[0]
         s.inputText = call
         let marks = s.rhythm.marks
@@ -423,7 +437,7 @@ struct Task5SessionTests {
         #expect(s.rhythm.marks == marks)
         s.keyDown(from: .keyboard); r.clock.advance(0.08); s.keyUp(from: .keyboard)
         r.clock.advance(0.3)
-        try await Task.sleep(for: .milliseconds(100))
+        try await waitForCharacterCommit(s)
         #expect(s.inputText == "Е")
         #expect(s.lastTransmissionText.isEmpty)
         s.stop()
@@ -439,8 +453,8 @@ struct Task5SessionTests {
         #expect(r.engine.localKey.last == false)
         #expect(r.session.status == .running)
         r.clock.advance(0.3)
-        try await Task.sleep(for: .milliseconds(100))
-        #expect(!r.session.inputText.isEmpty)
+        try await waitForCharacterCommit(r.session)
+        #expect(r.session.inputText == "Е")
         r.session.stop()
     }
 
