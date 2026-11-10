@@ -52,8 +52,6 @@ struct RootView: View {
             windowWidth = size.width
         }
         .environment(\.uiScale, uiScale)
-        // The desktop shows through the window (behind-window material), so the
-        // glass controls refract the user's wallpaper instead of a painted backdrop.
         .containerBackground(for: .window) { WindowBackdrop() }
         .navigationTitle("Paloma Morse")
         .navigationSubtitle(model.dataSourceNotice ?? "")
@@ -68,19 +66,14 @@ struct RootView: View {
     }
 }
 
-/// Dark theme: a behind-window material, so the wallpaper shows through and the
-/// glass has something to refract. Light theme: opaque, like Apple's light
-/// windows — a calm grey window background under white panels.
-private struct WindowBackdrop: View {
+/// A solid backing for the window and its glass controls.
+struct WindowBackdrop: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Group {
             if colorScheme == .dark {
-                ZStack {
-                    Rectangle().fill(.regularMaterial)
-                    Color(nsColor: .windowBackgroundColor).opacity(0.35)
-                }
+                Color(nsColor: .windowBackgroundColor)
             } else {
                 // A notch greyer than the white panels, like Apple's light windows.
                 Color(red: 0.94, green: 0.94, blue: 0.95)

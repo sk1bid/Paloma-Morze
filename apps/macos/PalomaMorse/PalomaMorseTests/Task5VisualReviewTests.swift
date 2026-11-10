@@ -7,6 +7,33 @@ import XCTest
 /// no desktop or other application's pixels are captured.
 @MainActor
 final class Task5VisualReviewTests: XCTestCase {
+    func testWindowAndContentSurfacesAreOpaqueInBothThemes() throws {
+        for scheme in [ColorScheme.light, .dark] {
+            let view = HStack(spacing: 0) {
+                WindowBackdrop().frame(width: 48, height: 48)
+                Color.clear.frame(width: 48, height: 48).contentSurface()
+            }
+            .environment(\.colorScheme, scheme)
+            let renderer = ImageRenderer(content: view)
+            let image = try XCTUnwrap(renderer.cgImage)
+            let bitmap = NSBitmapImageRep(cgImage: image)
+            for x in [24, 72] {
+                let color = try XCTUnwrap(bitmap.colorAt(x: x, y: 24)?.usingColorSpace(.deviceRGB))
+                XCTAssertEqual(color.alphaComponent, 1, accuracy: 0.001)
+                if scheme == .dark {
+                    XCTAssertLessThan(color.redComponent, 0.45)
+                } else {
+                    XCTAssertGreaterThan(color.redComponent, 0.85)
+                }
+            }
+            let name = "native-surfaces-\(scheme == .dark ? "dark" : "light").png"
+            let data = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+            let path = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+            try data.write(to: path)
+            print("NATIVE_SURFACE_RENDER: \(path.path)")
+        }
+    }
+
     func testSixtyGroupRadiogramFormRendering() throws {
         let variant = try Task5Scenario.generate(configuration: Task5Configuration(), seed: 2483,
             reference: Task5Reference.load(), catalog: loadCatalog())

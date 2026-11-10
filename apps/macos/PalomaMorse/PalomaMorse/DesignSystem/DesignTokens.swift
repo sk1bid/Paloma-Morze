@@ -53,13 +53,12 @@ struct ContentSurface: ViewModifier {
 
     @Environment(\.colorScheme) private var colorScheme
 
-    /// Dark: a faint fill over the translucent window. Light: a white panel with
-    /// a hairline and a very soft shadow on the grey window, as Apple's light
-    /// apps do — glass controls on it read by their rims and shadows.
+    /// Dark uses the system content background. Light keeps the white panel,
+    /// hairline, and soft shadow over the grey window.
     func body(content: Content) -> some View {
         if colorScheme == .dark {
             content
-                .background(.fill.quinary, in: .rect(cornerRadius: radius))
+                .background(Color(nsColor: .controlBackgroundColor), in: .rect(cornerRadius: radius))
                 .overlay {
                     RoundedRectangle(cornerRadius: radius)
                         .strokeBorder(.separator.opacity(0.7), lineWidth: 0.5)
