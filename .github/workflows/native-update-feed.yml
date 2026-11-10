@@ -64,6 +64,9 @@ jobs:
           blob=$(git hash-object -w "$RUNNER_TEMP/appcast.xml")
           git update-index --add --cacheinfo "100644,$blob,appcast.xml"
           tree=$(git write-tree)
-          parents=(); [[ -n "$parent" ]] && parents=(-p "$parent")
-          commit=$(printf 'Publish native feed for %s\n' "$RELEASE_TAG" | git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit-tree "$tree" "${parents[@]}")
+          if [[ -n "$parent" ]]; then
+            commit=$(printf 'Publish native feed for %s\n' "$RELEASE_TAG" | git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit-tree "$tree" -p "$parent")
+          else
+            commit=$(printf 'Publish native feed for %s\n' "$RELEASE_TAG" | git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit-tree "$tree")
+          fi
           git push origin "$commit:refs/heads/native-updates"
