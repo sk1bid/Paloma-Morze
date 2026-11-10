@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+  <channel>
+    <title>Paloma Morse for macOS</title>
+    <item>
+      <title>Paloma Morse 0.4.21</title>
+      <sparkle:version>0.4.21</sparkle:version>
+      <sparkle:shortVersionString>0.4.21</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/sk1bid/Paloma-Morze/releases/download/v0.4.21/Paloma-Morse-Native-0.4.21-universal.zip" length="4399867" type="application/octet-stream" sparkle:edSignature="qOHSbuDuilEcjFv04Y2Nd3mKWIUSQUjwOwHBQ5hMk92RhC5Q6TuKB8kTQ6RNOvvGrIGG0aaL4bOFVvmlAsMWCA==" />
+    </item>
+  </channel>
+</rss>
