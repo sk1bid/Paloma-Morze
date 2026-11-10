@@ -20,7 +20,7 @@ xcodebuild -jobs "${PALOMA_BUILD_JOBS:-4}" -project apps/macos/PalomaMorse/Palom
  -onlyUsePackageVersionsFromResolvedFile -disableAutomaticPackageResolution \
  CODE_SIGNING_ALLOWED=NO ARCHS='arm64 x86_64' \
  PALOMA_UPDATE_PUBLIC_KEY="${PALOMA_UPDATE_PUBLIC_KEY:-}" \
- PALOMA_UPDATE_FEED_URL="${PALOMA_UPDATE_FEED_URL:-}" PALOMA_RELAY_URL="${PALOMA_RELAY_URL:-http://sk1bid.ru:3001}" build 2>&1 | tee "$work/xcodebuild-release.log"
+ PALOMA_UPDATE_FEED_URL="${PALOMA_UPDATE_FEED_URL:-}" PALOMA_RELAY_URL="${PALOMA_RELAY_URL:-https://sk1bid.ru}" build 2>&1 | tee "$work/xcodebuild-release.log"
 build_status=${PIPESTATUS[0]}
 set -e
 if [[ "$build_status" -ne 0 ]]; then

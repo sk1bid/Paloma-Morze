@@ -195,7 +195,7 @@ jobs:
       - name: Validate native distribution configuration
         env:
           PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_ED_KEY }}
-          RELAY_URL: ${{ vars.NATIVE_RELAY_URL }}
+          RELAY_URL: ${{ vars.NATIVE_RELAY_URL || 'https://sk1bid.ru' }}
           PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_ED_KEY }}
         run: |
           python3 - <<'PY'
@@ -219,7 +219,7 @@ jobs:
           NATIVE_OUTPUT_DIR: ${{ runner.temp }}/native-artifacts
           PALOMA_UPDATE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_ED_KEY }}
           PALOMA_UPDATE_FEED_URL: https://raw.githubusercontent.com/${{ github.repository }}/native-updates/appcast.xml
-          PALOMA_RELAY_URL: ${{ vars.NATIVE_RELAY_URL }}
+          PALOMA_RELAY_URL: ${{ vars.NATIVE_RELAY_URL || 'https://sk1bid.ru' }}
           PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_ED_KEY }}
           NATIVE_DOWNLOAD_BASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}
         run: |

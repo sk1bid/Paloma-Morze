@@ -30,7 +30,7 @@ struct LaunchOptions {
         // Explicit configuration; never silently send credentials to another origin.
         let configured = [defaults.string(forKey: "PalomaRelayURL"), Bundle.main.object(forInfoDictionaryKey: "PalomaRelayURL") as? String]
             .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .first { !$0.isEmpty } ?? "http://sk1bid.ru:3001"
+            .first { !$0.isEmpty } ?? "https://sk1bid.ru"
         let candidate = URL(string: configured)
         relayURL = candidate.flatMap {
             ["http", "https"].contains($0.scheme ?? "") && $0.host != nil && $0.user == nil && $0.password == nil ? $0 : nil

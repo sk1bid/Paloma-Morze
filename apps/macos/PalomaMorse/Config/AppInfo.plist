@@ -7,11 +7,4 @@
 <key>SUShowReleaseNotes</key><false/>
 <key>SUAutomaticallyUpdate</key><false/>
 <key>PalomaRelayURL</key><string>$(PALOMA_RELAY_URL)</string>
-<key>NSAppTransportSecurity</key><dict>
-  <key>NSExceptionDomains</key><dict>
-    <key>sk1bid.ru</key><dict>
-      <key>NSExceptionAllowsInsecureHTTPLoads</key><true/>
-    </dict>
-  </dict>
-</dict>
 </dict></plist>
