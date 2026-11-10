@@ -3,6 +3,13 @@
   <channel>
     <title>Paloma Morse for macOS</title>
     <item>
+      <title>Paloma Morse 0.4.22</title>
+      <sparkle:version>0.4.22</sparkle:version>
+      <sparkle:shortVersionString>0.4.22</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/sk1bid/Paloma-Morze/releases/download/v0.4.22/Paloma-Morse-Native-0.4.22-universal.zip" length="4400601" type="application/octet-stream" sparkle:edSignature="iWhFaWhybsyJaXckbNomcxFJbIu7KfOb3j2aqXimUUy7446FV7BzeTdPh1z6cJ7+piQi8jpxGoDvFPFJpjn3DA==" />
+    </item>
+    <item>
       <title>Paloma Morse 0.4.21</title>
       <sparkle:version>0.4.21</sparkle:version>
       <sparkle:shortVersionString>0.4.21</sparkle:shortVersionString>
