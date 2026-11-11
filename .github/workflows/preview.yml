@@ -28,7 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             platform: linux
             artifacts: ui/release/*.AppImage
           - os: windows-latest
@@ -56,7 +56,7 @@ jobs:
 
       - name: Install Linux audio headers
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev pulseaudio pulseaudio-utils
 
       - name: Compile native audio helper for the packaged client
         shell: bash
@@ -81,6 +81,10 @@ jobs:
       - name: Package preview without publishing
         working-directory: ui
         run: npx electron-builder --${{ matrix.platform }} --publish never
+
+      - name: Verify packaged Linux audio on the compatibility baseline
+        if: runner.os == 'Linux'
+        run: bash tools/test-linux-appimage-audio.sh ui/release/*.AppImage
 
       - name: Retain Electron preview packages
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

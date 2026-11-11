@@ -45,7 +45,8 @@ jobs:
     needs: [validate, release-policy]
     timeout-minutes: 30
     name: Build Linux
-    runs-on: ubuntu-latest
+    # Do not use ubuntu-latest: newer glibc breaks the helper on older desktops.
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -53,7 +54,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libasound2-dev
+          sudo apt-get install -y libasound2-dev pulseaudio pulseaudio-utils
 
       - name: Compile Linux native engine
         run: |
@@ -73,6 +74,9 @@ jobs:
           npm ci
           npm run build
           npx electron-builder --linux -p never
+
+      - name: Verify packaged Linux audio on the compatibility baseline
+        run: bash tools/test-linux-appimage-audio.sh ui/release/*.AppImage
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4

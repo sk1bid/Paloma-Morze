@@ -25,7 +25,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # Keep the Linux runtime ABI compatible with Ubuntu 22.04.
+        os: [ubuntu-22.04, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,6 +38,10 @@ jobs:
       - name: Install Linux audio headers
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+
+      - name: Test Linux package compatibility checks
+        if: runner.os == 'Linux'
+        run: python3 tools/test-linux-appimage-audio-unit.py
 
       - name: Compile and test native engine
         shell: bash
