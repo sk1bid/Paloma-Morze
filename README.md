@@ -57,9 +57,13 @@ chmod +x Paloma-Morse.*.AppImage
 
 <img src="docs/images/electron-reception.png" alt="Paloma Morse: экран тренировки приёма" width="1280">
 
-**Задача №5.** Обмен с ботом и радиограмма для передачи. На скриншоте показан учебный вариант.
+**Передача.** Тренировка работы ключом и отображение точек и тире.
 
-<img src="docs/images/electron-task5.png" alt="Paloma Morse: задача №5 с радиограммой, разбитой на группы" width="1280">
+<img src="docs/images/electron-transmission.png" alt="Paloma Morse: вкладка передачи ключом" width="1280">
+
+**Эфир.** Вход по позывному для связи с другими пользователями через интернет.
+
+<img src="docs/images/electron-radio.png" alt="Paloma Morse: вкладка эфира" width="1280">
 
 Показана Electron-версия. Нативное приложение для macOS использует системное оформление Apple.
 
