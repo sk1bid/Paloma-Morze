@@ -116,7 +116,9 @@ def smoke_electron(root, work, env, processes, logs, no_sandbox):
             probe.bind(("127.0.0.1", bridge_port))
         except OSError as error:
             raise RuntimeError("Port 8080 is occupied; close the existing app before this smoke") from error
-    electron_env = dict(env, PALOMA_AUDIO_PORT=str(bridge_port))
+    # The AppImage runtime normally supplies APPDIR. Extraction avoids FUSE,
+    # so provide that same contract when invoking the extracted AppRun.
+    electron_env = dict(env, PALOMA_AUDIO_PORT=str(bridge_port), APPDIR=str(root))
     electron_env.pop("ELECTRON_RUN_AS_NODE", None)
     electron_log = (work / "electron.log").open("w+")
     logs.append(electron_log)
