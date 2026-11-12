@@ -1,0 +1,21 @@
+Paloma Morse 0.4.24
+
+Changes:
+- Linux x86_64 AppImage now targets glibc 2.28 and GLIBCXX 3.4.25,
+  lowering the library requirements for older desktops such as Astra Linux 1.7.
+- The native audio helper is built with a pinned Debian 10 toolchain while
+  Node.js and Electron packaging continue on a modern build host.
+- Preview and release builds check packaged ELF dependencies and launch the
+  complete application on Debian 10, verifying the rendered interface, native
+  bridge and audio playback through an isolated PulseAudio server.
+- All clients share version 0.4.24, including Windows, Electron macOS and
+  native macOS.
+
+Compatibility evidence:
+- The glibc 2.28 baseline was verified on Debian 10.
+- This is not certification or installation/device verification on real Astra
+  Linux 1.7 or 1.8; those environments still require a direct installation check.
+- The container smoke test disables Chromium's sandbox only inside its isolated
+  test environment. Normal desktop launches retain the sandbox.
+
+Build and verification instructions: tools/linux-compat/README.md.
