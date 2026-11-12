@@ -184,6 +184,20 @@ def smoke_electron(root, work, env, processes, logs, no_sandbox):
         stop(electron)
 
 
+def isolated_environment(work):
+    env = dict(os.environ, LC_ALL="C")
+    env.pop("LD_PRELOAD", None)
+    env.pop("LD_LIBRARY_PATH", None)
+    # PulseAudio requires HOME to belong to its user: shared /tmp is rejected.
+    # Keep its configuration, Chromium cache, and XDG runtime private as well.
+    for variable, directory in (("HOME", "home"), ("XDG_CONFIG_HOME", "config"),
+                                ("XDG_CACHE_HOME", "cache"), ("XDG_RUNTIME_DIR", "runtime")):
+        target = work / directory
+        target.mkdir(mode=0o700)
+        env[variable] = str(target)
+    return env
+
+
 def run_smoke(appimage, no_sandbox=False):
     for tool in ("readelf", "pulseaudio", "pactl", "parec", "xvfb-run"):
         if not shutil.which(tool):
@@ -195,9 +209,7 @@ def run_smoke(appimage, no_sandbox=False):
     processes = []
     with tempfile.TemporaryDirectory(prefix="paloma-appimage-audio-") as temporary:
         work = Path(temporary)
-        env = dict(os.environ, LC_ALL="C")
-        env.pop("LD_PRELOAD", None)
-        env.pop("LD_LIBRARY_PATH", None)
+        env = isolated_environment(work)
         logs = []
         try:
             # AppImage extraction executes its own runtime, without mounting FUSE.

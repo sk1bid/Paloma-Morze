@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Host-independent checks for the packaged Linux smoke's failure gates."""
 import importlib.util
+import os
+import stat
 from pathlib import Path
 import subprocess
 import sys
@@ -79,6 +81,19 @@ class PackagedAudioSmokeTests(unittest.TestCase):
     def test_pcm_rejects_silence_and_reads_signed_little_endian(self):
         self.assertEqual(smoke.pcm_peak(bytes(200)), 0)
         self.assertEqual(smoke.pcm_peak(b"\x00\x80\xff\x7f"), 32768)
+
+    def test_smoke_owns_private_home_and_xdg_directories(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with mock.patch.dict(os.environ, {"HOME": "/tmp", "XDG_RUNTIME_DIR": "/outside",
+                                             "LD_LIBRARY_PATH": "/outside", "LD_PRELOAD": "outside.so"}):
+                env = smoke.isolated_environment(Path(directory))
+            for name in ("HOME", "XDG_RUNTIME_DIR", "XDG_CONFIG_HOME", "XDG_CACHE_HOME"):
+                target = Path(env[name])
+                self.assertEqual(target.parent, Path(directory))
+                self.assertEqual(target.stat().st_uid, os.getuid())
+                self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o700)
+            self.assertNotIn("LD_LIBRARY_PATH", env)
+            self.assertNotIn("LD_PRELOAD", env)
 
     def test_cleanup_terminates_owned_process(self):
         child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"], start_new_session=True)
