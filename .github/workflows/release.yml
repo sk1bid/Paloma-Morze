@@ -270,7 +270,7 @@ jobs:
           mkdir -p ui/release ui/native
           
           # Copy release packages and updater metadata
-          find downloaded-artifacts -type f \( -name "*.AppImage" -o -name "*.exe" -o -name "*.dmg" -o -name "*.zip" -o -name "*.yml" -o -name "*.blockmap" \) -exec cp {} ui/release/ \;
+          find downloaded-artifacts -type f \( -name "*.AppImage" -o -name "*.exe" -o -name "*.dmg" -o -name "*.zip" -o -name "*.yml" -o -name "*.blockmap" \) ! -name "morze_app_win.exe" -exec cp {} ui/release/ \;
           
           # Native macOS uses Sparkle; legacy latest-mac.yml still points to Electron.
           cp downloaded-artifacts/artifacts-native-mac/* ui/release/
@@ -290,6 +290,11 @@ jobs:
           node tests/verify_release.cjs
           python3 ../apps/macos/Tools/release-metadata.py verify release "$(tr -d '[:space:]' < ../VERSION)"
 
+      - name: Prepare concise Russian release description
+        env:
+          RELEASE_REPOSITORY: ${{ github.repository }}
+        run: python3 scripts/release-body.py --repository "$RELEASE_REPOSITORY" --artifacts ui/release --output release-body.md
+
       - name: Prepare verified GitHub draft (publish manually after installation check)
         uses: softprops/action-gh-release@v2
         with:
@@ -297,7 +302,8 @@ jobs:
           tag_name: ${{ github.ref_name }}
           draft: true
           prerelease: false
-          generate_release_notes: true
+          body_path: release-body.md
+          generate_release_notes: false
           files: |
             ui/release/*.dmg
             ui/release/*.zip
@@ -308,6 +314,3 @@ jobs:
             ui/release/native-manifest.json
             ui/release/native-SHA256SUMS.txt
             ui/release/appcast.xml
-            ui/native/morze_app_linux
-            ui/native/morze_app_macos
-            ui/native/morze_app_win.exe
