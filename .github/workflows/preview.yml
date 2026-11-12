@@ -28,7 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             platform: linux
             artifacts: ui/release/*.AppImage
           - os: windows-latest
@@ -54,17 +54,17 @@ jobs:
           cache: npm
           cache-dependency-path: ui/package-lock.json
 
-      - name: Install Linux audio headers
+      - name: Compile and test Linux helper on glibc 2.28
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libasound2-dev pulseaudio pulseaudio-utils
+        run: bash tools/linux-compat.sh build
 
       - name: Compile native audio helper for the packaged client
+        if: runner.os != 'Linux'
         shell: bash
         run: |
           set -euo pipefail
           flags=(-std=c++17 -O2 -lpthread -lm)
           case "$RUNNER_OS" in
-            Linux) flags+=(-lasound -ldl); engine=ui/native/morze_app ;;
             macOS) flags+=(-framework CoreAudio -framework AudioUnit -framework CoreFoundation); engine=ui/native/morze_app ;;
             Windows) flags+=(-static); engine=ui/native/morze_app.exe ;;
           esac
@@ -84,7 +84,7 @@ jobs:
 
       - name: Verify packaged Linux audio on the compatibility baseline
         if: runner.os == 'Linux'
-        run: bash tools/test-linux-appimage-audio.sh ui/release/*.AppImage
+        run: bash tools/linux-compat.sh test ui/release/*.AppImage
 
       - name: Retain Electron preview packages
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

@@ -1,35 +1,43 @@
 #!/usr/bin/env python3
-"""Smoke the actual packaged Linux audio helper, not its headless test mode."""
+"""Check packaged ELF ABI, actual audio, and Electron rendering on the target host."""
 import argparse
 import array
 import os
+import json
 from pathlib import Path
 import queue
 import re
 import shutil
 import signal
+import socket
 import stat
 import subprocess
 import sys
 import tempfile
 import threading
 import time
+import urllib.request
 
 
-def check_versions(text):
+def check_versions(text, required=("GLIBC", "GLIBCXX")):
     # Inspect dependencies only, not versions this ELF might define/export.
     needs = text.split("Version needs section", 1)
     if len(needs) != 2:
         raise RuntimeError("ELF has no readable version needs section")
+    unsupported = re.findall(r"\bName: (GLIBC_[A-Za-z][A-Za-z0-9_]*)\b", needs[1])
+    if unsupported:
+        raise RuntimeError(f"Unsupported baseline dependency: {', '.join(sorted(set(unsupported)))}")
     found = {}
-    for family, ceiling in (("GLIBC", (2, 35)), ("GLIBCXX", (3, 4, 30))):
+    for family, ceiling in (("GLIBC", (2, 28)), ("GLIBCXX", (3, 4, 25))):
         versions = {tuple(map(int, value.split("."))) for value in
                     re.findall(r"\bName: " + family + r"_([0-9.]+)\b", needs[1])}
         if not versions:
-            raise RuntimeError(f"No {family} dependency versions found")
+            if family in required:
+                raise RuntimeError(f"No {family} dependency versions found")
+            continue
         highest = max(versions)
         if highest > ceiling:
-            raise RuntimeError(f"{family}_{'.'.join(map(str, highest))} exceeds Ubuntu 22.04 limit "
+            raise RuntimeError(f"{family}_{'.'.join(map(str, highest))} exceeds Debian 10 / Astra 1.7 baseline "
                                f"{'.'.join(map(str, ceiling))}")
         found[family] = highest
     return found
@@ -60,10 +68,130 @@ def stop(process):
             process.wait(timeout=3)
 
 
-def run_smoke(appimage):
-    for tool in ("readelf", "pulseaudio", "pactl", "parec"):
+def free_port():
+    with socket.socket() as server:
+        server.bind(("127.0.0.1", 0))
+        return server.getsockname()[1]
+
+
+def check_packaged_elfs(root, env):
+    # Check Electron and every shipped DSO as well as the native helper. A helper
+    # built on the baseline cannot compensate for a newer Electron binary.
+    count = 0
+    for binary in sorted(root.rglob("*")):
+        if not binary.is_file():
+            continue
+        with binary.open("rb") as source:
+            if source.read(4) != b"\x7fELF":
+                continue
+        info = subprocess.run(["readelf", "--version-info", str(binary)], env=env,
+                              capture_output=True, text=True, check=True, timeout=10)
+        if "Version needs section" not in info.stdout:
+            continue  # Static AppImage runtime or an ELF with no versioned imports.
+        try:
+            check_versions(info.stdout, required=())
+        except RuntimeError as error:
+            raise RuntimeError(f"{binary.relative_to(root)}: {error}") from error
+        count += 1
+    if not count:
+        raise RuntimeError("No versioned packaged ELF files found")
+    print(f"PASS: all {count} packaged ELF files meet GLIBC 2.28 / GLIBCXX 3.4.25 caps", flush=True)
+
+
+def rendered_app(value):
+    return (isinstance(value, dict) and value.get("ready") == "complete"
+            and value.get("title") == "Paloma Morse" and value.get("buttons", 0) > 0
+            and value.get("text", 0) > 20 and value.get("visible") is True
+            and not value.get("loader", True))
+
+
+def smoke_electron(root, work, env, processes, logs, no_sandbox):
+    import websocket
+
+    debug_port, bridge_port = free_port(), 8080
+    # The production renderer uses port 8080. Verify it is free before starting
+    # rather than connecting the test to an existing user application.
+    with socket.socket() as probe:
+        try:
+            probe.bind(("127.0.0.1", bridge_port))
+        except OSError as error:
+            raise RuntimeError("Port 8080 is occupied; close the existing app before this smoke") from error
+    electron_env = dict(env, PALOMA_AUDIO_PORT=str(bridge_port))
+    electron_env.pop("ELECTRON_RUN_AS_NODE", None)
+    electron_log = (work / "electron.log").open("w+")
+    logs.append(electron_log)
+    command = ["xvfb-run", "-a", str(root / "AppRun"), "--disable-gpu",
+               "--remote-debugging-address=127.0.0.1", f"--remote-debugging-port={debug_port}",
+               "--remote-allow-origins=http://localhost", f"--user-data-dir={work / 'profile'}"]
+    if no_sandbox:
+        command.append("--no-sandbox")
+    electron = subprocess.Popen(command, env=electron_env, stdout=electron_log,
+                                stderr=subprocess.STDOUT, start_new_session=True)
+    processes.append(electron)
+    deadline = time.monotonic() + 40
+    rendered = False
+    while time.monotonic() < deadline:
+        if electron.poll() is not None:
+            raise RuntimeError(f"Packaged Electron exited {electron.returncode} before rendering")
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{debug_port}/json/list", timeout=2) as response:
+                pages = json.load(response)
+            for page in pages:
+                if page.get("type") != "page" or not page.get("url", "").startswith("file:"):
+                    continue
+                connection = websocket.create_connection(page["webSocketDebuggerUrl"], timeout=3,
+                                                         origin="http://localhost")
+                try:
+                    connection.send(json.dumps({"id": 1, "method": "Runtime.evaluate", "params": {
+                        "expression": "({ready:document.readyState,title:document.title,"
+                        "buttons:document.querySelectorAll('#root button').length,"
+                        "text:document.querySelector('#root')?.innerText.length||0,"
+                        "visible:!!document.querySelector('.app-container')&&"
+                        "Number(getComputedStyle(document.querySelector('.app-container')).opacity)>0.9,"
+                        "loader:!!document.querySelector('.loader-container')})", "returnByValue": True}}))
+                    while time.monotonic() < deadline:
+                        message = json.loads(connection.recv())
+                        if message.get("id") == 1:
+                            rendered = rendered_app(message.get("result", {}).get("result", {}).get("value"))
+                            break
+                finally:
+                    connection.close()
+                if rendered:
+                    break
+        except (OSError, ValueError, websocket.WebSocketException):
+            pass
+        if rendered:
+            break
+        time.sleep(0.2)
+    if not rendered:
+        raise RuntimeError("Packaged Electron did not render the React app within 40 seconds")
+    # The application's own bridge must also spawn its bundled helper successfully.
+    connection = websocket.create_connection(f"ws://127.0.0.1:{bridge_port}", timeout=10)
+    try:
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            event = connection.recv()
+            if event.startswith("{"):
+                message = json.loads(event)
+                if message.get("event") == "error":
+                    raise RuntimeError(f"Packaged application audio bridge: {message}")
+                if message.get("type") == "audio" and message.get("event") == "ready":
+                    print("PASS: packaged Electron rendered React and its audio bridge reports ready", flush=True)
+                    return
+        raise RuntimeError("Packaged application's audio bridge did not become ready")
+    finally:
+        connection.close()
+        stop(electron)
+
+
+def run_smoke(appimage, no_sandbox=False):
+    for tool in ("readelf", "pulseaudio", "pactl", "parec", "xvfb-run"):
         if not shutil.which(tool):
-            raise RuntimeError(f"Missing {tool}; install binutils pulseaudio pulseaudio-utils")
+            raise RuntimeError(f"Missing {tool}; install binutils pulseaudio pulseaudio-utils xvfb xauth")
+    try:
+        import websocket  # Debian package python3-websocket
+    except ImportError as error:
+        raise RuntimeError("Missing websocket-client; install python3-websocket") from error
     processes = []
     with tempfile.TemporaryDirectory(prefix="paloma-appimage-audio-") as temporary:
         work = Path(temporary)
@@ -88,7 +216,8 @@ def run_smoke(appimage):
             versions = subprocess.run(["readelf", "--version-info", str(helper)], env=env,
                                       capture_output=True, text=True, check=True, timeout=10)
             highest = check_versions(versions.stdout)
-            print("PASS: packaged helper mode 0755, Ubuntu 22.04 ABI " + str(highest), flush=True)
+            print("PASS: packaged helper mode 0755, baseline ABI " + str(highest), flush=True)
+            check_packaged_elfs(work / "squashfs-root", env)
 
             # Private server and runtime directory: no user daemon/default-device changes.
             runtime = work / "pulse"
@@ -173,6 +302,7 @@ def run_smoke(appimage):
                 if engine.returncode != 0:
                     raise RuntimeError(f"Helper exited {engine.returncode}")
                 print(f"PASS: real packaged helper AUDIO READY, P → DONE 0, monitor PCM peak={peak}")
+            smoke_electron(work / "squashfs-root", work, env, processes, logs, no_sandbox)
         except BaseException:
             for log in logs:
                 log.flush()
@@ -189,8 +319,10 @@ def run_smoke(appimage):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("appimage", type=Path)
+    parser.add_argument("--no-sandbox", action="store_true",
+                        help="Disable Chromium sandbox only for isolated CI containers")
     args = parser.parse_args()
     try:
-        run_smoke(args.appimage.resolve(strict=True))
+        run_smoke(args.appimage.resolve(strict=True), args.no_sandbox)
     except (OSError, RuntimeError, subprocess.SubprocessError) as error:
         sys.exit(f"FAIL: {error}")

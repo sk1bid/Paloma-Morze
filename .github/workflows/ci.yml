@@ -25,8 +25,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Keep the Linux runtime ABI compatible with Ubuntu 22.04.
-        os: [ubuntu-22.04, windows-latest, macos-latest]
+        # Linux uses a pinned Debian 10 container for the native ABI.
+        os: [ubuntu-24.04, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,21 +35,21 @@ jobs:
           cache: npm
           cache-dependency-path: ui/package-lock.json
 
-      - name: Install Linux audio headers
+      - name: Compile and test Linux helper on glibc 2.28
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+        run: bash tools/linux-compat.sh build
 
       - name: Test Linux package compatibility checks
         if: runner.os == 'Linux'
         run: python3 tools/test-linux-appimage-audio-unit.py
 
       - name: Compile and test native engine
+        if: runner.os != 'Linux'
         shell: bash
         run: |
           set -euo pipefail
           flags=(-std=c++17 -O2 -lpthread -lm)
           case "$RUNNER_OS" in
-            Linux) flags+=(-lasound -ldl); engine=ui/native/morze_app ;;
             macOS) flags+=(-framework CoreAudio -framework AudioUnit -framework CoreFoundation); engine=ui/native/morze_app ;;
             Windows) flags+=(-static); engine=ui/native/morze_app.exe ;;
           esac
