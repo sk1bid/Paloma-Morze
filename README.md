@@ -6,11 +6,15 @@
 
 **Выберите свою систему. Собирать программу и устанавливать движок отдельно не нужно.**
 
-| Ваш компьютер | Что скачать | Как установить |
-| --- | --- | --- |
-| **Windows · 64 бит** | [Установщик для Windows (.exe)](https://github.com/sk1bid/Paloma-Morze/releases/latest#download-windows) | Откройте файл и следуйте шагам установщика. |
-| **Linux · Intel / AMD, 64 бит** | [Приложение для Linux (.AppImage)](https://github.com/sk1bid/Paloma-Morze/releases/latest#download-linux) | В свойствах файла разрешите запуск как программы. Откройте файл. |
-| **Mac · macOS 26 и новее** | [Нативное приложение для Mac (.dmg)](https://github.com/sk1bid/Paloma-Morze/releases/latest#download-macos) | Откройте образ и перетащите приложение в «Программы». Подходит для Apple Silicon и Intel. |
+| Ваш компьютер | Что скачать |
+| --- | --- |
+| **Windows · 64 бит** | [Скачать для Windows (.exe)](https://github.com/sk1bid/Paloma-Morze/releases/latest#download-windows) |
+| **Linux · Intel / AMD, 64 бит** | [Скачать для Linux (.AppImage)](https://github.com/sk1bid/Paloma-Morze/releases/latest#download-linux) |
+| **Mac · macOS 26 и новее** | [Скачать для Mac (.dmg)](https://github.com/sk1bid/Paloma-Morze/releases/latest#download-macos) |
+
+- **Windows:** откройте файл и следуйте шагам установщика.
+- **Linux:** в свойствах файла разрешите запуск как программы, затем откройте его.
+- **Mac:** откройте образ и перетащите приложение в «Программы». Подходит для Apple Silicon и Intel.
 
 Ссылки ведут к разделу скачивания последней версии. Там нажмите ссылку своей системы; остальные файлы в списке Assets скачивать не нужно.
 
